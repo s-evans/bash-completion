@@ -169,7 +169,7 @@ _cleartool()
 					;;
 				diff)
 					options='-graphical -tiny -hstack \
-					-vstack -redecessor -options -window \
+					-vstack -predecessor -options -window \
 					-serial_format -diff_format -columns'
 					;;
 				diffbl)

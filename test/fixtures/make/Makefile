@@ -20,6 +20,27 @@ install: all
 clean:
 	-rm -f $(NAME)
 
+.test_passes:
+	./sample >/dev/null
+	touch ^@
+
+.cache/.1:
+	touch $@
+
+.cache/.2:
+	touch $@
+
+.cache/1:
+	touch $@
+
+.cache/2:
+	touch $@
+
 ifndef __BASH_MAKE_COMPLETION__
 -include sample.d
 endif
+
+VARIABLE_LOOKS_A_BIT_LIKE_A_TARGET := fooled-you
+extra_makefile:
+	touch $@
+include extra_makefile

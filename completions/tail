@@ -1,0 +1,41 @@
+#!/usr/bin/env sh
+
+# TODO: remove recommendations immediately after switches that take parameters
+# TODO: handle mutually exclusive options, long and short form options that are equivalent
+
+_tail()
+{
+	COMPREPLY=()
+
+    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+    local options=''
+    local option_list=( '--bytes=' '--follow' '--follow=' '--help' '--lines=' \
+        '--max-unchanged-stats=' '--pid=' '--quiet' '--retry' '--silent' \
+        '--sleep-interval=' '--verbose' '-F' '-c' '-f' '-n' '-q' '-s' '-v' )
+
+    if [[ $cur == *= ]]; then
+        compopt -o nospace
+    fi
+
+    for option in ${option_list[@]} ; do
+        local found=0
+
+        for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+            if [[ $word == $option ]]; then
+               found=1 
+               break
+            fi
+        done
+
+        if [[ $found -eq 0 ]]; then
+            options+="$option "
+        fi
+    done
+
+    COMPREPLY=( $( compgen -f -W "$options" -- $cur ) )
+
+	return 0
+}
+
+complete -o default -F _tail tail
+

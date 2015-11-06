@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-_windows_users()
+_windows_net_users()
 {
     # TODO: this might break down if there a lot of users or usernames have spaces, special chars, etc.
     local options=`net user | head -n -2 | tail -n +5`
@@ -75,7 +75,7 @@ _windows_net()
 ?'
                 elif [[ $COMP_CWORD -ge 3 ]]; then
                     # TODO: cull the list based off of words present in the command string
-                    options=$(_windows_users)
+                    options=$(_windows_net_users)
                     options+='/comment: /delete /domain /add'
                 fi
                 ;;
@@ -134,7 +134,7 @@ _windows_net()
 
             user)
                 if [[ $COMP_CWORD -eq 2 ]]; then
-                    options=$(_windows_users)
+                    options=$(_windows_net_users)
                 else
                     options=''
                 fi

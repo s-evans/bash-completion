@@ -1,0 +1,411 @@
+#!/usr/bin/env sh
+
+_windows_schtasks_users()
+{
+    # TODO: this might break down if there a lot of users or usernames have spaces, special chars, etc.
+    local options=`net user | head -n -2 | tail -n +5`
+    options=${options///}
+    echo "$options"
+}
+
+_windows_get_schtasks()
+{
+    local options=`schtasks /query /fo list | grep ^TaskName: | sed 's/TaskName: \+//'`
+    options=${options//\\/\\\\}
+    options=${options// /\\ }
+    echo "$options"
+}
+
+_windows_schtasks()
+{
+    COMPREPLY=()
+
+    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+    local command=${COMP_WORDS[1]}
+    local prev=${COMP_WORDS[COMP_CWORD-1]}
+    local options=''
+
+    if [[ $COMP_CWORD -eq 1 ]] ; then
+        COMPREPLY=( $( compgen -W '/run /end /create /delete /query /change /showsid /?' -- $cur ) )
+        return 0
+
+    elif [[ "${COMP_WORDS[COMP_CWORD]}" == "/?" ]]; then
+        COMPREPLY=( $( compgen -W "/?" -- $cur ) )
+        return 0
+
+    elif [[ "$prev" == "/?" ]]; then
+        return 0
+
+    else
+
+        # Command-specific arguments
+        case "$command" in
+
+            /run)
+
+                case "$prev" in
+                    /s)
+                        ;&
+                    /p)
+                        options=''
+                        ;;
+
+                    /u)
+                        options=$(_windows_schtasks_users)
+                        ;;
+
+                    /tn)
+                        local IFS=$'\n'
+                        options=$(_windows_get_schtasks)
+                        ;;
+
+                    *)
+                        options=''
+                        local option_list=('/s' '/u' '/p' '/i' '/tn' '/hresult' '/?')
+
+                        for option in ${option_list[@]} ; do
+                            local found=0
+
+                            for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+                                if [[ $word == $option ]]; then
+                                   found=1 
+                                   break
+                                fi
+                            done
+
+                            if [[ $found -eq 0 ]]; then
+                                options+="$option "
+                            fi
+                        done
+                        ;;
+
+                esac
+                ;;
+
+            /end)
+
+                case "$prev" in
+                    /s)
+                        ;&
+                    /p)
+                        options=''
+                        ;;
+
+                    /u)
+                        options=$(_windows_schtasks_users)
+                        ;;
+
+                    /tn)
+                        local IFS=$'\n'
+                        options=$(_windows_get_schtasks)
+                        ;;
+
+                    *)
+                        options=''
+                        local option_list=('/s' '/u' '/p' '/tn' '/hresult' '/?')
+
+                        for option in ${option_list[@]} ; do
+                            local found=0
+
+                            for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+                                if [[ $word == $option ]]; then
+                                   found=1 
+                                   break
+                                fi
+                            done
+
+                            if [[ $found -eq 0 ]]; then
+                                options+="$option "
+                            fi
+                        done
+                        ;;
+
+                esac
+                ;;
+
+            /create)
+
+                case "$prev" in
+                    /s)
+                        ;&
+                    /rp)
+                        ;&
+                    /delay)
+                        ;&
+                    /rl)
+                        ;&
+                    /ed)
+                        ;&
+                    /sd)
+                        ;&
+                    /du)
+                        ;&
+                    /et)
+                        ;&
+                    /ri)
+                        ;&
+                    /st)
+                        ;&
+                    /tr)
+                        ;&
+                    /i)
+                        ;&
+                    /m)
+                        ;&
+                    /d)
+                        ;&
+                    /mo)
+                        ;&
+                    /p)
+                        options=''
+                        ;;
+
+                    /sc)
+                        options='minute hourly daily weekly monthly once \
+                            onstart onlogon onidle onevent'
+                        ;;
+
+                    /ru)
+                        ;&
+                    /u)
+                        options=$(_windows_schtasks_users)
+                        ;;
+
+                    /tn)
+                        local IFS=$'\n'
+                        options=$(_windows_get_schtasks)
+                        ;;
+
+                    *)
+                        options=''
+                        local option_list=('/s' '/u' '/p' '/tn' '/ru' '/sc'
+                            '/mo' '/d' '/m' '/i' '/ec' '/rp' '/tr' '/st' '/ri'
+                            '/et' '/du' '/k' '/sd' '/ed' '/it' '/np' '/xml'
+                            '/v1' '/f' '/rl' '/z' '/delay' '/hresult' '/?')
+
+                        for option in ${option_list[@]} ; do
+                            local found=0
+
+                            for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+                                if [[ $word == $option ]]; then
+                                   found=1 
+                                   break
+                                fi
+                            done
+
+                            if [[ $found -eq 0 ]]; then
+                                options+="$option "
+                            fi
+                        done
+                        ;;
+
+                esac
+                ;;
+
+
+            /delete)
+
+                case "$prev" in
+                    /s)
+                        ;&
+                    /p)
+                        options=''
+                        ;;
+
+                    /u)
+                        options=$(_windows_schtasks_users)
+                        ;;
+
+                    /tn)
+                        local IFS=$'\n'
+                        options=$(_windows_get_schtasks)
+                        ;;
+
+                    *)
+                        options=''
+                        local option_list=('/s' '/u' '/p' '/f' '/tn' '/hresult' '/?')
+
+                        for option in ${option_list[@]} ; do
+                            local found=0
+
+                            for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+                                if [[ $word == $option ]]; then
+                                   found=1 
+                                   break
+                                fi
+                            done
+
+                            if [[ $found -eq 0 ]]; then
+                                options+="$option "
+                            fi
+                        done
+                        ;;
+
+                esac
+                ;;
+
+            /query)
+
+                case "$prev" in
+                    /s)
+                        ;&
+                    /p)
+                        options=''
+                        ;;
+
+                    /u)
+                        options=$(_windows_schtasks_users)
+                        ;;
+
+                    /xml)
+                        options='one'
+                        ;;
+
+                    /fo)
+                        options='table list csv'
+                        ;;
+
+                    /tn)
+                        local IFS=$'\n'
+                        options=$(_windows_get_schtasks)
+                        ;;
+
+                    *)
+                        options=''
+                        local option_list=('/s' '/u' '/p' '/fo' '/xml' '/nh' '/v' '/tn' '/hresult' '/?')
+
+                        for option in ${option_list[@]} ; do
+                            local found=0
+
+                            for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+                                if [[ $word == $option ]]; then
+                                   found=1 
+                                   break
+                                fi
+                            done
+
+                            if [[ $found -eq 0 ]]; then
+                                options+="$option "
+                            fi
+                        done
+                        ;;
+
+                esac
+                ;;
+
+            /change)
+
+                case "$prev" in
+                    /s)
+                        ;&
+                    /rp)
+                        ;&
+                    /delay)
+                        ;&
+                    /rl)
+                        ;&
+                    /ed)
+                        ;&
+                    /sd)
+                        ;&
+                    /ec)
+                        ;&
+                    /du)
+                        ;&
+                    /et)
+                        ;&
+                    /ri)
+                        ;&
+                    /st)
+                        ;&
+                    /tr)
+                        ;&
+                    /xml)
+                        ;&
+                    /p)
+                        options=''
+                        ;;
+
+                    /u)
+                        options=$(_windows_schtasks_users)
+                        ;;
+
+                    /ru)
+                        options=$(_windows_schtasks_users)
+                        ;;
+
+                    /tn)
+                        local IFS=$'\n'
+                        options=$(_windows_get_schtasks)
+                        ;;
+
+                    *)
+                        options=''
+                        local option_list=('/s' '/u' '/p' '/tn' '/ru' '/rp'
+                            '/tr' '/st' '/ri' '/et' '/du' '/k' '/sd' '/ed'
+                            '/it' '/rl' '/enable' '/disable' '/z' '/delay'
+                            '/hresult' '/?')
+
+                        for option in ${option_list[@]} ; do
+                            local found=0
+
+                            for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+                                if [[ $word == $option ]]; then
+                                   found=1 
+                                   break
+                                fi
+                            done
+
+                            if [[ $found -eq 0 ]]; then
+                                options+="$option "
+                            fi
+                        done
+                        ;;
+
+                esac
+                ;;
+
+            /showsid)
+
+                case "$prev" in
+
+                    /tn)
+                        local IFS=$'\n'
+                        options=$(_windows_get_schtasks)
+                        ;;
+
+                    *)
+                        options=''
+                        local option_list=('/tn' '/hresult' '/?')
+
+                        for option in ${option_list[@]} ; do
+                            local found=0
+
+                            for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+                                if [[ $word == $option ]]; then
+                                   found=1 
+                                   break
+                                fi
+                            done
+
+                            if [[ $found -eq 0 ]]; then
+                                options+="$option "
+                            fi
+                        done
+                        ;;
+
+                esac
+                ;;
+
+        esac
+
+        if [ -n "$options" -a -z "$COMPREPLY" ]; then
+            COMPREPLY=( $(compgen -W '${options}' -- ${cur} ) )
+        fi
+    fi
+
+    return 0
+}
+
+complete -o default -F _windows_schtasks schtasks schtasks.exe
+

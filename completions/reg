@@ -78,7 +78,8 @@ _windows_reg()
 
                     else
                         # list root keys
-                        options='hkey_local_machine\\ hkey_current_user\\ hkey_current_config\\ hkey_users\\ /?'
+                        options='hkey_local_machine\\ hkey_current_user\\ \
+                            hkey_current_config\\ hkey_users\\ /?'
 
                     fi
                 elif [[ $COMP_CWORD -gt 2 ]]; then
@@ -89,7 +90,8 @@ _windows_reg()
                         options=$(_windows_reg_values "${COMP_WORDS[2]}")
 
                     elif [[ "$prev" == "/t" ]]; then
-                        options='reg_sz reg_multi_sz reg_expand_sz reg_dword reg_qword reg_binary reg_none'
+                        options='reg_sz reg_multi_sz reg_expand_sz reg_dword \
+                        reg_qword reg_binary reg_none'
 
                     elif [[ "$prev" == "/se" || "$prev" == "/f" ]]; then
                         options=''
@@ -97,7 +99,8 @@ _windows_reg()
                     else
                         # cull the list of switches if they've been used
                         options=''
-                        option_list=( "/v" "/ve" "/s" "/f" "/k" "/d" "/c" "/e" "/t" "/z" "/se" "/reg\:32" "/reg\:64" )
+                        local option_list=( "/v" "/ve" "/s" "/f" "/k" "/d" "/c" \
+                            "/e" "/t" "/z" "/se" "/reg\:32" "/reg\:64" )
 
                         for option in ${option_list[@]} ; do
                             local found=0
@@ -131,7 +134,8 @@ _windows_reg()
 
                     else
                         # list root keys
-                        options='hkey_local_machine\\ hkey_current_user\\ hkey_current_config\\ hkey_users\\ /?'
+                        options='hkey_local_machine\\ hkey_current_user\\ \
+                            hkey_current_config\\ hkey_users\\ /?'
 
                     fi
                 elif [[ $COMP_CWORD -gt 2 ]]; then
@@ -142,7 +146,8 @@ _windows_reg()
                         options=$(_windows_reg_values "${COMP_WORDS[2]}")
 
                     elif [[ "$prev" == "/t" ]]; then
-                        options='reg_sz reg_multi_sz reg_expand_sz reg_dword reg_qword reg_binary reg_none'
+                        options='reg_sz reg_multi_sz reg_expand_sz reg_dword \
+                            reg_qword reg_binary reg_none'
 
                     elif [[ "$prev" == "/s" || "$prev" == "/d" ]]; then
                         options=''
@@ -150,7 +155,8 @@ _windows_reg()
                     else
                         # cull the list of switches if they've been used
                         options=''
-                        option_list=( "/v" "/ve" "/s" "/f" "/d" "/t" "/s" "/reg\:32" "/reg\:64" )
+                        local option_list=( "/v" "/ve" "/s" "/f" "/d" "/t" "/s" \
+                            "/reg\:32" "/reg\:64" )
 
                         for option in ${option_list[@]} ; do
                             local found=0
@@ -184,7 +190,8 @@ _windows_reg()
 
                     else
                         # list root keys
-                        options='hkey_local_machine\\ hkey_current_user\\ hkey_current_config\\ hkey_users\\ /?'
+                        options='hkey_local_machine\\ hkey_current_user\\ \
+                        hkey_current_config\\ hkey_users\\ /?'
 
                     fi
                 elif [[ $COMP_CWORD -gt 2 ]]; then
@@ -197,7 +204,8 @@ _windows_reg()
                     else
                         # cull the list of switches if they've been used
                         options=''
-                        option_list=( "/v" "/ve" "/va" "/f" "/reg\:32" "/reg\:64" )
+                        local option_list=( "/v" "/ve" "/va" "/f" "/reg\:32" \
+                            "/reg\:64" )
 
                         for option in ${option_list[@]} ; do
                             local found=0
@@ -231,14 +239,15 @@ _windows_reg()
 
                     else
                         # list root keys
-                        options='hkey_local_machine\\ hkey_current_user\\ hkey_current_config\\ hkey_users\\ /?'
+                        options='hkey_local_machine\\ hkey_current_user\\ \
+                            hkey_current_config\\ hkey_users\\ /?'
 
                     fi
                 elif [[ $COMP_CWORD -gt 3 ]]; then
 
                     # cull the list of switches if they've been used
                     options=''
-                    option_list=( "/s" "/f" "/reg\:32" "/reg\:64" )
+                    local option_list=( "/s" "/f" "/reg\:32" "/reg\:64" )
 
                     for option in ${option_list[@]} ; do
                         local found=0
@@ -274,7 +283,8 @@ _windows_reg()
 
                     else
                         # list root keys
-                        options='hkey_local_machine\\ hkey_current_user\\ hkey_current_config\\ hkey_users\\ /?'
+                        options='hkey_local_machine\\ hkey_current_user\\ \
+                            hkey_current_config\\ hkey_users\\ /?'
 
                     fi
 
@@ -285,7 +295,7 @@ _windows_reg()
 
                     # cull the list of switches if they've been used
                     options=''
-                    option_list=( "/y" "/reg\:32" "/reg\:64" )
+                    local option_list=( "/y" "/reg\:32" "/reg\:64" )
 
                     for option in ${option_list[@]} ; do
                         local found=0
@@ -321,7 +331,8 @@ _windows_reg()
 
                     else
                         # list root keys
-                        options='hkey_local_machine\\ hkey_current_user\\ hkey_current_config\\ hkey_users\\ /?'
+                        options='hkey_local_machine\\ hkey_current_user\\ \
+                            hkey_current_config\\ hkey_users\\ /?'
 
                     fi
 
@@ -332,7 +343,7 @@ _windows_reg()
 
                     # cull the list of switches if they've been used
                     options=''
-                    option_list=( "/reg\:32" "/reg\:64" )
+                    local option_list=( "/reg\:32" "/reg\:64" )
 
                     for option in ${option_list[@]} ; do
                         local found=0
@@ -365,7 +376,8 @@ _windows_reg()
 
                     else
                         # list root keys
-                        options='hkey_local_machine\\ hkey_current_user\\ hkey_current_config\\ hkey_users\\ /?'
+                        options='hkey_local_machine\\ hkey_current_user\\ \
+                            hkey_current_config\\ hkey_users\\ /?'
 
                     fi
                 fi
@@ -385,7 +397,8 @@ _windows_reg()
 
                     else
                         # list root keys
-                        options='hkey_local_machine\\ hkey_current_user\\ hkey_current_config\\ hkey_users\\ /?'
+                        options='hkey_local_machine\\ hkey_current_user\\ \
+                            hkey_current_config\\ hkey_users\\ /?'
 
                     fi
                 elif [[ $COMP_CWORD -gt 3 ]]; then
@@ -398,7 +411,8 @@ _windows_reg()
                     else
                         # cull the list of switches if they've been used
                         options=''
-                        option_list=( "/v" "/ve" "/s" "/oa" "/od" "/os" "/on" "/reg\:32" "/reg\:64" )
+                        local option_list=( "/v" "/ve" "/s" "/oa" "/od" "/os" \
+                            "/on" "/reg\:32" "/reg\:64" )
 
                         for option in ${option_list[@]} ; do
                             local found=0
@@ -455,7 +469,9 @@ _windows_reg()
                     else
                         # cull the list of switches if they've been used
                         options=''
-                        option_list=( "dont_virtualize" "dont_silent_fail" "recurse_flag" "/reg\:32" "/reg\:64" )
+                        local option_list=( "dont_virtualize" \
+                            "dont_silent_fail" "recurse_flag" "/reg\:32" \
+                            "/reg\:64" )
 
                         for option in ${option_list[@]} ; do
                             local found=0

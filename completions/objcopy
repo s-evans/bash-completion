@@ -1,0 +1,70 @@
+#!/usr/bin/env sh
+
+# TODO: remove recommendations immediately after switches that take parameters
+# TODO: handle mutually exclusive options, long and short form options that are equivalent
+
+_objcopy()
+{
+	COMPREPLY=()
+
+    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+    local options=''
+    local option_list=( '--add-gnu-debuglink=' '--add-section' \
+        '--adjust-start=' '--alt-machine-code=' \
+        '--binary-architecture=' '--byte=' '--change-addresses=' \
+        '--change-leading-char' '--change-section-address' \
+        '--change-section-lma' '--change-section-vma' \
+        '--change-warnings' '--compress-debug-sections' '--debugging' \
+        '--decompress-debug-sections' \
+        '--disable-deterministic-archives' '--discard-all' \
+        '--discard-locals' '--dump-section' '--dwarf-depth=' \
+        '--dwarf-start=' '--enable-deterministic-archives' \
+        '--extract-dwo' '--extract-symbol' '--file-alignment=' \
+        '--gap-fill=' '--globalize-symbol=' '--globalize-symbols=' \
+        '--heap=' '--help' '--image-base=' '--impure' '--info' \
+        '--input-target=' '--interleave-width=' '--interleave=' \
+        '--keep-file-symbols' '--keep-global-symbol=' \
+        '--keep-global-symbols=' '--keep-symbol=' '--keep-symbols=' \
+        '--localize-hidden' '--localize-symbol=' '--localize-symbols=' \
+        '--long-section-names' '--no-change-warnings' \
+        '--only-keep-debug' '--only-section=' '--output-target=' \
+        '--pad-to=' '--prefix-alloc-sections=' '--prefix-sections=' \
+        '--prefix-symbols=' '--preserve-dates' '--pure' \
+        '--readonly-text' '--redefine-sym' '--redefine-syms=' \
+        '--remove-leading-char' '--remove-section=' '--rename-section' \
+        '--reverse-bytes=' '--section-alignment=' '--set-section-flags' \
+        '--set-start=' '--srec-forceS3' '--srec-len=' '--stack=' \
+        '--strip-all' '--strip-debug' '--strip-dwo' '--strip-symbol=' \
+        '--strip-symbols=' '--strip-unneeded-symbol=' \
+        '--strip-unneeded-symbols=' '--subsystem=' '--target=' \
+        '--verbose' '--version' '--weaken' '--weaken-symbol=' \
+        '--weaken-symbols=' '--wildcard' '--writable-text' '-B' '-D' \
+        '-F' '-G' '-I' '-K' '-L' '-N' '-O' '-R' '-S' '-U' '-V' '-W' \
+        '-X' '-b' '-g' '-i' '-j' '-p' '-v' '-w' '-x' )
+
+    if [[ $cur == *= ]]; then
+        compopt -o nospace
+    fi
+
+    for option in ${option_list[@]} ; do
+        local found=0
+
+        for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+            if [[ $word == $option ]]; then
+               found=1 
+               break
+            fi
+        done
+
+        if [[ $found -eq 0 ]]; then
+            options+="$option "
+        fi
+    done
+
+    COMPREPLY=( $( compgen -f -W "$options" -- $cur ) )
+
+	return 0
+}
+
+complete -o default -F _objcopy objcopy
+

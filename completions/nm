@@ -1,0 +1,47 @@
+#!/usr/bin/env sh
+
+# TODO: remove recommendations immediately after switches that take parameters
+# TODO: handle mutually exclusive options, long and short form options that are equivalent
+
+_nm()
+{
+	COMPREPLY=()
+
+    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+    local options=''
+    local option_list=( '--debug-syms' '--defined-only' '--demangle' \
+        '--demangle=' '--dynamic' '--extern-only' '--format=' \
+        '--format=' '--help' '--line-numbers' '--no-demangle' \
+        '--no-sort' '--numeric-sort' '--plugin' '--portability' \
+        '--print-armap' '--print-file-name' '--print-size' '--radix=' \
+        '--reverse-sort' '--size-sort' '--special-syms' '--synthetic' \
+        '--target=' '--undefined-only' '--version' '-A' '-B' '-C' '-D' \
+        '-P' '-S' '-V' '-X' '-a' '-f' '-g' '-h' '-l' '-n' '-o' '-p' \
+        '-r' '-s' '-t' '-u' '-v')
+
+    if [[ $cur == *= ]]; then
+        compopt -o nospace
+    fi
+
+    for option in ${option_list[@]} ; do
+        local found=0
+
+        for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+            if [[ $word == $option ]]; then
+               found=1 
+               break
+            fi
+        done
+
+        if [[ $found -eq 0 ]]; then
+            options+="$option "
+        fi
+    done
+
+    COMPREPLY=( $( compgen -f -W "$options" -- $cur ) )
+
+	return 0
+}
+
+complete -o default -F _nm nm
+

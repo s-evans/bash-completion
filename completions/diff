@@ -1,0 +1,57 @@
+#!/usr/bin/env sh
+
+# TODO: remove recommendations immediately after switches that take parameters
+# TODO: handle mutually exclusive options, long and short form options that are equivalent
+
+_diff()
+{
+	COMPREPLY=()
+
+    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+    local options=''
+    local option_list=( '--normal' '-q' '--brief' '-s'
+        '--report-identical-files' '-c' '-C' '--context' '--context=' '-u' '-U' \
+        '--unified' '--unified=' '-e' '--ed' '-n' '--rcs' '-y' '--side-by-side' \
+        '-W' '--width=' '--left-column' '--suppress-common-lines' '-p' \
+        '--show-c-function' '-F' '--show-function-line=' '--label' '-t' \
+        '--expand-tabs' '-T' '--initial-tab' '--tabsize=' \
+        '--suppress-blank-empty' '-l' '--paginate' '-r' '--recursive' '-N' \
+        '--new-file' '--unidirectional-new-file' '--ignore-file-name-case' \
+        '--no-ignore-file-name-case' '-x' '--exclude=' '-X' '--exclude-from=' \
+        '-S' '--starting-file=' '--from-file=' '--to-file=' '-i' \
+        '--ignore-case' '-E' '--ignore-tab-expansion' '-Z' \
+        '--ignore-trailing-space' '-b' '--ignore-space-change' '-w' \
+        '--ignore-all-space' '-B' '--ignore-blank-lines' '-I' \
+        '--ignore-matching-lines=' '-a' '--text' '--strip-trailing-cr' '-D' \
+        '--ifdef=' '--GTYPE-group-format=' '--line-format=' \
+        '--LTYPE-line-format=' '-d' '--minimal' '--horizon-lines=' \
+        '--speed-large-files' '--help' '-v' '--version')
+
+    if [[ $cur == *= ]]; then
+        compopt -o nospace
+    fi
+
+    for option in ${option_list[@]} ; do
+        local found=0
+
+        for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+            if [[ $word == $option ]]; then
+               found=1 
+               break
+            fi
+        done
+
+        if [[ $found -eq 0 ]]; then
+            options+="$option "
+        fi
+    done
+
+    COMPREPLY=( $( compgen -f -W "$options" -- $cur ) )
+
+	return 0
+}
+
+complete -o default -F _diff diff
+
+
+

@@ -1,0 +1,58 @@
+#!/usr/bin/env sh
+
+# TODO: remove recommendations immediately after switches that take parameters
+# TODO: handle mutually exclusive options, long and short form options that are equivalent
+# TODO: '--debug-dump=' completion doesn't work particularly well
+
+_readelf()
+{
+	COMPREPLY=()
+
+    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+    local options=''
+    local option_list=( '--all' '--arch-specific' '--archive-index' \
+        '--debug-dump=' '--debug-dump=Ranges' '--debug-dump=abbrev' \
+        '--debug-dump=aranges' '--debug-dump=decodedline' \
+        '--debug-dump=frames' '--debug-dump=frames-interp' \
+        '--debug-dump=gdb_index' '--debug-dump=info' '--debug-dump=loc' \
+        '--debug-dump=macro' '--debug-dump=pubnames' \
+        '--debug-dump=pubtypes' '--debug-dump=rawline' \
+        '--debug-dump=str' '--debug-dump=trace_abbrev' \
+        '--debug-dump=trace_aranges' '--debug-dump=trace_info' \
+        '--dwarf-depth=' '--dwarf-start=' '--dyn-syms' '--dynamic' \
+        '--file-header' '--headers' '--help' '--hex-dump=' \
+        '--histogram' '--notes' '--program-headers' '--relocated-dump=' \
+        '--relocs' '--section-details' '--section-groups' \
+        '--section-headers' '--sections' '--segments' '--string-dump=' \
+        '--symbols' '--syms' '--unwind' '--use-dynamic' '--version' \
+        '--version-info' '--wide' '-A' '-D' '-H' '-I' '-R' '-S' '-V' \
+        '-W' '-a' '-c' '-d' '-e' '-g' '-h' '-l' '-n' '-p' '-r' '-s' \
+        '-t' '-u' '-v' '-w' '-wF' '-wL' '-wR' '-wa' '-wf' '-wi' '-wl' \
+        '-wm' '-wo' '-wp' '-wr' '-ws' '-wt' '-x' )
+
+    if [[ $cur == *= ]]; then
+        compopt -o nospace
+    fi
+
+    for option in ${option_list[@]} ; do
+        local found=0
+
+        for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+            if [[ $word == $option ]]; then
+               found=1 
+               break
+            fi
+        done
+
+        if [[ $found -eq 0 ]]; then
+            options+="$option "
+        fi
+    done
+
+    COMPREPLY=( $( compgen -f -W "$options" -- $cur ) )
+
+	return 0
+}
+
+complete -o default -F _readelf readelf
+

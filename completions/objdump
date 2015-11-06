@@ -1,0 +1,58 @@
+#!/usr/bin/env sh
+
+# TODO: remove recommendations immediately after switches that take parameters
+# TODO: handle mutually exclusive options, long and short form options that are equivalent
+# TODO: "dwarf=" completions don't work particularly well
+
+_objdump()
+{
+	COMPREPLY=()
+
+    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+    local options=''
+    local option_list=( '--adjust-vma=' '--all-headers' '--architecture=' \
+        '--archive-headers' '--debugging' '--debugging-tags' '--demangle=' \
+        '--disassemble' '--disassemble-all' '--disassemble-zeroes' \
+        '--disassembler-options=' '--dwarf' '--dwarf=Ranges' '--dwarf=abbrev' \
+        '--dwarf=aranges' '--dwarf=decodedline' '--dwarf=frames' \
+        '--dwarf=frames-interp' '--dwarf=gdb_index' '--dwarf=info' '--dwarf=loc' \
+        '--dwarf=macro' '--dwarf=pubnames' '--dwarf=pubtypes' '--dwarf=rawline' \
+        '--dwarf=str' '--dwarf=trace_abbrev' '--dwarf=trace_aranges' \
+        '--dwarf=trace_info' '--dynamic-reloc' '--dynamic-syms' '--endian=' \
+        '--file-headers' '--file-offsets' '--file-start-context' '--full-contents' \
+        '--headers' '--help' '--info' '--insn-width=' '--line-numbers' \
+        '--no-show-raw-insn' '--prefix-addresses' '--prefix-strip=' \
+        '--prefix=prefix' '--private-headers' '--private=' '--reloc' \
+        '--section-headers' '--section=' '--source' '--special-syms' '--stabs' \
+        '--start-address=' '--stop-address=' '--syms' '--target=' '--version' \
+        '--wide' '-C' '-D' '-EB' '-EL' '-F' '-G' '-H' '-M' '-P ' '-R' '-S' '-T' \
+        '-V' '-W' '-WF' '-WL' '-WR' '-Wa' '-Wf' '-Wi' '-Wl' '-Wm' '-Wo' '-Wp' '-Wr' \
+        '-Ws' '-Wt' '-a' '-b' '-d' '-e' '-f' '-g' '-h' '-i' '-j' '-l' '-m' '-p' \
+        '-r' '-s' '-t' '-w' '-x' '-z' )
+
+    if [[ $cur == *= ]]; then
+        compopt -o nospace
+    fi
+
+    for option in ${option_list[@]} ; do
+        local found=0
+
+        for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+            if [[ $word == $option ]]; then
+               found=1 
+               break
+            fi
+        done
+
+        if [[ $found -eq 0 ]]; then
+            options+="$option "
+        fi
+    done
+
+    COMPREPLY=( $( compgen -f -W "$options" -- $cur ) )
+
+	return 0
+}
+
+complete -o default -F _objdump objdump
+

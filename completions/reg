@@ -1,0 +1,163 @@
+#!/usr/bin/env sh
+
+_windows_reg_keys()
+{
+    # process the string so that the reg utility will understand it
+    local tmp=$(echo "${1}" | sed 's/\\\+/\\/g' | sed 's/\\[^\\]*$//' | sed 's/\\ / /g')
+
+    # query for additional keys
+    local options=`reg query "$tmp"`
+
+    # post process the query results to make them palatable to bash
+    options=${options///\\}
+    options=${options//\\/\\\\}
+    options=${options// /\\ }
+
+    echo "$options"
+}
+
+# TODO: update and use this
+_windows_reg_values()
+{
+    # process the string so that the reg utility will understand it
+    local tmp=$(echo "${1}" | sed 's/\\\+/\\/g' | sed 's/\\[^\\]*$//' | sed 's/\\ / /g')
+
+    # query for additional keys
+    local options=`reg query "$tmp"`
+
+    # post process the query results to make them palatable to bash
+    options=${options///\\}
+    options=${options//\\/\\\\}
+    options=${options// /\\ }
+
+    echo "$options"
+}
+
+_windows_reg()
+{
+	COMPREPLY=()
+
+    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+    local options=''
+	local command=${COMP_WORDS[1]}
+    local commands='query add delete copy save restore load unload compare export import flags /?'
+	local prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	if [[ $COMP_CWORD -eq 1 ]] ; then
+		COMPREPLY=( $( compgen -W "$commands" -- $cur ) )
+    elif [[ "$prev" == "/?" ]]; then
+        return 0
+	else
+        # Command-specific arguments
+        case "$command" in
+
+            query)
+                options='/?'
+                if [[ $COMP_CWORD -eq 2 ]]; then
+                    compopt -o nospace
+
+                    if [[ "${cur}" == *\\* ]]; then
+                        local IFS=$'\n' 
+                        options=$(_windows_reg_keys "$cur")
+                    else
+                        options='HKEY_LOCAL_MACHINE\ HKEY_CURRENT_USER\ HKEY_CURRENT_CONFIG\ HKEY_USERS\ /?'
+                    fi
+                elif [[ $COMP_CWORD -gt 2 ]]; then
+
+                    if [[ "$prev" == "/v" ]]; then
+                        local key=${COMP_WORDS[2]}
+
+                        # process the string so that the reg utility will understand it
+                        local tmp=$(echo $key | sed 's/\\\+/\\/g' | sed 's/\\ / /g')
+
+                        # query for values
+                        local IFS=$'\n'
+                        options=`reg query "$tmp" | grep -B 100000 ^$ | grep -A 10000 HKEY | head -n -1 | tail -n +2 | sed 's/ \+/ /g' | sed 's/^ \+\| \+$//' | sed 's/ .*//'`
+
+                        # post process the query results to make them palatable to bash
+                        options=${options///\\}
+                        options=${options//\\/\\\\}
+                        options=${options// /\\ }
+                    elif [[ "$prev" == "/t" || "$prev" == "/se" || "$prev" == "/f" ]]; then
+                        options=''
+                    else
+                        # cull the list of switches if they've been used
+                        options=''
+                        option_list=( "/v" "/ve" "/s" "/f" "/k" "/d" "/c" "/e" "/t" "/z" "/se" )
+
+                        for option in ${option_list[@]} ; do
+                            local found=0
+
+                            for word in ${COMP_WORDS[@]} ; do
+                                if [[ $word == $option ]]; then
+                                   found=1 
+                                   break
+                                fi
+                            done
+
+                            if [[ $found -eq 0 ]]; then
+                                options+="$option "
+                            fi
+                        done
+                    fi
+                fi
+                ;;
+
+            # TODO: continue working on this
+
+            add)
+                options='/?'
+                ;;
+
+            delete)
+                options='/?'
+                ;;
+
+            copy)
+                options='/?'
+                ;;
+
+            save)
+                options='/?'
+                ;;
+
+            restore)
+                options='/?'
+                ;;
+
+            load)
+                options='/?'
+                ;;
+
+            unload)
+                options='/?'
+                ;;
+
+            compare)
+                options='/?'
+                ;;
+
+            export)
+                options='/?'
+                ;;
+
+            import)
+                options='/?'
+                ;;
+
+            flags)
+                options='/?'
+                ;;
+
+        esac
+
+        if [ -n "$options" -a -z "$COMPREPLY" ]; then
+            COMPREPLY=( $(compgen -W '${options}' -- ${cur} ) )
+        fi
+	fi
+
+	return 0
+}
+
+complete -o default -F _windows_reg reg reg.exe
+

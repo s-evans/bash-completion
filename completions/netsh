@@ -1,0 +1,539 @@
+#!/usr/bin/env sh
+
+_netsh()
+{
+	COMPREPLY=()
+
+	local prev=${COMP_WORDS[COMP_CWORD-1]}
+    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+    local commands=("add" "advfirewall" "bridge" "delete" "dhcpclient" \
+        "dnsclient" "dump" "exec" "firewall" "help" "http" "interface" "ipsec" \
+        "lan" "namespace" "nap" "netio" "p2p" "ras" "rpc" "set" "show" "wfp" \
+        "winhttp" "winsock" "wlan" )
+    local options=''
+
+    declare -i count=0
+    local command=''
+    for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+        for option in ${commands[@]} ; do
+            if [[ "${option}" == "${word}" ]]; then
+                command=${option}
+                break
+            fi
+        done
+        if [[ -n $command ]]; then
+            break
+        fi
+        count+=1
+    done
+
+    local subcmd=${COMP_WORDS[$count+1]}
+    local subsubcmd=${COMP_WORDS[$count+2]}
+    local subsubsubcmd=${COMP_WORDS[$count+3]}
+
+    count=$COMP_CWORD-$count
+
+    # Command-specific arguments
+    case "$command" in
+
+        add) 
+            if [[ "$prev" == "$command" ]]; then
+                options='helper'
+            elif [[ "$prev" == "helper" ]]; then
+                options=$(command ls *.dll 2> /dev/null) # TODO: may want to show all files
+            fi
+            ;;
+
+        advfirewall)
+
+            if [[ "$prev" == "$command" ]]; then
+                options='consec dump export firewall import mainmode \
+                monitor reset set show'
+
+            elif [[ "$subcmd"  == "consec" ]]; then
+                # TODO: more detail
+                if [[ "$prev" == "$subcmd" ]]; then
+                    options='add delete dump set show'
+                elif [[ "$subsubcmd" == "add" ]]; then
+                    options='rule'
+                elif [[ "$subsubcmd" == "delete" ]]; then
+                    options='rule'
+                elif [[ "$subsubcmd" == "set" ]]; then
+                    options='rule'
+                elif [[ "$subsubcmd" == "show" ]]; then
+                    options='rule'
+                fi
+
+            elif [[ "$subcmd"  == "firewall" ]]; then
+                if [[ "$prev" == "$subcmd" ]]; then
+                    options='add delete dump set show'
+                elif [[ "$subsubcmd" == "add" ]]; then
+                    options='rule'
+                elif [[ "$subsubcmd" == "delete" ]]; then
+                    options='rule'
+                elif [[ "$subsubcmd" == "set" ]]; then
+                    options='rule'
+                elif [[ "$subsubcmd" == "show" ]]; then
+                    options='rule'
+                fi
+
+            elif [[ "$subcmd"  == "mainmode" ]]; then
+                # TODO: more detail
+                if [[ "$prev" == "$subcmd" ]]; then
+                    options='add delete dump set show'
+                elif [[ "$subsubcmd" == "add" ]]; then
+                    options='rule'
+                elif [[ "$subsubcmd" == "delete" ]]; then
+                    options='rule'
+                elif [[ "$subsubcmd" == "set" ]]; then
+                    options='rule'
+                elif [[ "$subsubcmd" == "show" ]]; then
+                    options='rule'
+                fi
+
+            elif [[ "$subcmd"  == "monitor" ]]; then
+                # TODO: more detail
+                if [[ "$prev" == "$subcmd" ]]; then
+                    options='delete dump show'
+                elif [[ "$subsubcmd" == "delete" ]]; then
+                    options='mmsa qmsa'
+                    # TODO: next level contains 'all'
+                elif [[ "$subsubcmd" == "show" ]]; then
+                    options='consec currentprofile firewall mainmode mmsa qmsa'
+                fi
+
+            elif [[ "$subcmd" == "set" ]]; then
+                # TODO: more detail
+
+                if [[ "$prev" == "$subcmd" ]]; then
+                    options='allprofiles currentprofile domainprofile \
+                    global privateprofile publicprofile'
+
+                elif [[ "$subsubcmd" == "privateprofile" || "$subsubcmd" == "publicprofile" || "$subsubcmd" == "domainprofile" || "$subsubcmd" == "currentprofiles" || "$subsubcmd" == "allprofiles" ]]; then
+                    if [[ "$prev" == "allprofiles" ]]; then
+                        options='state firewallpolicy settings logging'
+                    elif [[ "$subsubsubcmd" == "state" ]]; then
+                        options='on off notconfigured'
+                    elif [[ "$subsubsubcmd" == "firewallpolicy" ]]; then
+                        options='blockinbound blockinboundalways allowinbound notconfigured allowoutbound blockoutbound notconfigured'
+                    elif [[ "$subsubsubcmd" == "settings" ]]; then
+
+                        # TODO: more
+                        # Usage: settings (parameter) enable|disable|notconfigured
+
+                        options='localfirewallrules localconsecrules inboundusernotification remotemanagement unicastresponsetomulticast'
+                    elif [[ "$subsubsubcmd" == "logging" ]]; then
+
+                        # TODO: more
+                        # allowedconnections  - Log allowed connections.
+                                              # Values: enable|disable|notconfigured
+                        # droppedconnections  - Log dropped connections.
+                                              # Values: enable|disable|notconfigured
+                        # filename            - Name and location of the firewall log.
+                                              # Values: <string>|notconfigured
+                        # maxfilesize         - Maximum log file size in kilobytes.
+                                               # Values: 1 - 32767|notconfigured
+
+                        options='allowedconnections droppedconnections filename maxfilesize '
+                    fi
+
+                elif [[ "$subsubcmd" == "global" ]]; then
+
+                    # TODO: statefulftp statefulpptp -> 'enable disable notconfigured'
+
+# IPsec Parameters:
+
+#       strongcrlcheck    - Configures how CRL checking is enforced.
+#                           0: Disable CRL checking (default)
+#                           1: Fail if cert is revoked
+#                           2: Fail on any error
+#                           notconfigured: Returns the value to its not
+#                           configured state.
+#       saidletimemin     - Configures the security association idle time in
+#                           minutes.
+#                         - Usage: 5-60|notconfigured (default=5)
+#       defaultexemptions - Configures the default IPsec exemptions. Default is
+#                           to exempt IPv6 neighbordiscovery protocol and
+#                           DHCP from IPsec.
+#                         - Usage: none|neighbordiscovery|icmp|dhcp|notconfigured
+#       ipsecthroughnat   - Configures when security associations can be
+#                           established with a computer behind a network
+#                           address translator.
+#                         - Usage: never|serverbehindnat|
+#                                  serverandclientbehindnat|
+#                                  notconfigured(default=never)
+#       authzcomputergrp  - Configures the computers that are authorized to
+#                           establish tunnel mode connections.
+#                         - Usage: none|<SDDL string>|notconfigured
+#       authzusergrp      - Configures the users that are authorized to establish
+#                           tunnel mode connections.
+#                         - Usage: none|<SDDL string>|notconfigured
+
+# Main Mode Parameters:
+
+#       mmkeylifetime     - Sets main mode key lifetime in minutes
+#                           or sessions, or both.
+#                         - Usage: <num>min,<num>sess
+#                           minlifetime: <1> min,
+#                           maxlifetime: <2880> min
+#                           minsessions: <0> sessions,
+#                           maxsessions: <2,147,483,647> sessions
+#       mmsecmethods      - configures the main mode list of proposals
+#                         - Usage:
+#                           keyexch:enc-integrity,keyexch:enc-integrity[,...]|default
+#                         - keyexch=dhgroup1|dhgroup2|dhgroup14|
+#                           ecdhp256|ecdhp384
+#                         - enc=3des|des|aes128|aes192|aes256
+#                         - integrity=md5|sha1|sha256|sha384
+#       mmforcedh         - configures the option to use DH to secure key exchange.
+#                         - Usage:
+#                           yes|no (default=no)
+
+                    options='statefulftp statefulpptp ipsec mainmode'
+                fi
+
+            elif [[ "$subcmd"  == "show" ]]; then
+                if [[ "$prev" == "$subcmd" ]]; then
+                    options='allprofiles currentprofile domainprofile \
+                    global privateprofile publicprofile store'
+                elif [[ "$subsubcmd" == "allprofiles" ]]; then
+                    options='state firewallpolicy settings logging'
+                elif [[ "$subsubcmd" == "currentprofile" ]]; then
+                    options='state firewallpolicy settings logging'
+                elif [[ "$subsubcmd" == "domainprofile" ]]; then
+                    options='state firewallpolicy settings logging'
+                elif [[ "$subsubcmd" == "global" ]]; then
+                    options='ipsec statefulftp statefulpptp mainmode categories'
+                elif [[ "$subsubcmd" == "privateprofile" ]]; then
+                    options='state firewallpolicy settings logging'
+                elif [[ "$subsubcmd" == "publicprofile" ]]; then
+                    options='state firewallpolicy settings logging'
+                elif [[ "$subsubcmd" == "store" ]]; then
+                    options=''
+                fi
+
+            fi
+            ;;
+
+        bridge)
+            if [[ "$prev" == "$command" ]]; then
+                options='dump install set show uninstall'
+            elif [[ "$subcmd" == "set" ]]; then
+                if [[ "$subsubcmd" == "adapter" ]]; then
+                    # TODO: improve
+                    local IFS=$'\n'
+                    options=`netsh bridge show adapter | cut -c 48- | head -n -1 | sed 's/.*/"&"/'`
+                    options+="
+forcecompatmode=enable
+forcecompatmode=disable"
+                else
+                    options='adapter'
+                fi
+            elif [[ "$subcmd" == "show" ]]; then
+                if [[ "$subsubcmd" == "adapter" ]]; then
+                    local IFS=$'\n'
+                    options=`netsh bridge show adapter | cut -c 48- | head -n -1 | sed 's/.*/"&"/'`
+                else
+                    options='adapter'
+                fi
+            fi
+            ;;
+
+        delete)
+            if [[ "$prev" == "$command" ]]; then
+                options='helper'
+            elif [[ "$prev" == "helper" ]]; then
+                options=$(command ls *.dll 2> /dev/null) # TODO: may want to show all files
+            fi
+            ;;
+
+        dhcpclient)
+            if [[ "$prev" == "$command" ]]; then
+                options='list trace'
+            elif [[ "$prev" == "trace" ]]; then
+                options='enable disable dump'
+            fi
+            ;;
+
+        dnsclient)
+            if [[ "$prev" == "$command" ]]; then
+                options='add delete dump set show'
+            elif [[ "$subcmd" == "add" ]]; then
+                options='dnsservers'
+            elif [[ "$subcmd" == "delete" ]]; then
+                options='dnsservers'
+            elif [[ "$subcmd" == "set" ]]; then
+                if [[ "$subsubcmd" == "dnsservers" ]]; then
+                    local IFS=$'\n'
+                    options=`netsh interface show interface name= | cut -c 48- | head -n -1 | sed 's/.*/"&"/'`
+                    options+="
+source=dhcp
+source=static
+register=none
+register=primary
+register=both
+validate=yes
+validate=no"
+                else
+                    options='dnsservers'
+                fi
+            elif [[ "$subcmd" == "show" ]]; then
+                options='state'
+            fi
+            # TODO: more detail
+            ;;
+
+        dump)
+            # NOTE: no options
+            ;;
+
+        exec)
+            if [[ "$prev" == "$command" ]]; then
+                options=$(command ls 2> /dev/null)
+            fi
+            ;;
+
+        firewall)
+            if [[ "$prev" == "$command" ]]; then
+                options='add delete dump set show'
+            fi
+            # NOTE: no further commands available on win7
+            ;;
+
+        help)
+            # NOTE: no options worth mentioning
+            ;;
+
+        http)
+            if [[ "$prev" == "$command" ]]; then
+                options='add delete dump flush show'
+            elif [[ "$subcmd" == "add" ]]; then
+                options='cacheparam iplisten sslcert timeout urlacl'
+            elif [[ "$subcmd" == "delete" ]]; then
+                options='cache iplisten sslcert timeout urlacl'
+            elif [[ "$subcmd" == "flush" ]]; then
+                options='logbuffer'
+            elif [[ "$subcmd" == "show" ]]; then
+                options='cacheparam cachestate iplisten servicestate sslcert timeout urlacl'
+            fi
+            # TODO: more detail
+            ;;
+
+        interface)
+            if [[ "$subcmd" == "show" ]]; then
+                if [[ "$subsubcmd" == "interface" ]]; then
+                    local IFS=$'\n'
+                    options=`netsh interface show interface name= | cut -c 48- | head -n -1 | sed 's/.*/"&"/'`
+                else
+                    options='interface'
+                fi
+
+            elif [[ "$subcmd" == "set" ]]; then
+                if [[ "$subsubcmd" == "interface" ]]; then
+                    local IFS=$'\n'
+                    options=`netsh interface show interface name= | cut -c 48- | head -n -1 | sed 's/.*/"&"/'`
+                else
+                    options='interface'
+                fi
+
+            elif [[ "$subcmd" == "isatap" ]]; then
+                if [[ "$prev" == "$subcmd" ]]; then
+                    options='dump set show'
+                elif [[ "$subsubcmd" == "set" ]]; then
+                    # TODO: set router name= state=enabled|disabled|default interval=
+                    # TODO: set state enabled|disabled|default
+                    options='router state'
+                elif [[ "$subsubcmd" == "show" ]]; then
+                    options='router state'
+                fi
+
+            elif [[ "$subcmd" == "httpstunnel" ]]; then
+                # TODO: more detail
+                if [[ "$prev" == "$subcmd" ]]; then
+                    options='add delete dump reset set show'
+                elif [[ "$subsubcmd" == "add" ]]; then
+                    options='interface'
+                elif [[ "$subsubcmd" == "delete" ]]; then
+                    options='interface'
+                elif [[ "$subsubcmd" == "set" ]]; then
+                    options='interface'
+                elif [[ "$subsubcmd" == "show" ]]; then
+                    options='interfaces statistics'
+                fi
+
+            elif [[ "$subcmd" == "ipv4" ]]; then
+                # TODO: more detail
+                options='add delete dump install reset set show uninstall'
+
+            elif [[ "$subcmd" == "ipv6" ]]; then
+                # TODO: more detail
+                options='6to4 add delete dump isatap reset set show'
+
+            elif [[ "$subcmd" == "portproxy" ]]; then
+                # TODO: more detail
+                options='add delete dump reset set show'
+
+            elif [[ "$subcmd" == "tcp" ]]; then
+                # TODO: more detail
+                options='add delete dump reset set show'
+
+            elif [[ "$subcmd" == "teredo" ]]; then
+                # TODO: more detail
+                options='dump set show'
+
+            elif [[ "$prev" == "$command" ]]; then
+                options='6to4 dump httpstunnel ipv4 ipv6 isatap portproxy set show tcp teredo'
+            fi
+
+            # TODO: more detail
+            ;;
+
+        ipsec)
+            if [[ "$prev" == "$command" ]]; then
+                options='dump dynamic static'
+            fi
+            # TODO: more detail
+            ;;
+
+        lan)
+            if [[ "$prev" == "$command" ]]; then
+                options='add delete dump export reconnect set show'
+            fi
+            # TODO: more detail
+            ;;
+
+        namespace)
+            if [[ "$prev" == "$command" ]]; then
+                options='dump show'
+            fi
+            ;;
+
+        nap)
+            if [[ "$prev" == "$command" ]]; then
+                options='client dump hra reset show'
+            fi
+            # TODO: more detail
+            ;;
+
+        netio)
+            if [[ "$prev" == "$command" ]]; then
+                options='add delete dump show'
+            fi
+            # TODO: more detail
+            ;;
+
+        p2p)
+            if [[ "$prev" == "$command" ]]; then
+                options='dump group idmgr pnrp'
+            fi
+            # TODO: more detail
+            ;;
+
+        ras)
+            if [[ "$prev" == "$command" ]]; then
+                options='aaaa add delete diagnostics dump ip ipv6 set show'
+            fi
+            # TODO: more detail
+            ;;
+
+        rpc)
+            if [[ "$prev" == "$command" ]]; then
+                options='add delete dump filter reset show'
+            fi
+            # TODO: more detail
+            ;;
+
+        set)
+            if [[ "$prev" == "$command" ]]; then
+                options='machine'
+            else
+                options='name= user= pwd='
+            fi
+            ;;
+
+        show)
+            if [[ "$prev" == "$command" ]]; then
+                options='alias helper'
+            fi
+            # TODO: more detail
+            ;;
+
+        wfp)
+            if [[ "$prev" == "$command" ]]; then
+                options='capture dump set show'
+            fi
+            # TODO: more detail
+            ;;
+
+        winhttp)
+            if [[ "$prev" == "$command" ]]; then
+                options='dump import reset set show'
+            fi
+            # TODO: more detail
+            ;;
+
+        winsock)
+            if [[ "$prev" == "$command" ]]; then
+                options='audit dump remove reset set show'
+            elif [[ "$subcmd" == "audit" ]]; then
+                options='trail'
+            elif [[ "$subcmd" == "remove" ]]; then
+                options='provider'
+            elif [[ "$subcmd" == "set" ]]; then
+                if [[ "$subsubcmd" == "autotuning" ]]; then
+                    options='on off'
+                else 
+                    options='autotuning'
+                fi
+            elif [[ "$subcmd" == "show" ]]; then
+                options='autotuning catalog'
+            fi
+            ;;
+
+        wlan)
+            if [[ "$prev" == "$command" ]]; then
+                options='add connect delete disconnect dump export \
+                refresh reportissues set show start stop'
+            elif [[ "$subcmd" == "add" ||  "$subcmd" == "delete" ]]; then
+                options='filter profile'
+            elif [[ "$subcmd" == "disconnect" ]]; then
+                local IFS=$'\n'
+                options=`netsh interface show interface name= | cut -c 48- | head -n -1 | sed 's/.*/"&"/'`
+            elif [[ "$subcmd" == "export" ]]; then
+                options='hostednetworkprofile profile'
+            elif [[ "$subcmd" == "refresh" || "$subcmd" == "start" || "$subcmd" == "stop" ]]; then
+                options='hostednetwork'
+            elif [[ "$subcmd" == "show" ]]; then
+                # TODO: go into more detail
+                options='all allowexplicitcreds autoconfig \
+                    blockednetworks createalluserprofile drivers \
+                    filters hostednetwork interfaces networks \
+                    onlyUseGPProfilesforAllowedNetworks profiles \
+                    settings tracing'
+            elif [[ "$subcmd" == "set" ]]; then
+                # TODO: go into more detail
+                options='allowexplicitcreds autoconfig blockednetworks \
+                blockperiod createalluserprofile hostednetwork \
+                profileorder profileparameter profiletype tracing'
+            fi
+            ;;
+
+        *)
+            options="-a -c -r -u -p -f ${commands[@]} ?" 
+            ;;
+
+    esac
+
+    if [[ "$prev" != "?" && -z "${IFS}" ]]; then
+        options="$options ?"
+    fi
+
+    if [ -n "$options" -a -z "$COMPREPLY" ]; then
+        COMPREPLY=( $(compgen -W '${options}' -- ${cur} ) )
+    fi
+
+	return 0
+}
+
+complete -o default -F _netsh netsh netsh.exe
+

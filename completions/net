@@ -1,0 +1,117 @@
+#!/usr/bin/env sh
+
+_windows_net()
+{
+	COMPREPLY=()
+
+    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+    local options=''
+	local command=${COMP_WORDS[1]}
+
+	if [[ $COMP_CWORD -eq 1 ]] ; then
+        local commands='accounts computer config continue file group help helpmsg \
+        localgroup pause session share start statistics stop time use user view'
+
+		COMPREPLY=( $( compgen -W "$commands" -- $cur ) )
+	else
+        # Command-specific arguments
+        case "$command" in
+
+            accounts)
+                options='/FORCELOGOFF: /MINPWLEN: /MAXPWAGE: /MINPWAGE: /UNIQUEPW: /DOMAIN'
+                ;;
+
+            computer)
+                options=''
+                ;;
+
+            config)
+                options='server workstation'
+                ;;
+
+            continue)
+                local IFS=$'\n'
+                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                ;;
+
+            file)
+                options='/close'
+                ;;
+
+            group)
+                # TODO: list groups
+                options=''
+                ;;
+
+            help)
+                options=''
+                ;;
+
+            helpmsg)
+                options=''
+                ;;
+
+            localgroup)
+                # TODO: list groups
+                options=''
+                ;;
+
+            pause)
+                local IFS=$'\n'
+                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                ;;
+
+            session)
+                options='/delete /list'
+                ;;
+
+            share)
+                # TODO: list share names
+                options=''
+                ;;
+
+            start)
+                local IFS=$'\n'
+                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                ;;
+
+            statistics)
+                options='server workstation'
+                ;;
+
+            stop)
+                local IFS=$'\n'
+                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                ;;
+
+            time)
+                options='/set /domain /rtsdomain'
+                ;;
+
+            use)
+                # TODO: list recents
+                options='/persistent:yes /persistent:no /delete /savecred /smartcard /user:'
+                ;;
+
+            user)
+                # TODO: list usernames
+                options=''
+                ;;
+
+            view)
+                # TODO: ? 
+                options=''
+                ;;
+
+        esac
+
+        if [ -n "$options" -a -z "$COMPREPLY" ]; then
+            COMPREPLY=( $(compgen -W '${options}' -- ${cur} ) )
+        fi
+    fi
+
+	return 0
+}
+
+complete -o default -F _windows_net net net.exe
+

@@ -1,0 +1,50 @@
+#!/usr/bin/env sh
+
+_ipconfig()
+{
+	COMPREPLY=()
+
+    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+    local options=''
+	local command=${COMP_WORDS[1]}
+
+	if [[ $COMP_CWORD -eq 1 ]] ; then
+        local commands='/all /renew /release /allcompartments /flushdns /renew6 /release6 \
+        /displaydns /registerdns /showclassid /setclassid /showclassid6 \
+        /setclassid6 /?'
+		COMPREPLY=( $( compgen -W "$commands" -- $cur ) )
+	else
+        # Command-specific arguments
+        case "$command" in
+
+            /showclassid6)
+                ;&
+            /setclassid6)
+                ;&
+            /showclassid)
+                ;&
+            /setclassid)
+                ;&
+            /renew6)
+                ;&
+            /release6)
+                ;&
+            /renew)
+                ;&
+            /release)
+                local IFS=$'\n' # interfaces are newline separated
+                options=`netsh interface show interface name= | cut -c 48- | head -n -1 | sed 's/.*/\"&\"/'`
+                ;;
+
+        esac
+
+        if [ -n "$options" -a -z "$COMPREPLY" ]; then
+            COMPREPLY=( $(compgen -W '${options}' -- ${cur} ) )
+        fi
+	fi
+
+	return 0
+}
+
+complete -o default -F _ipconfig ipconfig ipconfig.exe
+

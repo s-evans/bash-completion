@@ -16,14 +16,14 @@ _windows_reg_keys()
     echo "$options"
 }
 
-# TODO: update and use this
 _windows_reg_values()
 {
     # process the string so that the reg utility will understand it
-    local tmp=$(echo "${1}" | sed 's/\\\+/\\/g' | sed 's/\\[^\\]*$//' | sed 's/\\ / /g')
+    local tmp=$(echo "${1}" | sed 's/\\\+/\\/g' | sed 's/\\ / /g')
 
-    # query for additional keys
-    local options=`reg query "$tmp"`
+    # query for values
+    local IFS=$'\n'
+    options=`reg query "$tmp" | grep -B 100000 ^$ | grep -A 10000 HKEY | head -n -1 | tail -n +3 | sed 's/ \+/ /g' | sed 's/^ \+\| \+$//' | sed 's/ .*//'`
 
     # post process the query results to make them palatable to bash
     options=${options///\\}
@@ -33,62 +33,73 @@ _windows_reg_values()
     echo "$options"
 }
 
+# TODO: some options are mutually exclusive or position dependent and are not reflected (ie. reg:32 and reg:64)
+# TODO: fix option culling loops for escaped characters
+
 _windows_reg()
 {
 	COMPREPLY=()
 
     local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
-    local options=''
 	local command=${COMP_WORDS[1]}
-    local commands='query add delete copy save restore load unload compare export import flags /?'
 	local prev=${COMP_WORDS[COMP_CWORD-1]}
+    local options=''
 
 	if [[ $COMP_CWORD -eq 1 ]] ; then
+        local commands='query add delete copy save restore load unload \
+            compare export import flags /?'
 		COMPREPLY=( $( compgen -W "$commands" -- $cur ) )
+        return 0
+
+    elif [[ "${COMP_WORDS[COMP_CWORD]}" == "/?" ]]; then
+		COMPREPLY=( $( compgen -W "/?" -- $cur ) )
+        return 0
+
     elif [[ "$prev" == "/?" ]]; then
         return 0
+
 	else
         # Command-specific arguments
         case "$command" in
 
             query)
                 options='/?'
+
                 if [[ $COMP_CWORD -eq 2 ]]; then
+                    # complete the registry key path
                     compopt -o nospace
 
                     if [[ "${cur}" == *\\* ]]; then
+                        # use the existing string to get next level of keys
                         local IFS=$'\n' 
                         options=$(_windows_reg_keys "$cur")
+
                     else
+                        # list root keys
                         options='HKEY_LOCAL_MACHINE\ HKEY_CURRENT_USER\ HKEY_CURRENT_CONFIG\ HKEY_USERS\ /?'
+
                     fi
                 elif [[ $COMP_CWORD -gt 2 ]]; then
 
                     if [[ "$prev" == "/v" ]]; then
-                        local key=${COMP_WORDS[2]}
+                        # list values available for the key
+                        options=$(_windows_reg_values "${COMP_WORDS[2]}")
 
-                        # process the string so that the reg utility will understand it
-                        local tmp=$(echo $key | sed 's/\\\+/\\/g' | sed 's/\\ / /g')
+                    elif [[ "$prev" == "/t" ]]; then
+                        options='REG_SZ REG_MULTI_SZ REG_EXPAND_SZ REG_DWORD REG_QWORD REG_BINARY REG_NONE'
 
-                        # query for values
-                        local IFS=$'\n'
-                        options=`reg query "$tmp" | grep -B 100000 ^$ | grep -A 10000 HKEY | head -n -1 | tail -n +2 | sed 's/ \+/ /g' | sed 's/^ \+\| \+$//' | sed 's/ .*//'`
-
-                        # post process the query results to make them palatable to bash
-                        options=${options///\\}
-                        options=${options//\\/\\\\}
-                        options=${options// /\\ }
-                    elif [[ "$prev" == "/t" || "$prev" == "/se" || "$prev" == "/f" ]]; then
+                    elif [[ "$prev" == "/se" || "$prev" == "/f" ]]; then
                         options=''
+
                     else
                         # cull the list of switches if they've been used
                         options=''
-                        option_list=( "/v" "/ve" "/s" "/f" "/k" "/d" "/c" "/e" "/t" "/z" "/se" )
+                        option_list=( "/v" "/ve" "/s" "/f" "/k" "/d" "/c" "/e" "/t" "/z" "/se" "/reg\:32" "/reg\:64" )
 
                         for option in ${option_list[@]} ; do
                             local found=0
 
-                            for word in ${COMP_WORDS[@]} ; do
+                            for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
                                 if [[ $word == $option ]]; then
                                    found=1 
                                    break
@@ -103,50 +114,360 @@ _windows_reg()
                 fi
                 ;;
 
-            # TODO: continue working on this
-
             add)
                 options='/?'
+
+                if [[ $COMP_CWORD -eq 2 ]]; then
+                    # complete the registry key path
+                    compopt -o nospace
+
+                    if [[ "${cur}" == *\\* ]]; then
+                        # use the existing string to get next level of keys
+                        local IFS=$'\n' 
+                        options=$(_windows_reg_keys "$cur")
+
+                    else
+                        # list root keys
+                        options='HKEY_LOCAL_MACHINE\ HKEY_CURRENT_USER\ HKEY_CURRENT_CONFIG\ HKEY_USERS\ /?'
+
+                    fi
+                elif [[ $COMP_CWORD -gt 2 ]]; then
+
+                    if [[ "$prev" == "/v" ]]; then
+                        # list values available for the key
+                        options=$(_windows_reg_values "${COMP_WORDS[2]}")
+
+                    elif [[ "$prev" == "/t" ]]; then
+                        options='REG_SZ REG_MULTI_SZ REG_EXPAND_SZ REG_DWORD REG_QWORD REG_BINARY REG_NONE'
+
+                    elif [[ "$prev" == "/s" || "$prev" == "/d" ]]; then
+                        options=''
+
+                    else
+                        # cull the list of switches if they've been used
+                        options=''
+                        option_list=( "/v" "/ve" "/s" "/f" "/d" "/t" "/s" "/reg\:32" "/reg\:64" )
+
+                        for option in ${option_list[@]} ; do
+                            local found=0
+
+                            for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+                                if [[ $word == $option ]]; then
+                                   found=1 
+                                   break
+                                fi
+                            done
+
+                            if [[ $found -eq 0 ]]; then
+                                options+="$option "
+                            fi
+                        done
+                    fi
+                fi
                 ;;
 
             delete)
                 options='/?'
+
+                if [[ $COMP_CWORD -eq 2 ]]; then
+                    # complete the registry key path
+                    compopt -o nospace
+
+                    if [[ "${cur}" == *\\* ]]; then
+                        # use the existing string to get next level of keys
+                        local IFS=$'\n' 
+                        options=$(_windows_reg_keys "$cur")
+
+                    else
+                        # list root keys
+                        options='HKEY_LOCAL_MACHINE\ HKEY_CURRENT_USER\ HKEY_CURRENT_CONFIG\ HKEY_USERS\ /?'
+
+                    fi
+                elif [[ $COMP_CWORD -gt 2 ]]; then
+
+                    if [[ "$prev" == "/v" ]]; then
+                        # list values available for the key
+                        options=$(_windows_reg_values "${COMP_WORDS[2]}")
+
+                    else
+                        # cull the list of switches if they've been used
+                        options=''
+                        option_list=( "/v" "/ve" "/va" "/f" "/reg\:32" "/reg\:64" )
+
+                        for option in ${option_list[@]} ; do
+                            local found=0
+
+                            for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+                                if [[ $word == $option ]]; then
+                                   found=1 
+                                   break
+                                fi
+                            done
+
+                            if [[ $found -eq 0 ]]; then
+                                options+="$option "
+                            fi
+                        done
+                    fi
+                fi
                 ;;
 
             copy)
                 options='/?'
+
+                if [[ $COMP_CWORD -eq 3 || $COMP_CWORD -eq 2 ]]; then
+                    # complete the registry key path
+                    compopt -o nospace
+
+                    if [[ "${cur}" == *\\* ]]; then
+                        # use the existing string to get next level of keys
+                        local IFS=$'\n' 
+                        options=$(_windows_reg_keys "$cur")
+
+                    else
+                        # list root keys
+                        options='HKEY_LOCAL_MACHINE\ HKEY_CURRENT_USER\ HKEY_CURRENT_CONFIG\ HKEY_USERS\ /?'
+
+                    fi
+                elif [[ $COMP_CWORD -gt 3 ]]; then
+
+                    # cull the list of switches if they've been used
+                    options=''
+                    option_list=( "/s" "/f" "/reg\:32" "/reg\:64" )
+
+                    for option in ${option_list[@]} ; do
+                        local found=0
+
+                        for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+                            if [[ $word == $option ]]; then
+                               found=1 
+                               break
+                            fi
+                        done
+
+                        if [[ $found -eq 0 ]]; then
+                            options+="$option "
+                        fi
+                    done
+                fi
                 ;;
+
+            export)
+                ;&
 
             save)
                 options='/?'
-                ;;
 
-            restore)
-                options='/?'
+                if [[ $COMP_CWORD -eq 2 ]]; then
+                    # complete the registry key path
+                    compopt -o nospace
+
+                    if [[ "${cur}" == *\\* ]]; then
+                        # use the existing string to get next level of keys
+                        local IFS=$'\n' 
+                        options=$(_windows_reg_keys "$cur")
+
+                    else
+                        # list root keys
+                        options='HKEY_LOCAL_MACHINE\ HKEY_CURRENT_USER\ HKEY_CURRENT_CONFIG\ HKEY_USERS\ /?'
+
+                    fi
+
+                elif [[ $COMP_CWORD -eq 3 ]]; then
+                    options=''
+
+                elif [[ $COMP_CWORD -gt 3 ]]; then
+
+                    # cull the list of switches if they've been used
+                    options=''
+                    option_list=( "/y" "/reg\:32" "/reg\:64" )
+
+                    for option in ${option_list[@]} ; do
+                        local found=0
+
+                        for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+                            if [[ $word == $option ]]; then
+                               found=1 
+                               break
+                            fi
+                        done
+
+                        if [[ $found -eq 0 ]]; then
+                            options+="$option "
+                        fi
+                    done
+                fi
                 ;;
 
             load)
+                ;&
+
+            restore)
                 options='/?'
+
+                if [[ $COMP_CWORD -eq 2 ]]; then
+                    # complete the registry key path
+                    compopt -o nospace
+
+                    if [[ "${cur}" == *\\* ]]; then
+                        # use the existing string to get next level of keys
+                        local IFS=$'\n' 
+                        options=$(_windows_reg_keys "$cur")
+
+                    else
+                        # list root keys
+                        options='HKEY_LOCAL_MACHINE\ HKEY_CURRENT_USER\ HKEY_CURRENT_CONFIG\ HKEY_USERS\ /?'
+
+                    fi
+
+                elif [[ $COMP_CWORD -eq 3 ]]; then
+                    options=''
+
+                elif [[ $COMP_CWORD -gt 3 ]]; then
+
+                    # cull the list of switches if they've been used
+                    options=''
+                    option_list=( "/reg\:32" "/reg\:64" )
+
+                    for option in ${option_list[@]} ; do
+                        local found=0
+
+                        for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+                            if [[ $word == $option ]]; then
+                               found=1 
+                               break
+                            fi
+                        done
+
+                        if [[ $found -eq 0 ]]; then
+                            options+="$option "
+                        fi
+                    done
+                fi
                 ;;
 
             unload)
                 options='/?'
+
+                if [[ $COMP_CWORD -eq 2 ]]; then
+                    # complete the registry key path
+                    compopt -o nospace
+
+                    if [[ "${cur}" == *\\* ]]; then
+                        # use the existing string to get next level of keys
+                        local IFS=$'\n' 
+                        options=$(_windows_reg_keys "$cur")
+
+                    else
+                        # list root keys
+                        options='HKEY_LOCAL_MACHINE\ HKEY_CURRENT_USER\ HKEY_CURRENT_CONFIG\ HKEY_USERS\ /?'
+
+                    fi
+                fi
                 ;;
 
             compare)
                 options='/?'
-                ;;
 
-            export)
-                options='/?'
+                if [[ $COMP_CWORD -eq 3 || $COMP_CWORD -eq 2 ]]; then
+                    # complete the registry key path
+                    compopt -o nospace
+
+                    if [[ "${cur}" == *\\* ]]; then
+                        # use the existing string to get next level of keys
+                        local IFS=$'\n' 
+                        options=$(_windows_reg_keys "$cur")
+
+                    else
+                        # list root keys
+                        options='HKEY_LOCAL_MACHINE\ HKEY_CURRENT_USER\ HKEY_CURRENT_CONFIG\ HKEY_USERS\ /?'
+
+                    fi
+                elif [[ $COMP_CWORD -gt 3 ]]; then
+
+                    if [[ "$prev" == "/v" ]]; then
+                        # list values available for the key
+                        options=$(_windows_reg_values "${COMP_WORDS[2]}")
+
+                    else
+                        # cull the list of switches if they've been used
+                        options=''
+                        option_list=( "/v" "/ve" "/s" "/oa" "/od" "/os" "/on" "/reg\:32" "/reg\:64" )
+
+                        for option in ${option_list[@]} ; do
+                            local found=0
+
+                            for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+                                if [[ $word == $option ]]; then
+                                   found=1 
+                                   break
+                                fi
+                            done
+
+                            if [[ $found -eq 0 ]]; then
+                                options+="$option "
+                            fi
+                        done
+
+                    fi
+                fi
                 ;;
 
             import)
-                options='/?'
+                if [[ $COMP_CWORD -eq 2 ]]; then
+                    options=''
+                elif [[ $COMP_CWORD -eq 3 ]]; then
+                    options='/reg\:32 /reg\:64'
+                fi
                 ;;
 
             flags)
                 options='/?'
+
+                if [[ $COMP_CWORD -eq 2 ]]; then
+                    # complete the registry key path
+                    compopt -o nospace
+
+                    if [[ "${cur}" == *\\* ]]; then
+                        # use the existing string to get next level of keys
+                        local IFS=$'\n' 
+                        options=$(_windows_reg_keys "$cur")
+
+                    else
+                        # list root keys
+                        options='HKEY_LOCAL_MACHINE\\Software\\'
+
+                    fi
+
+                elif [[ $COMP_CWORD -eq 3 ]]; then
+                    options='query set'
+
+                elif [[ $COMP_CWORD -gt 3 ]]; then
+
+                    if [[ "${COMP_WORDS[3]}" == "query" ]]; then
+                        options=''
+                    else
+                        # cull the list of switches if they've been used
+                        options=''
+                        option_list=( "DONT_VIRTUALIZE" "DONT_SILENT_FAIL" "RECURSE_FLAG" "/reg\:32" "/reg\:64" )
+
+                        for option in ${option_list[@]} ; do
+                            local found=0
+
+                            for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+                                if [[ $word == $option ]]; then
+                                   found=1 
+                                   break
+                                fi
+                            done
+
+                            if [[ $found -eq 0 ]]; then
+                                options+="$option "
+                            fi
+                        done
+
+                    fi
+                fi
                 ;;
 
         esac

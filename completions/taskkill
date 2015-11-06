@@ -1,0 +1,58 @@
+#!/usr/bin/env sh
+
+_windows_taskkill()
+{
+	COMPREPLY=()
+
+    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+	local prev=${COMP_WORDS[COMP_CWORD-1]}
+    local options=''
+
+    if [[ $prev == "/?" ]]; then
+		COMPREPLY=( $( compgen -W "" -- $cur ) )
+
+	else
+        options='/f /t /im /pid /fi /p /s /u /?'
+
+        # Command-specific arguments
+        case "$prev" in
+
+            /s)
+                options=''
+                ;;
+
+            /u)
+                options=''
+                ;;
+
+            /p)
+                options=''
+                ;;
+
+            /fi)
+                # TODO: lots of options here...
+                options=''
+                ;;
+
+            /pid)
+                local IFS=$'\n'
+                options=`tasklist /fo list | grep ^PID: | cut -c 5- | sed 's/ //g'`
+                ;;
+
+            /im)
+                local IFS=$'\n'
+                options=`tasklist /fo list | grep ^Image\ Name: | cut -c 12- | sort | uniq | sed 's/^ \+//' | sed 's/.*/"&"/'`
+                ;;
+
+        esac
+
+        if [ -n "$options" -a -z "$COMPREPLY" ]; then
+            COMPREPLY=( $(compgen -W '${options}' -- ${cur} ) )
+        fi
+    fi
+
+	return 0
+}
+
+complete -o default -F _windows_taskkill taskkill taskkill.exe
+

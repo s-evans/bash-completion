@@ -2,9 +2,9 @@
 
 _netsh()
 {
-	COMPREPLY=()
+    COMPREPLY=()
 
-	local prev=${COMP_WORDS[COMP_CWORD-1]}
+    local prev=${COMP_WORDS[COMP_CWORD-1]}
     local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
     local commands=("add" "advfirewall" "bridge" "delete" "dhcpclient" \
         "dnsclient" "dump" "exec" "firewall" "help" "http" "interface" "ipsec" \
@@ -48,7 +48,7 @@ _netsh()
 
             if [[ "$prev" == "$command" ]]; then
                 options='consec dump export firewall import mainmode \
-                monitor reset set show'
+                    monitor reset set show'
 
             elif [[ "$subcmd"  == "consec" ]]; then
                 # TODO: more detail
@@ -107,7 +107,7 @@ _netsh()
 
                 if [[ "$prev" == "$subcmd" ]]; then
                     options='allprofiles currentprofile domainprofile \
-                    global privateprofile publicprofile'
+                        global privateprofile publicprofile'
 
                 elif [[ "$subsubcmd" == "privateprofile" || "$subsubcmd" == "publicprofile" || "$subsubcmd" == "domainprofile" || "$subsubcmd" == "currentprofiles" || "$subsubcmd" == "allprofiles" ]]; then
                     if [[ "$prev" == "allprofiles" ]]; then
@@ -126,13 +126,13 @@ _netsh()
 
                         # TODO: more
                         # allowedconnections  - Log allowed connections.
-                                              # Values: enable|disable|notconfigured
+                        # Values: enable|disable|notconfigured
                         # droppedconnections  - Log dropped connections.
-                                              # Values: enable|disable|notconfigured
+                        # Values: enable|disable|notconfigured
                         # filename            - Name and location of the firewall log.
-                                              # Values: <string>|notconfigured
+                        # Values: <string>|notconfigured
                         # maxfilesize         - Maximum log file size in kilobytes.
-                                               # Values: 1 - 32767|notconfigured
+                        # Values: 1 - 32767|notconfigured
 
                         options='allowedconnections droppedconnections filename maxfilesize '
                     fi
@@ -141,53 +141,53 @@ _netsh()
 
                     # TODO: statefulftp statefulpptp -> 'enable disable notconfigured'
 
-# IPsec Parameters:
+                    # IPsec Parameters:
 
-#       strongcrlcheck    - Configures how CRL checking is enforced.
-#                           0: Disable CRL checking (default)
-#                           1: Fail if cert is revoked
-#                           2: Fail on any error
-#                           notconfigured: Returns the value to its not
-#                           configured state.
-#       saidletimemin     - Configures the security association idle time in
-#                           minutes.
-#                         - Usage: 5-60|notconfigured (default=5)
-#       defaultexemptions - Configures the default IPsec exemptions. Default is
-#                           to exempt IPv6 neighbordiscovery protocol and
-#                           DHCP from IPsec.
-#                         - Usage: none|neighbordiscovery|icmp|dhcp|notconfigured
-#       ipsecthroughnat   - Configures when security associations can be
-#                           established with a computer behind a network
-#                           address translator.
-#                         - Usage: never|serverbehindnat|
-#                                  serverandclientbehindnat|
-#                                  notconfigured(default=never)
-#       authzcomputergrp  - Configures the computers that are authorized to
-#                           establish tunnel mode connections.
-#                         - Usage: none|<SDDL string>|notconfigured
-#       authzusergrp      - Configures the users that are authorized to establish
-#                           tunnel mode connections.
-#                         - Usage: none|<SDDL string>|notconfigured
+                    #       strongcrlcheck    - Configures how CRL checking is enforced.
+                    #                           0: Disable CRL checking (default)
+                    #                           1: Fail if cert is revoked
+                    #                           2: Fail on any error
+                    #                           notconfigured: Returns the value to its not
+                    #                           configured state.
+                    #       saidletimemin     - Configures the security association idle time in
+                    #                           minutes.
+                    #                         - Usage: 5-60|notconfigured (default=5)
+                    #       defaultexemptions - Configures the default IPsec exemptions. Default is
+                    #                           to exempt IPv6 neighbordiscovery protocol and
+                    #                           DHCP from IPsec.
+                    #                         - Usage: none|neighbordiscovery|icmp|dhcp|notconfigured
+                    #       ipsecthroughnat   - Configures when security associations can be
+                    #                           established with a computer behind a network
+                    #                           address translator.
+                    #                         - Usage: never|serverbehindnat|
+                    #                                  serverandclientbehindnat|
+                    #                                  notconfigured(default=never)
+                    #       authzcomputergrp  - Configures the computers that are authorized to
+                    #                           establish tunnel mode connections.
+                    #                         - Usage: none|<SDDL string>|notconfigured
+                    #       authzusergrp      - Configures the users that are authorized to establish
+                    #                           tunnel mode connections.
+                    #                         - Usage: none|<SDDL string>|notconfigured
 
-# Main Mode Parameters:
+                    # Main Mode Parameters:
 
-#       mmkeylifetime     - Sets main mode key lifetime in minutes
-#                           or sessions, or both.
-#                         - Usage: <num>min,<num>sess
-#                           minlifetime: <1> min,
-#                           maxlifetime: <2880> min
-#                           minsessions: <0> sessions,
-#                           maxsessions: <2,147,483,647> sessions
-#       mmsecmethods      - configures the main mode list of proposals
-#                         - Usage:
-#                           keyexch:enc-integrity,keyexch:enc-integrity[,...]|default
-#                         - keyexch=dhgroup1|dhgroup2|dhgroup14|
-#                           ecdhp256|ecdhp384
-#                         - enc=3des|des|aes128|aes192|aes256
-#                         - integrity=md5|sha1|sha256|sha384
-#       mmforcedh         - configures the option to use DH to secure key exchange.
-#                         - Usage:
-#                           yes|no (default=no)
+                    #       mmkeylifetime     - Sets main mode key lifetime in minutes
+                    #                           or sessions, or both.
+                    #                         - Usage: <num>min,<num>sess
+                    #                           minlifetime: <1> min,
+                    #                           maxlifetime: <2880> min
+                    #                           minsessions: <0> sessions,
+                    #                           maxsessions: <2,147,483,647> sessions
+                    #       mmsecmethods      - configures the main mode list of proposals
+                    #                         - Usage:
+                    #                           keyexch:enc-integrity,keyexch:enc-integrity[,...]|default
+                    #                         - keyexch=dhgroup1|dhgroup2|dhgroup14|
+                    #                           ecdhp256|ecdhp384
+                    #                         - enc=3des|des|aes128|aes192|aes256
+                    #                         - integrity=md5|sha1|sha256|sha384
+                    #       mmforcedh         - configures the option to use DH to secure key exchange.
+                    #                         - Usage:
+                    #                           yes|no (default=no)
 
                     options='statefulftp statefulpptp ipsec mainmode'
                 fi
@@ -195,7 +195,7 @@ _netsh()
             elif [[ "$subcmd"  == "show" ]]; then
                 if [[ "$prev" == "$subcmd" ]]; then
                     options='allprofiles currentprofile domainprofile \
-                    global privateprofile publicprofile store'
+                        global privateprofile publicprofile store'
                 elif [[ "$subsubcmd" == "allprofiles" ]]; then
                     options='state firewallpolicy settings logging'
                 elif [[ "$subsubcmd" == "currentprofile" ]]; then
@@ -224,8 +224,8 @@ _netsh()
                     local IFS=$'\n'
                     options=`netsh bridge show adapter | cut -c 48- | head -n -1 | sed 's/.*/"&"/'`
                     options+="
-forcecompatmode=enable
-forcecompatmode=disable"
+                    forcecompatmode=enable
+                    forcecompatmode=disable"
                 else
                     options='adapter'
                 fi
@@ -267,13 +267,13 @@ forcecompatmode=disable"
                     local IFS=$'\n'
                     options=`netsh interface show interface name= | cut -c 48- | head -n -1 | sed 's/.*/"&"/'`
                     options+="
-source=dhcp
-source=static
-register=none
-register=primary
-register=both
-validate=yes
-validate=no"
+                    source=dhcp
+                    source=static
+                    register=none
+                    register=primary
+                    register=both
+                    validate=yes
+                    validate=no"
                 else
                     options='dnsservers'
                 fi
@@ -493,7 +493,7 @@ validate=no"
         wlan)
             if [[ "$prev" == "$command" ]]; then
                 options='add connect delete disconnect dump export \
-                refresh reportissues set show start stop'
+                    refresh reportissues set show start stop'
             elif [[ "$subcmd" == "add" ||  "$subcmd" == "delete" ]]; then
                 options='filter profile'
             elif [[ "$subcmd" == "disconnect" ]]; then
@@ -513,8 +513,8 @@ validate=no"
             elif [[ "$subcmd" == "set" ]]; then
                 # TODO: go into more detail
                 options='allowexplicitcreds autoconfig blockednetworks \
-                blockperiod createalluserprofile hostednetwork \
-                profileorder profileparameter profiletype tracing'
+                    blockperiod createalluserprofile hostednetwork \
+                    profileorder profileparameter profiletype tracing'
             fi
             ;;
 
@@ -532,7 +532,7 @@ validate=no"
         COMPREPLY=( $(compgen -W '${options}' -- ${cur} ) )
     fi
 
-	return 0
+    return 0
 }
 
 complete -o default -F _netsh netsh netsh.exe

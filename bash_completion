@@ -1027,15 +1027,22 @@ _expand()
 
 # This function completes on process IDs.
 # AIX and Solaris ps prefers X/Open syntax.
-[[ $OSTYPE == *@(solaris|aix)* ]] &&
+if [[ $OSTYPE == *@(solaris|aix)* ]]; then
 _pids()
 {
     COMPREPLY=( $( compgen -W '$( command ps -efo pid | sed 1d )' -- "$cur" ))
-} ||
+} 
+elif [[ $OSTYPE == cygwin ]]; then
+_pids()
+{
+    COMPREPLY=( $( compgen -W '$( command tasklist /fo list | grep ^PID: | cut -c 5- | sed "s/ //g" | tr "\n" " " )' -- "$cur" ))
+} 
+else
 _pids()
 {
     COMPREPLY=( $( compgen -W '$( command ps axo pid= )' -- "$cur" ) )
 }
+fi
 
 # This function completes on process group IDs.
 # AIX and SunOS prefer X/Open, all else should be BSD.

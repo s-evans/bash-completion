@@ -35,8 +35,7 @@ _windows_taskkill()
                 ;;
 
             /pid)
-                local IFS=$'\n'
-                options=`tasklist /fo list | grep ^PID: | cut -c 5- | sed 's/ //g'`
+                _pids
                 ;;
 
             /im)

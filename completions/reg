@@ -12,6 +12,7 @@ _windows_reg_keys()
     options=${options///\\}
     options=${options//\\/\\\\}
     options=${options// /\\ }
+    options=${options,,}
 
     echo "$options"
 }
@@ -22,17 +23,18 @@ _windows_reg_values()
     local tmp=$(echo "${1}" | sed 's/\\\+/\\/g' | sed 's/\\ / /g')
 
     # query for values
-    local IFS=$'\n'
-    options=`reg query "$tmp" | grep -B 100000 ^$ | grep -A 10000 HKEY | head -n -1 | tail -n +3 | sed 's/ \+/ /g' | sed 's/^ \+\| \+$//' | sed 's/ .*//'`
+    options=`reg query "$tmp" | grep -B 100000 ^$ | grep -A 10000 HKEY | head -n -1 | tail -n +2 | grep -v "\(Default\)" | sed 's/ \+/ /g' | sed 's/^ \+\| \+$//' | sed 's/ REG_.*//'`
 
     # post process the query results to make them palatable to bash
     options=${options///\\}
     options=${options//\\/\\\\}
     options=${options// /\\ }
+    options=${options,,}
 
     echo "$options"
 }
 
+# TODO: improve root key short name handling
 # TODO: some options are mutually exclusive or position dependent and are not reflected (ie. reg:32 and reg:64)
 # TODO: fix option culling loops for escaped characters
 
@@ -76,17 +78,18 @@ _windows_reg()
 
                     else
                         # list root keys
-                        options='HKEY_LOCAL_MACHINE\ HKEY_CURRENT_USER\ HKEY_CURRENT_CONFIG\ HKEY_USERS\ /?'
+                        options='hkey_local_machine\\ hkey_current_user\\ hkey_current_config\\ hkey_users\\ /?'
 
                     fi
                 elif [[ $COMP_CWORD -gt 2 ]]; then
 
                     if [[ "$prev" == "/v" ]]; then
                         # list values available for the key
+                        local IFS=$'\n'
                         options=$(_windows_reg_values "${COMP_WORDS[2]}")
 
                     elif [[ "$prev" == "/t" ]]; then
-                        options='REG_SZ REG_MULTI_SZ REG_EXPAND_SZ REG_DWORD REG_QWORD REG_BINARY REG_NONE'
+                        options='reg_sz reg_multi_sz reg_expand_sz reg_dword reg_qword reg_binary reg_none'
 
                     elif [[ "$prev" == "/se" || "$prev" == "/f" ]]; then
                         options=''
@@ -128,17 +131,18 @@ _windows_reg()
 
                     else
                         # list root keys
-                        options='HKEY_LOCAL_MACHINE\ HKEY_CURRENT_USER\ HKEY_CURRENT_CONFIG\ HKEY_USERS\ /?'
+                        options='hkey_local_machine\\ hkey_current_user\\ hkey_current_config\\ hkey_users\\ /?'
 
                     fi
                 elif [[ $COMP_CWORD -gt 2 ]]; then
 
                     if [[ "$prev" == "/v" ]]; then
                         # list values available for the key
+                        local IFS=$'\n'
                         options=$(_windows_reg_values "${COMP_WORDS[2]}")
 
                     elif [[ "$prev" == "/t" ]]; then
-                        options='REG_SZ REG_MULTI_SZ REG_EXPAND_SZ REG_DWORD REG_QWORD REG_BINARY REG_NONE'
+                        options='reg_sz reg_multi_sz reg_expand_sz reg_dword reg_qword reg_binary reg_none'
 
                     elif [[ "$prev" == "/s" || "$prev" == "/d" ]]; then
                         options=''
@@ -180,13 +184,14 @@ _windows_reg()
 
                     else
                         # list root keys
-                        options='HKEY_LOCAL_MACHINE\ HKEY_CURRENT_USER\ HKEY_CURRENT_CONFIG\ HKEY_USERS\ /?'
+                        options='hkey_local_machine\\ hkey_current_user\\ hkey_current_config\\ hkey_users\\ /?'
 
                     fi
                 elif [[ $COMP_CWORD -gt 2 ]]; then
 
                     if [[ "$prev" == "/v" ]]; then
                         # list values available for the key
+                        local IFS=$'\n'
                         options=$(_windows_reg_values "${COMP_WORDS[2]}")
 
                     else
@@ -226,7 +231,7 @@ _windows_reg()
 
                     else
                         # list root keys
-                        options='HKEY_LOCAL_MACHINE\ HKEY_CURRENT_USER\ HKEY_CURRENT_CONFIG\ HKEY_USERS\ /?'
+                        options='hkey_local_machine\\ hkey_current_user\\ hkey_current_config\\ hkey_users\\ /?'
 
                     fi
                 elif [[ $COMP_CWORD -gt 3 ]]; then
@@ -269,7 +274,7 @@ _windows_reg()
 
                     else
                         # list root keys
-                        options='HKEY_LOCAL_MACHINE\ HKEY_CURRENT_USER\ HKEY_CURRENT_CONFIG\ HKEY_USERS\ /?'
+                        options='hkey_local_machine\\ hkey_current_user\\ hkey_current_config\\ hkey_users\\ /?'
 
                     fi
 
@@ -316,7 +321,7 @@ _windows_reg()
 
                     else
                         # list root keys
-                        options='HKEY_LOCAL_MACHINE\ HKEY_CURRENT_USER\ HKEY_CURRENT_CONFIG\ HKEY_USERS\ /?'
+                        options='hkey_local_machine\\ hkey_current_user\\ hkey_current_config\\ hkey_users\\ /?'
 
                     fi
 
@@ -360,7 +365,7 @@ _windows_reg()
 
                     else
                         # list root keys
-                        options='HKEY_LOCAL_MACHINE\ HKEY_CURRENT_USER\ HKEY_CURRENT_CONFIG\ HKEY_USERS\ /?'
+                        options='hkey_local_machine\\ hkey_current_user\\ hkey_current_config\\ hkey_users\\ /?'
 
                     fi
                 fi
@@ -380,13 +385,14 @@ _windows_reg()
 
                     else
                         # list root keys
-                        options='HKEY_LOCAL_MACHINE\ HKEY_CURRENT_USER\ HKEY_CURRENT_CONFIG\ HKEY_USERS\ /?'
+                        options='hkey_local_machine\\ hkey_current_user\\ hkey_current_config\\ hkey_users\\ /?'
 
                     fi
                 elif [[ $COMP_CWORD -gt 3 ]]; then
 
                     if [[ "$prev" == "/v" ]]; then
                         # list values available for the key
+                        local IFS=$'\n'
                         options=$(_windows_reg_values "${COMP_WORDS[2]}")
 
                     else
@@ -435,7 +441,7 @@ _windows_reg()
 
                     else
                         # list root keys
-                        options='HKEY_LOCAL_MACHINE\\Software\\'
+                        options='hkey_local_machine\\software\\'
 
                     fi
 
@@ -449,7 +455,7 @@ _windows_reg()
                     else
                         # cull the list of switches if they've been used
                         options=''
-                        option_list=( "DONT_VIRTUALIZE" "DONT_SILENT_FAIL" "RECURSE_FLAG" "/reg\:32" "/reg\:64" )
+                        option_list=( "dont_virtualize" "dont_silent_fail" "recurse_flag" "/reg\:32" "/reg\:64" )
 
                         for option in ${option_list[@]} ; do
                             local found=0

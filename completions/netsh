@@ -6,11 +6,12 @@ _netsh()
 
     local prev=${COMP_WORDS[COMP_CWORD-1]}
     local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
-    local commands=("add" "advfirewall" "bridge" "delete" "dhcpclient" \
-        "dnsclient" "dump" "exec" "firewall" "help" "http" "interface" "ipsec" \
-        "lan" "namespace" "nap" "netio" "p2p" "ras" "rpc" "set" "show" "wfp" \
-        "winhttp" "winsock" "wlan" )
     local options=''
+
+    local commands=('add' 'advfirewall' 'bridge' 'delete' 'dhcpclient'
+        'dnsclient' 'dump' 'exec' 'firewall' 'help' 'http' 'interface' 'ipsec'
+        'lan' 'namespace' 'nap' 'netio' 'p2p' 'ras' 'rpc' 'set' 'show' 'wfp'
+        'winhttp' 'winsock' 'wlan' )
 
     declare -i count=0
     local command=''
@@ -47,8 +48,8 @@ _netsh()
         advfirewall)
 
             if [[ "$prev" == "$command" ]]; then
-                options='consec dump export firewall import mainmode \
-                    monitor reset set show'
+                options='consec dump export firewall import mainmode monitor
+                    reset set show'
 
             elif [[ "$subcmd"  == "consec" ]]; then
                 # TODO: more detail
@@ -106,8 +107,8 @@ _netsh()
                 # TODO: more detail
 
                 if [[ "$prev" == "$subcmd" ]]; then
-                    options='allprofiles currentprofile domainprofile \
-                        global privateprofile publicprofile'
+                    options='allprofiles currentprofile domainprofile global
+                        privateprofile publicprofile'
 
                 elif [[ "$subsubcmd" == "privateprofile" || "$subsubcmd" == "publicprofile" || "$subsubcmd" == "domainprofile" || "$subsubcmd" == "currentprofiles" || "$subsubcmd" == "allprofiles" ]]; then
                     if [[ "$prev" == "allprofiles" ]]; then
@@ -115,13 +116,17 @@ _netsh()
                     elif [[ "$subsubsubcmd" == "state" ]]; then
                         options='on off notconfigured'
                     elif [[ "$subsubsubcmd" == "firewallpolicy" ]]; then
-                        options='blockinbound blockinboundalways allowinbound notconfigured allowoutbound blockoutbound notconfigured'
+                        options='blockinbound blockinboundalways allowinbound
+                            notconfigured allowoutbound blockoutbound
+                            notconfigured'
                     elif [[ "$subsubsubcmd" == "settings" ]]; then
 
                         # TODO: more
                         # Usage: settings (parameter) enable|disable|notconfigured
 
-                        options='localfirewallrules localconsecrules inboundusernotification remotemanagement unicastresponsetomulticast'
+                        options='localfirewallrules localconsecrules
+                            inboundusernotification remotemanagement
+                            unicastresponsetomulticast'
                     elif [[ "$subsubsubcmd" == "logging" ]]; then
 
                         # TODO: more
@@ -134,7 +139,8 @@ _netsh()
                         # maxfilesize         - Maximum log file size in kilobytes.
                         # Values: 1 - 32767|notconfigured
 
-                        options='allowedconnections droppedconnections filename maxfilesize '
+                        options='allowedconnections droppedconnections filename
+                            maxfilesize'
                     fi
 
                 elif [[ "$subsubcmd" == "global" ]]; then
@@ -194,8 +200,8 @@ _netsh()
 
             elif [[ "$subcmd"  == "show" ]]; then
                 if [[ "$prev" == "$subcmd" ]]; then
-                    options='allprofiles currentprofile domainprofile \
-                        global privateprofile publicprofile store'
+                    options='allprofiles currentprofile domainprofile global
+                        privateprofile publicprofile store'
                 elif [[ "$subsubcmd" == "allprofiles" ]]; then
                     options='state firewallpolicy settings logging'
                 elif [[ "$subsubcmd" == "currentprofile" ]]; then
@@ -314,7 +320,8 @@ _netsh()
             elif [[ "$subcmd" == "flush" ]]; then
                 options='logbuffer'
             elif [[ "$subcmd" == "show" ]]; then
-                options='cacheparam cachestate iplisten servicestate sslcert timeout urlacl'
+                options='cacheparam cachestate iplisten servicestate sslcert
+                    timeout urlacl'
             fi
             # TODO: more detail
             ;;
@@ -382,7 +389,8 @@ _netsh()
                 options='dump set show'
 
             elif [[ "$prev" == "$command" ]]; then
-                options='6to4 dump httpstunnel ipv4 ipv6 isatap portproxy set show tcp teredo'
+                options='6to4 dump httpstunnel ipv4 ipv6 isatap portproxy set
+                    show tcp teredo'
             fi
 
             # TODO: more detail
@@ -492,8 +500,8 @@ _netsh()
 
         wlan)
             if [[ "$prev" == "$command" ]]; then
-                options='add connect delete disconnect dump export \
-                    refresh reportissues set show start stop'
+                options='add connect delete disconnect dump export refresh
+                    reportissues set show start stop'
             elif [[ "$subcmd" == "add" ||  "$subcmd" == "delete" ]]; then
                 options='filter profile'
             elif [[ "$subcmd" == "disconnect" ]]; then
@@ -505,16 +513,15 @@ _netsh()
                 options='hostednetwork'
             elif [[ "$subcmd" == "show" ]]; then
                 # TODO: go into more detail
-                options='all allowexplicitcreds autoconfig \
-                    blockednetworks createalluserprofile drivers \
-                    filters hostednetwork interfaces networks \
-                    onlyUseGPProfilesforAllowedNetworks profiles \
-                    settings tracing'
+                options='all allowexplicitcreds autoconfig blockednetworks
+                    createalluserprofile drivers filters hostednetwork
+                    interfaces networks onlyUseGPProfilesforAllowedNetworks
+                    profiles settings tracing'
             elif [[ "$subcmd" == "set" ]]; then
                 # TODO: go into more detail
-                options='allowexplicitcreds autoconfig blockednetworks \
-                    blockperiod createalluserprofile hostednetwork \
-                    profileorder profileparameter profiletype tracing'
+                options='allowexplicitcreds autoconfig blockednetworks
+                    blockperiod createalluserprofile hostednetwork profileorder
+                    profileparameter profiletype tracing'
             fi
             ;;
 

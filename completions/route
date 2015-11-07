@@ -27,6 +27,7 @@ if [[ $OSTYPE == *linux* ]]; then
     complete -F _route route
 elif [[ $OSTYPE == cygwin ]]; then
     # TODO: support ipv6
+
     _route()
     {
         local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
@@ -35,10 +36,13 @@ elif [[ $OSTYPE == cygwin ]]; then
 
         if [[ "${COMP_WORDS[1]}" == -p && $COMP_CWORD -eq 2 ]]; then
             COMPREPLY=( $( compgen -W 'add' -- $cur ) )
+
         elif [[ "${COMP_WORDS[1]}" == -* && $COMP_CWORD -eq 2 ]]; then
             COMPREPLY=( $( compgen -W '${commands[@]}' -- $cur ) )
+
         elif [[ $COMP_CWORD -eq 1 ]] ; then
             COMPREPLY=( $( compgen -W '-f -p -4 -6 ${commands[@]}' -- $cur ) )
+
         else
             declare -i count=0
             local command=''

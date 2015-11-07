@@ -9,12 +9,14 @@ _servicecontrolmanager()
 	local command=${COMP_WORDS[1]}
 
 	if [[ $COMP_CWORD -eq 1 ]] ; then
-        local commands='query queryex start pause interrogate continue stop config \
-        description failure failureflag sidtype privs qc qdescription qfailure \
-        qfailureflag qsidtype qprivs qtriggerinfo qpreferrednode delete create \
-        control sdshow sdset showsid triggerinfo preferrednode getdisplayname \
-        getkeyname enumdepend'
+        local commands='query queryex start pause interrogate continue stop
+            config description failure failureflag sidtype privs qc
+            qdescription qfailure qfailureflag qsidtype qprivs qtriggerinfo
+            qpreferrednode delete create control sdshow sdset showsid
+            triggerinfo preferrednode getdisplayname getkeyname enumdepend'
+
 		COMPREPLY=( $( compgen -W "$commands" -- $cur ) )
+
 	else
         # Command-specific arguments
         case "$command" in

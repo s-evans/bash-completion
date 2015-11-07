@@ -18,8 +18,9 @@ _windows_net()
 	local prev=${COMP_WORDS[COMP_CWORD-1]}
 
 	if [[ $COMP_CWORD -eq 1 ]] ; then
-        local commands='accounts computer config continue file group help helpmsg \
-        localgroup pause session share start statistics stop time use user view'
+        local commands='accounts computer config continue file group help
+            helpmsg localgroup pause session share start statistics stop time
+            use user view'
 
 		COMPREPLY=( $( compgen -W "$commands" -- $cur ) )
     elif [[ $prev == "?" ]]; then
@@ -29,7 +30,8 @@ _windows_net()
         case "$command" in
 
             accounts)
-                options='/forcelogoff: /minpwlen: /maxpwage: /minpwage: /uniquepw: /domain ?'
+                options='/forcelogoff: /minpwlen: /maxpwage: /minpwage:
+                    /uniquepw: /domain ?'
                 ;;
 
             computer)

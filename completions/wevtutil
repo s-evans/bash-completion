@@ -7,14 +7,20 @@ _wevtutil()
     local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
     local prev=${COMP_WORDS[COMP_CWORD-1]}
     local options=''
+    local common_options="/remote\\: /username\\: /password\\: \
+        /authentication\\:default /authentication\\:negotiate \
+        /authentication\\:kerberos /authentication\\:ntlm /unicode\\:true \
+        /unicode\\:false"
+
+    if [[ $cur == *: ]]; then
+        compopt -o nospace
+    fi
 
     if [[ $COMP_CWORD -eq 1 ]]; then
-        local commands='enum-logs get-log set-log \
-            enum-publishers get-publisher \
-            install-manifest uninstall-manifest \
-            query-events get-log-info export-log \
-            archive-log clear-log el gl sl ep gp im um qe \
-            gli epl al cl /?'
+        local commands='enum-logs get-log set-log enum-publishers \
+            get-publisher install-manifest uninstall-manifest query-events \
+            get-log-info export-log archive-log clear-log el gl sl ep gp im \
+            um qe gli epl al cl /?'
 
         COMPREPLY=( $( compgen -W "$commands" -- $cur ) )
 
@@ -36,7 +42,7 @@ _wevtutil()
                     options=''
                 else
                     compopt -o nospace
-                    options='/locale:'
+                    options="/locale\\: ${common_options}"
                 fi
                 ;;
 
@@ -48,9 +54,10 @@ _wevtutil()
                     options=`wevtutil el`
                     options=${options// /\\\ }
                     options=${options///}
+                    options=${options,,}
                 else
                     compopt -o nospace
-                    options='/backup:'
+                    options="/backup\\: ${common_options}"
                 fi
                 ;;
 
@@ -65,7 +72,7 @@ _wevtutil()
             ep)
                 ;&
             enum-publishers)
-                options=''
+                options="${common_options}"
                 ;;
 
             epl)
@@ -76,15 +83,15 @@ _wevtutil()
                     options=`wevtutil el`
                     options=${options// /\\\ }
                     options=${options///}
+                    options=${options,,}
                 elif [[ ${COMP_CWORD} -eq 3 ]]; then
                     options=''
                 else
-                    options='/logfile:true /logfile:false \
-                        /structuredquery:true \
-                        /structuredquery:false /query: \
-                        /overwrite:true /overwrite:false' 
-                fi
-                ;;
+                    options="/logfile\\:true /logfile\\:false \
+                        /structuredquery\\:true /structuredquery\\:false /query\\: \
+                        /overwrite\\:true /overwrite\\:false ${common_options}"
+                    fi
+                    ;;
 
             gl)
                 ;&
@@ -94,8 +101,9 @@ _wevtutil()
                     options=`wevtutil el`
                     options=${options// /\\\ }
                     options=${options///}
+                    options=${options,,}
                 else
-                    options='/format:xml /format:text' 
+                    options="/format\\:xml /format\\:text ${common_options}"
                 fi
                 ;;
 
@@ -107,10 +115,11 @@ _wevtutil()
                     options=`wevtutil ep`
                     options=${options// /\\\ }
                     options=${options///}
+                    options=${options,,}
                 else
-                    options='/getevents:true /getevents:false \
-                        /getmessage:true /getmessage:false /format:xml \
-                        /format:text' 
+                    options="/getevents\\:true /getevents\\:false \
+                        /getmessage\\:true /getmessage\\:false /format\\:xml \
+                        /format\\:text ${common_options}"
                 fi
                 ;;
 
@@ -120,8 +129,8 @@ _wevtutil()
                 if [[ ${COMP_CWORD} -eq 2 ]]; then
                     options=''
                 else
-                    options='/resourceFilePath: /messageFilePath: \
-                        /parameterFilePath:' 
+                    options="/resourceFilePath\\: /messageFilePath\\: \
+                        /parameterFilePath\\: ${common_options}"
                 fi
                 ;;
 
@@ -133,12 +142,14 @@ _wevtutil()
                     options=`wevtutil el`
                     options=${options// /\\\ }
                     options=${options///}
+                    options=${options,,}
                 else
-                    options='/logfile:true /logfile:false \
-                        /structuredquery:true /structuredquery:false /query: \
-                        /bookmark: /savebookmark: /reversedirection:true \
-                        /reversedirection:false /format:xml /format:text \
-                        /format:renderedxml /locale: /count: /element:' 
+                    options="/logfile\\:true /logfile\\:false \
+                        /structuredquery\\:true /structuredquery\\:false /query\\: \
+                        /bookmark\\: /savebookmark\\: /reversedirection\\:true \
+                        /reversedirection\\:false /format\\:xml /format\\:text \
+                        /format\\:renderedxml /locale\\: /count\\: /element\\: \
+                        ${common_options}"
                 fi
                 ;;
 
@@ -150,13 +161,14 @@ _wevtutil()
                     options=`wevtutil el`
                     options=${options// /\\\ }
                     options=${options///}
+                    options=${options,,}
                 else
-                    options='/enabled:true /enabled:false /quiet:true \
-                        /quiet:false /filemax: /isolation:system \
-                        /isolation:application /isolation:custom \
-                        /logfilename: /retention:true /retention:false \
-                        /autobackup:true /autobackup:false /maxsize: \
-                        /level: /keywords: /config:'
+                    options="/enabled\\:true /enabled\\:false /quiet\\:true \
+                        /quiet\\:false /filemax\\: /isolation\\:system \
+                        /isolation\\:application /isolation\\:custom \
+                        /logfilename\\: /retention\\:true /retention\\:false \
+                        /autobackup\\:true /autobackup\\:false /maxsize\\: /level\\: \
+                        /keywords\\: /config\\: ${common_options}"
                 fi
                 ;;
 

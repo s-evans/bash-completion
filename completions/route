@@ -31,7 +31,7 @@ elif [[ $OSTYPE == cygwin ]]; then
     _route()
     {
         local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
-        local commands=("print" "add" "change" "delete")
+        local commands=('print' 'add' 'change' 'delete')
         local options=''
 
         if [[ "${COMP_WORDS[1]}" == -p && $COMP_CWORD -eq 2 ]]; then

@@ -5,10 +5,10 @@ _wmic()
 	COMPREPLY=()
 
     local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
-    local prev=${COMP_WORDS[COMP_CWORD-1]}
+    local prev=$(printf '%q' "${COMP_WORDS[COMP_CWORD-1]}")
     local options=''
 
-    if [[ $prev == /?* ]]; then
+    if [[ "$prev" == '/\?'* ]]; then
         return 0
     fi
 
@@ -57,36 +57,89 @@ _wmic()
 
     count=$COMP_CWORD-$count
 
-    # TODO: more completions for each command
-
     case "$command" in
 
         # command not found
         '')
-            # TODO: may not be the correct variable to use
-            case $prev in
 
-                # TODO: completion for global switches
-                pattern)
-                    option=''
+            case "${cur}" in
+
+                /authority\\\\:*)
+                    ;&
+                /password\\\\:*)
+                    ;&
+                /record\\\\:*)
+                    ;&
+                /locale\\\\:*)
+                    ;&
+                /node\\\\:*)
+                    ;&
+                /role\\\\:*)
+                    ;&
+                /namespace\\\\:*)
+                    options=''
+                    ;;
+
+                /user\\\\:*)
+                    # TODO: list users
+                    options=''
+                    ;;
+
+                /implevel\\\\:*)
+                    options='/implevel\:anonymous /implevel\:identify
+                        /implevel\:impersonate /implevel\:delegate'
+                    ;;
+
+                /authlevel\\\\:*)
+                    options='/authlevel\:default /authlevel\:none
+                        /authlevel\:connect /authlevel\:call /authlevel\:pkt
+                        /authlevel\:pktintegrity /authlevel\:pktprivacy'
+                        ;;
+
+                /privileges\\\\:*)
+                    options='/priveleges\:enable /priveleges\:disable'
+                    ;;
+
+                /aggregate\\\\:*)
+                    options='/aggregate\:on /aggregate\:off'
+                    ;;
+
+                /failfast\\\\:*)
+                    options='/failfast\:on /failfast\:off'
+                    ;;
+
+                /interactive\\\\:*)
+                    options='/interactive\:on /interactive\:off'
+                    ;;
+
+                /trace\\\\:*)
+                    options='/trace\:on /trace\:off'
+                    ;;
+
+                /output\\\\:*)
+                    # TODO: add filename option
+                    options='/output\:stdout /output\:clipboard'
+                    ;;
+
+                /append\\\\:*)
+                    # TODO: add filename option
+                    options='/append\:stdout /append\:clipboard'
                     ;;
 
                 *)
                     # remove global options that have been used
-
-                    local global_switches=( '/namespace' '/role'
-                        '/node' '/implevel' '/authlevel' '/locale'
-                        '/privileges' '/trace' '/record' '/interactive'
-                        '/failfast' '/user' '/password' '/output'
-                        '/append' '/aggregate' '/authority' '/?'
-                        '/?\\:brief' '/?\\:full')
+                    local global_switches=( '/namespace\:' '/role\:'
+                        '/node\:' '/implevel\:' '/authlevel\:' '/locale\:'
+                        '/privileges\:' '/trace\:' '/record\:' '/interactive\:'
+                        '/failfast\:' '/user\:' '/password\:' '/output\:'
+                        '/append\:' '/aggregate\:' '/authority\:' )
 
                     for option in ${global_switches[@]} ; do
                         declare -i found=0
 
                         for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
 
-                            if [[ "${option}" == "${word}" ]]; then
+                            if [[ "${word}" == "${option}"* ]]; then
                                 found=1
                                 break
                             fi
@@ -103,8 +156,16 @@ _wmic()
 
             esac
 
-            options+="${commands[*]} " 
+            options+=" ${commands[*]} /? /?\\:brief /?\\:full " 
+
+            # check if the recommended completion is an option that takes an immediate value
+            local tmp=( $( compgen -W '${options}' -- ${cur} ) )
+            if [[ ${tmp[0]} == /*: ]]; then
+                compopt -o nospace
+            fi
             ;;
+
+        # TODO: more completions for each command
 
         alias)
             if [[ $count -eq 1 ]]; then 

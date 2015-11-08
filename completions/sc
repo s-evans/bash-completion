@@ -2,8 +2,10 @@
 
 _scm_services()
 {
-    # TODO: this might break on special characters
-    local services=$(wmic service get name | sed -e '1d' -e '$d' -e 's/\r//' -e 's/ \+$//' -e 's/.*/"&"/')
+    local services=$(wmic service get name | sed -e '1d' -e '$d' -e 's/\r//' -e 's/ \+$//')
+    local IFS=$'\n'
+    services=$(printf '%q\n' $services)
+    services=`echo "$services" | sed 's/[:=]/\\\&/g'`
     services=${services,,}
     echo "$services"
 }
@@ -13,21 +15,20 @@ _servicecontrolmanager()
     COMPREPLY=()
 
     local cur=$(printf '%q' "${COMP_WORDS[$COMP_CWORD]}")
-    local command=${COMP_WORDS[1]}
+    local prev=${COMP_WORDS[$COMP_CWORD-1]}
     local options=''
 
     if [[ $COMP_CWORD -eq 1 ]] ; then
-        local commands='query queryex start pause interrogate continue stop
-            config description failure failureflag sidtype privs qc
-            qdescription qfailure qfailureflag qsidtype qprivs qtriggerinfo
-            qpreferrednode delete create control sdshow sdset showsid
-            triggerinfo preferrednode getdisplayname getkeyname enumdepend'
+        options='query queryex start pause interrogate continue stop \
+            config description failure failureflag sidtype privs qc \
+            qdescription qfailure qfailureflag qsidtype qprivs qtriggerinfo \
+            qpreferrednode delete create control sdshow sdset showsid \
+            triggerinfo preferrednode getdisplayname getkeyname enumdepend /?'
 
-        COMPREPLY=( $( compgen -W "$commands" -- "$cur" ) )
+    elif [[ $COMP_CWORD -eq 2 ]] ; then
 
-    else
         # Command-specific arguments
-        case "$command" in
+        case "$prev" in
 
             query)
                 local IFS=$'\n'
@@ -191,9 +192,10 @@ _servicecontrolmanager()
 
         esac
 
-        if [ -n "$options" -a -z "$COMPREPLY" ]; then
-            COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
-        fi
+    fi
+
+    if [ -n "$options" -a -z "$COMPREPLY" ]; then
+        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
     fi
 
     return 0

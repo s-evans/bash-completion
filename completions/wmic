@@ -10,8 +10,10 @@ _windows_wmic_users()
 
 _wmic_services()
 {
-    # TODO: this might break on special characters
-    local services=$(wmic service get name | sed -e '1d' -e '$d' -e 's/\r//' -e 's/ \+$//' -e 's/.*/"&"/')
+    local services=$(wmic service get name | sed -e '1d' -e '$d' -e 's/\r//' -e 's/ \+$//')
+    local IFS=$'\n'
+    services=$(printf '%q\n' $services)
+    services=`echo "$services" | sed 's/[:=]/\\\&/g'`
     services=${services,,}
     echo "$services"
 }

@@ -10,10 +10,19 @@ _windows_schtasks_users()
 
 _windows_get_schtasks()
 {
+    # get all the scheduled tasks
     local options=`schtasks /query /fo list | sed -e '/^Task/ !d' -e 's/^TaskName: \+//'`
-    options=${options//\\/\\\\}
-    options=${options// /\\ }
+
+    # escape bash tokenizer strings and separate with newlines
+    local IFS=$'\n'
+    options=$(printf '%q\n' $options)
+
+    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
+    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
+
+    # make lowercase for convenience
     options=${options,,}
+
     echo "$options"
 }
 

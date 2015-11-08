@@ -2,6 +2,7 @@
 
 _scm_services()
 {
+    # TODO: this might break on special characters
     local services=$(wmic service get name | sed -e '1d' -e '$d' -e 's/\r//' -e 's/ \+$//' -e 's/.*/"&"/')
     services=${services,,}
     echo "$services"

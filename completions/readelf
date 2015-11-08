@@ -7,7 +7,7 @@
 
 _readelf()
 {
-	COMPREPLY=()
+    COMPREPLY=()
 
     local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
     local options=''
@@ -40,8 +40,8 @@ _readelf()
 
         for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
             if [[ $word == $option ]]; then
-               found=1 
-               break
+                found=1 
+                break
             fi
         done
 
@@ -52,7 +52,7 @@ _readelf()
 
     COMPREPLY=( $( compgen -f -W "$options" -- $cur ) )
 
-	return 0
+    return 0
 }
 
 complete -o default -F _readelf readelf

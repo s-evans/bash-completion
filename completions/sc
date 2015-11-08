@@ -18,6 +18,8 @@ _servicecontrolmanager()
     local prev=${COMP_WORDS[$COMP_CWORD-1]}
     local options=''
 
+    # TODO: add more completion options
+
     if [[ $COMP_CWORD -eq 1 ]] ; then
         options='query queryex start pause interrogate continue stop \
             config description failure failureflag sidtype privs qc \

@@ -2,7 +2,7 @@
 
 _scm_services()
 {
-    local services=$(sc query | sed -e '/^SERVICE_NAME/ !d' -e 's/^SERVICE_NAME: //' -e 's/.*/"&"/')
+    local services=$(wmic service get name | sed -e '1d' -e '$d' -e 's/\r//' -e 's/ \+$//' -e 's/.*/"&"/')
     services=${services,,}
     echo "$services"
 }

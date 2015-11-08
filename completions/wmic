@@ -1,5 +1,12 @@
 #!/usr/bin/env sh
 
+_wmic_services()
+{
+    local services=$(wmic service get name | sed -e '1d' -e '$d' -e 's/\r//' -e 's/ \+$//' -e 's/.*/"&"/')
+    services=${services,,}
+    echo "$services"
+}
+
 _wmic()
 {
 	COMPREPLY=()

@@ -4,8 +4,8 @@ _wmic()
 {
 	COMPREPLY=()
 
-    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
-    local prev=$(printf '%q' "${COMP_WORDS[COMP_CWORD-1]}")
+    local cur=$(printf '%q' "${COMP_WORDS[$COMP_CWORD]}")
+    local prev=$(printf '%q' "${COMP_WORDS[$COMP_CWORD-1]}")
     local options=''
 
     if [[ "$prev" == '/\?'* ]]; then
@@ -37,12 +37,12 @@ _wmic()
     local command=''
 
     # find the command in the command string
-    for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+    for word in ${COMP_WORDS[@]::$COMP_CWORD} ; do
 
         for option in ${commands[@]} ; do
 
-            if [[ "${option}" == "${word}" ]]; then
-                command=${option}
+            if [[ "$option" == "$word" ]]; then
+                command=$option
                 break
             fi
 
@@ -62,7 +62,7 @@ _wmic()
         # command not found
         '')
 
-            case "${cur}" in
+            case "$cur" in
 
                 /authority\\\\:*)
                     ;&
@@ -137,9 +137,9 @@ _wmic()
                     for option in ${global_switches[@]} ; do
                         declare -i found=0
 
-                        for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+                        for word in ${COMP_WORDS[@]::$COMP_CWORD} ; do
 
-                            if [[ "${word}" == "${option}"* ]]; then
+                            if [[ "$word" == "$option"* ]]; then
                                 found=1
                                 break
                             fi
@@ -158,8 +158,10 @@ _wmic()
 
             options+=" ${commands[*]} /? /?\\:brief /?\\:full " 
 
+            # TODO: may want to move the following down below
+
             # check if the recommended completion is an option that takes an immediate value
-            local tmp=( $( compgen -W '${options}' -- ${cur} ) )
+            local tmp=( $( compgen -W '$options' -- "$cur" ) )
             if [[ ${tmp[0]} == /*: ]]; then
                 compopt -o nospace
             fi
@@ -817,7 +819,7 @@ _wmic()
 
     esac
 
-    COMPREPLY=( $( compgen -W '${options}' -- ${cur} ) )
+    COMPREPLY=( $( compgen -W '$options' -- "$cur" ) )
 
     return 0
 }

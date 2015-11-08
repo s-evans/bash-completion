@@ -1,194 +1,201 @@
 #!/usr/bin/env sh
 
+_scm_services()
+{
+    local services=$(sc query | sed -e '/^SERVICE_NAME/ !d' -e 's/^SERVICE_NAME: //' -e 's/.*/"&"/')
+    services=${services,,}
+    echo "$services"
+}
+
 _servicecontrolmanager()
 {
-	COMPREPLY=()
+    COMPREPLY=()
 
-    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+    local cur=$(printf '%q' "${COMP_WORDS[$COMP_CWORD]}")
+    local command=${COMP_WORDS[1]}
     local options=''
-	local command=${COMP_WORDS[1]}
 
-	if [[ $COMP_CWORD -eq 1 ]] ; then
+    if [[ $COMP_CWORD -eq 1 ]] ; then
         local commands='query queryex start pause interrogate continue stop
             config description failure failureflag sidtype privs qc
             qdescription qfailure qfailureflag qsidtype qprivs qtriggerinfo
             qpreferrednode delete create control sdshow sdset showsid
             triggerinfo preferrednode getdisplayname getkeyname enumdepend'
 
-		COMPREPLY=( $( compgen -W "$commands" -- $cur ) )
+        COMPREPLY=( $( compgen -W "$commands" -- "$cur" ) )
 
-	else
+    else
         # Command-specific arguments
         case "$command" in
 
             query)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             queryex)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             start)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             pause)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             interrogate)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             continue)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             stop)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             config)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             description)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             failure)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             failureflag)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             sidtype)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             privs)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             qc)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             qdescription)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             qfailure)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             qfailureflag)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             qsidtype)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             qprivs)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             qtriggerinfo)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             qpreferrednode)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             delete)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             create)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             control)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             sdshow)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             sdset)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             showsid)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             triggerinfo)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             preferrednode)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             getdisplayname)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             getkeyname)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
             enumdepend)
                 local IFS=$'\n'
-                options=`sc query | grep SERVICE_NAME | cut -c 15- | sed 's/.*/"&"/'`
+                options=`_scm_services`
                 ;;
 
         esac
 
         if [ -n "$options" -a -z "$COMPREPLY" ]; then
-            COMPREPLY=( $(compgen -W '${options}' -- ${cur} ) )
+            COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
         fi
     fi
 
-	return 0
+    return 0
 }
 
 complete -o default -F _servicecontrolmanager sc sc.exe

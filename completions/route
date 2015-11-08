@@ -28,28 +28,41 @@ if [[ $OSTYPE == *linux* ]]; then
 elif [[ $OSTYPE == cygwin ]]; then
     # TODO: support ipv6
 
+    _windows_get_routes()
+    {
+        route -4 print | sed -e '1,/^Network/ d'  \
+            -e '/===/,$ d' -e 's, \+, ,g' -e 's/^ \| $//'  \
+            -e 's/ [0-9]\+$/ metric&/' -e 's/ [^ ]\+ metric/ metric/'  \
+            -e 's/ / mask /' -e 's/On-link/0.0.0.0/'
+    }
+
+    _windows_get_interface_ids()
+    {
+        route -4 print | sed -e '1,2 d' -e '/===/,$ d' -e 's/^ \+\| \+$//' -e 's/\..*//'
+    }
+
     _route()
     {
-        local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+        local cur=$(printf '%q' "${COMP_WORDS[$COMP_CWORD]}")
         local commands=('print' 'add' 'change' 'delete')
         local options=''
 
         if [[ "${COMP_WORDS[1]}" == -p && $COMP_CWORD -eq 2 ]]; then
-            COMPREPLY=( $( compgen -W 'add' -- $cur ) )
+            COMPREPLY=( $( compgen -W 'add' -- "$cur" ) )
 
         elif [[ "${COMP_WORDS[1]}" == -* && $COMP_CWORD -eq 2 ]]; then
-            COMPREPLY=( $( compgen -W '${commands[@]}' -- $cur ) )
+            COMPREPLY=( $( compgen -W '${commands[@]}' -- "$cur" ) )
 
         elif [[ $COMP_CWORD -eq 1 ]] ; then
-            COMPREPLY=( $( compgen -W '-f -p -4 -6 ${commands[@]}' -- $cur ) )
+            COMPREPLY=( $( compgen -W '-f -p -4 -6 ${commands[@]}' -- "$cur" ) )
 
         else
             declare -i count=0
             local command=''
-            for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+            for word in ${COMP_WORDS[@]::$COMP_CWORD} ; do
                 for option in ${commands[@]} ; do
-                    if [[ "${option}" == "${word}" ]]; then
-                        command=${option}
+                    if [[ "$option" == "$word" ]]; then
+                        command=$option
                         break
                     fi
                 done
@@ -79,7 +92,7 @@ elif [[ $OSTYPE == cygwin ]]; then
                             ;;
                         8)
                             local IFS=$'\n'
-                            options=`route -4 print | grep -A 100000 "Interface List" | grep -B 10000 "^$" | head -n -2 | tail -n +2 | sed 's/^ \+\| \+$//' | sed 's/\([0-9]\+\).*/\1/'`
+                            options=`_windows_get_interface_ids`
                             ;;
                     esac
                     ;;
@@ -88,7 +101,7 @@ elif [[ $OSTYPE == cygwin ]]; then
                     case $count in
                         1)
                             local IFS=$'\n'
-                            options=`route -4 print | grep -A 100000 "Network Destination" | grep -B 10000 "=" | head -n -1 | tail -n +2  | sed 's, \+, ,g' | sed 's/^ \| $//' | sed 's/ [0-9]\+$/ metric&/' | sed 's/ [^ ]\+ metric/ metric/' | sed 's/ / mask /' | sed 's/On-link/0.0.0.0/'`
+                            options=`_windows_get_routes`
                             ;;
                         2)
                             options='mask'
@@ -101,7 +114,7 @@ elif [[ $OSTYPE == cygwin ]]; then
                             ;;
                         8)
                             local IFS=$'\n'
-                            options=`route -4 print | grep -A 100000 "Interface List" | grep -B 10000 "^$" | head -n -2 | tail -n +2  |  sed 's/^ \+\| \+$//' | sed 's/\([0-9]\+\).*/\1/'`
+                            options=`_windows_get_interface_ids`
                             ;;
                     esac
                     ;;
@@ -110,13 +123,13 @@ elif [[ $OSTYPE == cygwin ]]; then
                     case $count in
                         1)
                             local IFS=$'\n'
-                            options=`route -4 print | grep -A 100000 "Network Destination" | grep -B 10000 "=" | head -n -1 | tail -n +2  | sed 's, \+, ,g' | sed 's/^ \| $//' | sed 's/ [0-9]\+$/ metric&/' | sed 's/ [^ ]\+ metric/ metric/' | sed 's/ / mask /' | sed 's/On-link/0.0.0.0/'`
+                            options=`_windows_get_routes`
                             ;;
                     esac
                     ;;
             esac
 
-            COMPREPLY=( $( compgen -W '${options}' -- $cur ) )
+            COMPREPLY=( $( compgen -W '$options' -- "$cur" ) )
         fi
 
         return 0

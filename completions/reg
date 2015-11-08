@@ -62,7 +62,7 @@ _windows_reg()
 {
 	COMPREPLY=()
 
-    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+    local cur=$(printf '%q' "${COMP_WORDS[$COMP_CWORD]}")
     local key=$(printf '%q' "${COMP_WORDS[2]}")
 	local command=${COMP_WORDS[1]}
 	local prev=${COMP_WORDS[COMP_CWORD-1]}
@@ -71,11 +71,11 @@ _windows_reg()
 	if [[ $COMP_CWORD -eq 1 ]] ; then
         local commands='query add delete copy save restore load unload
             compare export import flags /?'
-		COMPREPLY=( $( compgen -W "$commands" -- $cur ) )
+		COMPREPLY=( $( compgen -W "$commands" -- "$cur" ) )
         return 0
 
     elif [[ "${COMP_WORDS[COMP_CWORD]}" == "/?" ]]; then
-		COMPREPLY=( $( compgen -W "/?" -- $cur ) )
+		COMPREPLY=( $( compgen -W "/?" -- "$cur" ) )
         return 0
 
     elif [[ "$prev" == "/?" ]]; then
@@ -92,7 +92,7 @@ _windows_reg()
                     # complete the registry key path
                     compopt -o nospace
 
-                    if [[ "${cur}" == *\\* ]]; then
+                    if [[ "$cur" == *\\* ]]; then
                         # use the existing string to get next level of keys
                         local IFS=$'\n'
                         options=$(_windows_reg_keys "$cur")
@@ -148,8 +148,9 @@ _windows_reg()
                     # complete the registry key path
                     compopt -o nospace
 
-                    if [[ "${cur}" == *\\* ]]; then
+                    if [[ "$cur" == *\\* ]]; then
                         # use the existing string to get next level of keys
+                        local IFS=$'\n'
                         options=$(_windows_reg_keys "$cur")
 
                     else
@@ -203,8 +204,9 @@ _windows_reg()
                     # complete the registry key path
                     compopt -o nospace
 
-                    if [[ "${cur}" == *\\* ]]; then
+                    if [[ "$cur" == *\\* ]]; then
                         # use the existing string to get next level of keys
+                        local IFS=$'\n'
                         options=$(_windows_reg_keys "$cur")
 
                     else
@@ -251,8 +253,9 @@ _windows_reg()
                     # complete the registry key path
                     compopt -o nospace
 
-                    if [[ "${cur}" == *\\* ]]; then
+                    if [[ "$cur" == *\\* ]]; then
                         # use the existing string to get next level of keys
+                        local IFS=$'\n'
                         options=$(_windows_reg_keys "$cur")
 
                     else
@@ -294,8 +297,9 @@ _windows_reg()
                     # complete the registry key path
                     compopt -o nospace
 
-                    if [[ "${cur}" == *\\* ]]; then
+                    if [[ "$cur" == *\\* ]]; then
                         # use the existing string to get next level of keys
+                        local IFS=$'\n'
                         options=$(_windows_reg_keys "$cur")
 
                     else
@@ -341,8 +345,9 @@ _windows_reg()
                     # complete the registry key path
                     compopt -o nospace
 
-                    if [[ "${cur}" == *\\* ]]; then
+                    if [[ "$cur" == *\\* ]]; then
                         # use the existing string to get next level of keys
+                        local IFS=$'\n'
                         options=$(_windows_reg_keys "$cur")
 
                     else
@@ -385,8 +390,9 @@ _windows_reg()
                     # complete the registry key path
                     compopt -o nospace
 
-                    if [[ "${cur}" == *\\* ]]; then
+                    if [[ "$cur" == *\\* ]]; then
                         # use the existing string to get next level of keys
+                        local IFS=$'\n'
                         options=$(_windows_reg_keys "$cur")
 
                     else
@@ -405,8 +411,9 @@ _windows_reg()
                     # complete the registry key path
                     compopt -o nospace
 
-                    if [[ "${cur}" == *\\* ]]; then
+                    if [[ "$cur" == *\\* ]]; then
                         # use the existing string to get next level of keys
+                        local IFS=$'\n'
                         options=$(_windows_reg_keys "$cur")
 
                     else
@@ -462,8 +469,9 @@ _windows_reg()
                     # complete the registry key path
                     compopt -o nospace
 
-                    if [[ "${cur}" == *\\* ]]; then
+                    if [[ "$cur" == *\\* ]]; then
                         # use the existing string to get next level of keys
+                        local IFS=$'\n'
                         options=$(_windows_reg_keys "$cur")
 
                     else
@@ -507,7 +515,7 @@ _windows_reg()
         esac
 
         if [ -n "$options" -a -z "$COMPREPLY" ]; then
-            COMPREPLY=( $(compgen -W '${options}' -- ${cur} ) )
+            COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
         fi
 	fi
 

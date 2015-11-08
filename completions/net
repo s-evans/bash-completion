@@ -3,29 +3,31 @@
 _windows_net_users()
 {
     # TODO: this might break down if there a lot of users or usernames have spaces, special chars, etc.
-    local options=`net user | head -n -2 | tail -n +5`
-    options=${options///}
-    echo "$options"
+    local user_names=$(wmic useraccount get Name | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
+    user_names=${user_names,,}
+    echo "$user_names"
 }
 
 _windows_net()
 {
-	COMPREPLY=()
+    COMPREPLY=()
 
-    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+    local cur=$(printf '%q' "${COMP_WORDS[$COMP_CWORD]}")
+    local prev=${COMP_WORDS[$COMP_CWORD-1]}
+    local command=${COMP_WORDS[1]}
     local options=''
-	local command=${COMP_WORDS[1]}
-	local prev=${COMP_WORDS[COMP_CWORD-1]}
 
-	if [[ $COMP_CWORD -eq 1 ]] ; then
+    if [[ $COMP_CWORD -eq 1 ]] ; then
         local commands='accounts computer config continue file group help
             helpmsg localgroup pause session share start statistics stop time
             use user view'
 
-		COMPREPLY=( $( compgen -W "$commands" -- $cur ) )
+        COMPREPLY=( $( compgen -W "$commands" -- "$cur" ) )
+
     elif [[ $prev == "?" ]]; then
-		COMPREPLY=( $( compgen -W "" -- $cur ) )
-	else
+        return 0
+
+    else
         # Command-specific arguments
         case "$command" in
 
@@ -73,12 +75,11 @@ _windows_net()
                 if [[ $COMP_CWORD -eq 2 ]]; then
                     local IFS=$'\n'
                     options=`net localgroup | head -n -2 | tail -n +5 | cut -c 2- | sed 's/.*/"&"/'`
-                    options+='
-?'
+                    options+=$'\n''?'
                 elif [[ $COMP_CWORD -ge 3 ]]; then
-                    # TODO: cull the list based off of words present in the command string
+                    local IFS=$'\n'
                     options=$(_windows_net_users)
-                    options+='/comment: /delete /domain /add'
+                    options+=$'\n''/comment:'$'\n''/delete'$'\n''/domain'$'\n''/add'
                 fi
                 ;;
 
@@ -131,18 +132,20 @@ _windows_net()
 
             use)
                 # TODO: list recents
-                options='/persistent:yes /persistent:no /delete /savecred /smartcard /user: ?'
+                options='/persistent\:yes /persistent\:no /delete /savecred /smartcard /user: ?'
                 ;;
 
             user)
                 if [[ $COMP_CWORD -eq 2 ]]; then
+                    local IFS=$'\n'
                     options=$(_windows_net_users)
+                    options+=$'\n''?'$'\n''/domain'
                 else
-                    options=''
+                    options='/delete /add /domain /active\:yes /active\:no /times:'
                 fi
 
+                # TODO: better positional argument support
                 # TODO: cull the list based on options that have been used
-                options+='? /delete /add /domain /active:yes /active:no /times:'
                 ;;
 
             view)
@@ -153,11 +156,11 @@ _windows_net()
         esac
 
         if [ -n "$options" -a -z "$COMPREPLY" ]; then
-            COMPREPLY=( $(compgen -W '${options}' -- ${cur} ) )
+            COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
         fi
     fi
 
-	return 0
+    return 0
 }
 
 complete -o default -F _windows_net net net.exe

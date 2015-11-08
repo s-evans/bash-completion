@@ -3,16 +3,33 @@
 _windows_reg_keys()
 {
     # process the string so that the reg utility will understand it
-    local tmp=$(echo "${1}" | sed 's/\\\+/\\/g' | sed 's/\\[^\\]*$//' | sed 's/\\ / /g')
+    local tmp=$(echo "$1" | sed -e 's/\\\(.\)/\1/g' -e 's/\\\(.\)/\1/g' -e 's/\\[^\\]*$//')
 
     # query for additional keys
-    local options=`reg query "$tmp"`
+    local options=`reg query "$tmp" | sed -e '1d' -e '/^ / d' -e '/^$/ d' -e '1d'`
 
-    # post process the query results to make them palatable to bash
-    options=${options///\\}
+    # add a line ending to the very end for consistency
+    options+=$'\n'
+
+    # add separators at ends of lines for convenience
+    options=${options//$'\n'/\\$'\n'}
+
+    # escape separators
     options=${options//\\/\\\\}
-    options=${options// /\\ }
+
+    # escape other word breaks and quotations that throw off bash command parsing and completion
+    options=`echo "$options" | sed "s/[\t \"&'(:;<=>|\\\`]/\\\\\&/g"`
+
+    # make lowercase for convenience
     options=${options,,}
+
+    # create additional completions with short root key names for convenience
+    tmp=$(echo "$options" | sed -e 's/^hkey_local_machine/hklm/' -e \
+        's/^hkey_current_user/hkcu/' -e 's/^hkey_current_config/hkcc/' -e \
+        's/^hkey_users/hku/')
+
+    # combine sets
+    options+=$'\n'"$tmp"
 
     echo "$options"
 }
@@ -20,22 +37,25 @@ _windows_reg_keys()
 _windows_reg_values()
 {
     # process the string so that the reg utility will understand it
-    local tmp=$(echo "${1}" | sed 's/\\\+/\\/g' | sed 's/\\ / /g')
+    local tmp=$(echo "$1" | sed -e 's/\\\(.\)/\1/g' -e 's/\\\(.\)/\1/g')
 
     # query for values
-    options=`reg query "$tmp" | grep -B 100000 ^$ | grep -A 10000 HKEY | head -n -1 | tail -n +2 | grep -v "\(Default\)" | sed 's/ \+/ /g' | sed 's/^ \+\| \+$//' | sed 's/ REG_.*//'`
+    options=`reg query "$tmp" | sed -e '/^[^ ]/ d' -e '/(Default)/ d' -e '/^$/ d' -e 's/    REG_.*$//g' -e 's/^    //' `
 
-    # post process the query results to make them palatable to bash
-    options=${options///\\}
-    options=${options//\\/\\\\}
-    options=${options// /\\ }
+    # add a line ending to the very end for consistency
+    options+=$'\n'
+
+    # escape other word breaks and quotations that throw off bash command parsing and completion
+    options=`echo "$options" | sed "s/[\t \"&'(:;<=>|\\\`]/\\\\\&/g"`
+
+    # make lowercase for convenience
     options=${options,,}
 
     echo "$options"
 }
 
-# TODO: improve root key short name handling
-# TODO: some options are mutually exclusive or position dependent and are not reflected (ie. reg:32 and reg:64)
+# TODO: mutually exclusive options (ie. reg:32 and reg:64)
+# TODO: dependent options (ie. /k /d /c /e are dependent upon /f)
 # TODO: fix option culling loops for escaped characters
 
 _windows_reg()
@@ -43,6 +63,7 @@ _windows_reg()
 	COMPREPLY=()
 
     local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+    local key=$(printf '%q' "${COMP_WORDS[2]}")
 	local command=${COMP_WORDS[1]}
 	local prev=${COMP_WORDS[COMP_CWORD-1]}
     local options=''
@@ -73,13 +94,13 @@ _windows_reg()
 
                     if [[ "${cur}" == *\\* ]]; then
                         # use the existing string to get next level of keys
-                        local IFS=$'\n' 
+                        local IFS=$'\n'
                         options=$(_windows_reg_keys "$cur")
 
                     else
                         # list root keys
-                        options='hkey_local_machine\\ hkey_current_user\\
-                            hkey_current_config\\ hkey_users\\ /?'
+                        options='hkey_local_machine\\ hklm\\ hkey_current_user\\ hkcu\\
+                            hkey_current_config\\ hkcc\\ hkey_users\\ hku\\ /?'
 
                     fi
                 elif [[ $COMP_CWORD -gt 2 ]]; then
@@ -87,7 +108,7 @@ _windows_reg()
                     if [[ "$prev" == "/v" ]]; then
                         # list values available for the key
                         local IFS=$'\n'
-                        options=$(_windows_reg_values "${COMP_WORDS[2]}")
+                        options=$(_windows_reg_values "$key")
 
                     elif [[ "$prev" == "/t" ]]; then
                         options='reg_sz reg_multi_sz reg_expand_sz reg_dword
@@ -129,13 +150,12 @@ _windows_reg()
 
                     if [[ "${cur}" == *\\* ]]; then
                         # use the existing string to get next level of keys
-                        local IFS=$'\n' 
                         options=$(_windows_reg_keys "$cur")
 
                     else
                         # list root keys
-                        options='hkey_local_machine\\ hkey_current_user\\
-                            hkey_current_config\\ hkey_users\\ /?'
+                        options='hkey_local_machine\\ hklm\\ hkey_current_user\\ hkcu\\
+                            hkey_current_config\\ hkcc\\ hkey_users\\ hku\\ /?'
 
                     fi
                 elif [[ $COMP_CWORD -gt 2 ]]; then
@@ -143,7 +163,7 @@ _windows_reg()
                     if [[ "$prev" == "/v" ]]; then
                         # list values available for the key
                         local IFS=$'\n'
-                        options=$(_windows_reg_values "${COMP_WORDS[2]}")
+                        options=$(_windows_reg_values "$key")
 
                     elif [[ "$prev" == "/t" ]]; then
                         options='reg_sz reg_multi_sz reg_expand_sz reg_dword
@@ -185,13 +205,12 @@ _windows_reg()
 
                     if [[ "${cur}" == *\\* ]]; then
                         # use the existing string to get next level of keys
-                        local IFS=$'\n' 
                         options=$(_windows_reg_keys "$cur")
 
                     else
                         # list root keys
-                        options='hkey_local_machine\\ hkey_current_user\\
-                            hkey_current_config\\ hkey_users\\ /?'
+                        options='hkey_local_machine\\ hklm\\ hkey_current_user\\ hkcu\\
+                            hkey_current_config\\ hkcc\\ hkey_users\\ hku\\ /?'
 
                     fi
                 elif [[ $COMP_CWORD -gt 2 ]]; then
@@ -199,7 +218,7 @@ _windows_reg()
                     if [[ "$prev" == "/v" ]]; then
                         # list values available for the key
                         local IFS=$'\n'
-                        options=$(_windows_reg_values "${COMP_WORDS[2]}")
+                        options=$(_windows_reg_values "$key")
 
                     else
                         # cull the list of switches if they've been used
@@ -234,13 +253,12 @@ _windows_reg()
 
                     if [[ "${cur}" == *\\* ]]; then
                         # use the existing string to get next level of keys
-                        local IFS=$'\n' 
                         options=$(_windows_reg_keys "$cur")
 
                     else
                         # list root keys
-                        options='hkey_local_machine\\ hkey_current_user\\
-                            hkey_current_config\\ hkey_users\\ /?'
+                        options='hkey_local_machine\\ hklm\\ hkey_current_user\\ hkcu\\
+                            hkey_current_config\\ hkcc\\ hkey_users\\ hku\\ /?'
 
                     fi
                 elif [[ $COMP_CWORD -gt 3 ]]; then
@@ -278,13 +296,12 @@ _windows_reg()
 
                     if [[ "${cur}" == *\\* ]]; then
                         # use the existing string to get next level of keys
-                        local IFS=$'\n' 
                         options=$(_windows_reg_keys "$cur")
 
                     else
                         # list root keys
-                        options='hkey_local_machine\\ hkey_current_user\\
-                            hkey_current_config\\ hkey_users\\ /?'
+                        options='hkey_local_machine\\ hklm\\ hkey_current_user\\ hkcu\\
+                            hkey_current_config\\ hkcc\\ hkey_users\\ hku\\ /?'
 
                     fi
 
@@ -326,13 +343,12 @@ _windows_reg()
 
                     if [[ "${cur}" == *\\* ]]; then
                         # use the existing string to get next level of keys
-                        local IFS=$'\n' 
                         options=$(_windows_reg_keys "$cur")
 
                     else
                         # list root keys
-                        options='hkey_local_machine\\ hkey_current_user\\
-                            hkey_current_config\\ hkey_users\\ /?'
+                        options='hkey_local_machine\\ hklm\\ hkey_current_user\\ hkcu\\
+                            hkey_current_config\\ hkcc\\ hkey_users\\ hku\\ /?'
 
                     fi
 
@@ -371,13 +387,12 @@ _windows_reg()
 
                     if [[ "${cur}" == *\\* ]]; then
                         # use the existing string to get next level of keys
-                        local IFS=$'\n' 
                         options=$(_windows_reg_keys "$cur")
 
                     else
                         # list root keys
-                        options='hkey_local_machine\\ hkey_current_user\\
-                            hkey_current_config\\ hkey_users\\ /?'
+                        options='hkey_local_machine\\ hklm\\ hkey_current_user\\ hkcu\\
+                            hkey_current_config\\ hkcc\\ hkey_users\\ hku\\ /?'
 
                     fi
                 fi
@@ -392,13 +407,12 @@ _windows_reg()
 
                     if [[ "${cur}" == *\\* ]]; then
                         # use the existing string to get next level of keys
-                        local IFS=$'\n' 
                         options=$(_windows_reg_keys "$cur")
 
                     else
                         # list root keys
-                        options='hkey_local_machine\\ hkey_current_user\\
-                            hkey_current_config\\ hkey_users\\ /?'
+                        options='hkey_local_machine\\ hklm\\ hkey_current_user\\ hkcu\\
+                            hkey_current_config\\ hkcc\\ hkey_users\\ hku\\ /?'
 
                     fi
                 elif [[ $COMP_CWORD -gt 3 ]]; then
@@ -406,7 +420,7 @@ _windows_reg()
                     if [[ "$prev" == "/v" ]]; then
                         # list values available for the key
                         local IFS=$'\n'
-                        options=$(_windows_reg_values "${COMP_WORDS[2]}")
+                        options=$(_windows_reg_values "$key")
 
                     else
                         # cull the list of switches if they've been used
@@ -450,7 +464,6 @@ _windows_reg()
 
                     if [[ "${cur}" == *\\* ]]; then
                         # use the existing string to get next level of keys
-                        local IFS=$'\n' 
                         options=$(_windows_reg_keys "$cur")
 
                     else

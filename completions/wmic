@@ -1,5 +1,13 @@
 #!/usr/bin/env sh
 
+_windows_wmic_users()
+{
+    # TODO: this might break down if there a lot of users or usernames have spaces, special chars, etc.
+    local user_names=$(wmic useraccount get Name | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
+    user_names=${user_names,,}
+    echo "$user_names"
+}
+
 _wmic_services()
 {
     # TODO: this might break on special characters
@@ -10,10 +18,10 @@ _wmic_services()
 
 _wmic()
 {
-	COMPREPLY=()
+    COMPREPLY=()
 
-    local cur=$(printf '%q' "${COMP_WORDS[$COMP_CWORD]}")
-    local prev=$(printf '%q' "${COMP_WORDS[$COMP_CWORD-1]}")
+    local cur=${COMP_WORDS[$COMP_CWORD]}
+    local prev=${COMP_WORDS[$COMP_CWORD-1]}
     local options=''
 
     if [[ "$prev" == '/\?'* ]]; then
@@ -63,6 +71,7 @@ _wmic()
         count+=1
     done
 
+    local subcmd=${COMP_WORDS[$count+1]}
     count=$COMP_CWORD-$count
 
     case "$command" in
@@ -72,66 +81,65 @@ _wmic()
 
             case "$cur" in
 
-                /authority\\\\:*)
+                /authority\\:*)
                     ;&
-                /password\\\\:*)
+                /password\\:*)
                     ;&
-                /record\\\\:*)
+                /record\\:*)
                     ;&
-                /locale\\\\:*)
+                /locale\\:*)
                     ;&
-                /node\\\\:*)
+                /node\\:*)
                     ;&
-                /role\\\\:*)
+                /role\\:*)
                     ;&
-                /namespace\\\\:*)
+                /namespace\\:*)
                     options=''
                     ;;
 
-                /user\\\\:*)
-                    # TODO: list users
-                    options=''
+                /user\\:*)
+                    options=$(_windows_wmic_users | sed 's/.*/\/user\\:&/')
                     ;;
 
-                /implevel\\\\:*)
+                /implevel\\:*)
                     options='/implevel\:anonymous /implevel\:identify
                         /implevel\:impersonate /implevel\:delegate'
                     ;;
 
-                /authlevel\\\\:*)
+                /authlevel\\:*)
                     options='/authlevel\:default /authlevel\:none
                         /authlevel\:connect /authlevel\:call /authlevel\:pkt
                         /authlevel\:pktintegrity /authlevel\:pktprivacy'
                         ;;
 
-                /privileges\\\\:*)
+                /privileges\\:*)
                     options='/priveleges\:enable /priveleges\:disable'
                     ;;
 
-                /aggregate\\\\:*)
+                /aggregate\\:*)
                     options='/aggregate\:on /aggregate\:off'
                     ;;
 
-                /failfast\\\\:*)
+                /failfast\\:*)
                     options='/failfast\:on /failfast\:off'
                     ;;
 
-                /interactive\\\\:*)
+                /interactive\\:*)
                     options='/interactive\:on /interactive\:off'
                     ;;
 
-                /trace\\\\:*)
+                /trace\\:*)
                     options='/trace\:on /trace\:off'
                     ;;
 
-                /output\\\\:*)
-                    # TODO: add filename option
+                /output\\:*)
                     options='/output\:stdout /output\:clipboard'
+                    options+=$(compgen -f -- ${cur#/output\\:} | sed 's/.*/\/output\\:&/')
                     ;;
 
-                /append\\\\:*)
-                    # TODO: add filename option
-                    options='/append\:stdout /append\:clipboard'
+                /append\\:*)
+                    options='/append\:stdout'$'\n''/append\:clipboard'
+                    options+=$(compgen -f -- ${cur#/append\\:} | sed 's/.*/\/append\\:&/')
                     ;;
 
                 *)
@@ -166,13 +174,6 @@ _wmic()
 
             options+=" ${commands[*]} /? /?\\:brief /?\\:full " 
 
-            # TODO: may want to move the following down below
-
-            # check if the recommended completion is an option that takes an immediate value
-            local tmp=( $( compgen -W '$options' -- "$cur" ) )
-            if [[ ${tmp[0]} == /*: ]]; then
-                compopt -o nospace
-            fi
             ;;
 
         # TODO: more completions for each command
@@ -827,7 +828,12 @@ _wmic()
 
     esac
 
-    COMPREPLY=( $( compgen -W '$options' -- "$cur" ) )
+    COMPREPLY=( $( compgen -W '$options' -- $(printf '%q' "$cur") ) )
+
+    # check if the recommended completion is an option that takes an immediate value
+    if [[ ${#COMPREPLY[@]} -eq 1 && ${COMPREPLY} == /*: ]]; then
+        compopt -o nospace
+    fi
 
     return 0
 }

@@ -2,16 +2,16 @@
 
 _windows_taskkill()
 {
-	COMPREPLY=()
+    COMPREPLY=()
 
-    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
-	local prev=${COMP_WORDS[COMP_CWORD-1]}
+    local cur=$(printf '%q' "${COMP_WORDS[$COMP_CWORD]}")
+    local prev=${COMP_WORDS[$COMP_CWORD-1]}
     local options=''
 
     if [[ $prev == "/?" ]]; then
-		COMPREPLY=( $( compgen -W "" -- $cur ) )
+        COMPREPLY=( $( compgen -W "" -- $cur ) )
 
-	else
+    else
         options='/f /t /im /pid /fi /p /s /u /?'
 
         # Command-specific arguments
@@ -40,17 +40,17 @@ _windows_taskkill()
 
             /im)
                 local IFS=$'\n'
-                options=`tasklist /fo list | grep ^Image\ Name: | cut -c 12- | sort | uniq | sed 's/^ \+//' | sed 's/.*/"&"/'`
+                options=`tasklist /fo list | sed -e '/^Image/ !d' -e 's/^Image Name: \+//' -e 's/.*/"&"/' | sort | uniq`
                 ;;
 
         esac
 
         if [ -n "$options" -a -z "$COMPREPLY" ]; then
-            COMPREPLY=( $(compgen -W '${options}' -- ${cur} ) )
+            COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
         fi
     fi
 
-	return 0
+    return 0
 }
 
 complete -o default -F _windows_taskkill taskkill taskkill.exe

@@ -4,8 +4,8 @@ _netsh()
 {
     COMPREPLY=()
 
-    local prev=${COMP_WORDS[COMP_CWORD-1]}
-    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+    local cur=$(printf '%q' "${COMP_WORDS[$COMP_CWORD]}")
+    local prev=${COMP_WORDS[$COMP_CWORD-1]}
     local options=''
 
     local commands=('add' 'advfirewall' 'bridge' 'delete' 'dhcpclient'
@@ -13,18 +13,22 @@ _netsh()
         'lan' 'namespace' 'nap' 'netio' 'p2p' 'ras' 'rpc' 'set' 'show' 'wfp'
         'winhttp' 'winsock' 'wlan' )
 
-    declare -i count=0
     local command=''
+    declare -i count=0
+
     for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+
         for option in ${commands[@]} ; do
             if [[ "${option}" == "${word}" ]]; then
                 command=${option}
                 break
             fi
         done
+
         if [[ -n $command ]]; then
             break
         fi
+
         count+=1
     done
 
@@ -531,12 +535,12 @@ _netsh()
 
     esac
 
-    if [[ "$prev" != "?" && -z "${IFS}" ]]; then
+    if [[ "$prev" != "?" && -z "$IFS" ]]; then
         options="$options ?"
     fi
 
     if [ -n "$options" -a -z "$COMPREPLY" ]; then
-        COMPREPLY=( $(compgen -W '${options}' -- ${cur} ) )
+        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
     fi
 
     return 0

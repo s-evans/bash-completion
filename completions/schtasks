@@ -3,16 +3,17 @@
 _windows_schtasks_users()
 {
     # TODO: this might break down if there a lot of users or usernames have spaces, special chars, etc.
-    local options=`net user | head -n -2 | tail -n +5`
-    options=${options///}
-    echo "$options"
+    local user_names=$(wmic useraccount get Name | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
+    user_names=${user_names,,}
+    echo "$user_names"
 }
 
 _windows_get_schtasks()
 {
-    local options=`schtasks /query /fo list | grep ^TaskName: | sed 's/TaskName: \+//'`
+    local options=`schtasks /query /fo list | sed -e '/^Task/ !d' -e 's/^TaskName: \+//'`
     options=${options//\\/\\\\}
     options=${options// /\\ }
+    options=${options,,}
     echo "$options"
 }
 
@@ -20,17 +21,17 @@ _windows_schtasks()
 {
     COMPREPLY=()
 
-    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+    local cur=$(printf '%q' "${COMP_WORDS[$COMP_CWORD]}")
+    local prev=${COMP_WORDS[$COMP_CWORD-1]}
     local command=${COMP_WORDS[1]}
-    local prev=${COMP_WORDS[COMP_CWORD-1]}
     local options=''
 
     if [[ $COMP_CWORD -eq 1 ]] ; then
-        COMPREPLY=( $( compgen -W '/run /end /create /delete /query /change /showsid /?' -- $cur ) )
+        COMPREPLY=( $( compgen -W '/run /end /create /delete /query /change /showsid /?' -- "$cur" ) )
         return 0
 
-    elif [[ "${COMP_WORDS[COMP_CWORD]}" == "/?" ]]; then
-        COMPREPLY=( $( compgen -W "/?" -- $cur ) )
+    elif [[ "${COMP_WORDS[$COMP_CWORD]}" == "/?" ]]; then
+        COMPREPLY=( $( compgen -W "/?" -- "$cur" ) )
         return 0
 
     elif [[ "$prev" == "/?" ]]; then
@@ -66,7 +67,7 @@ _windows_schtasks()
                         for option in ${option_list[@]} ; do
                             local found=0
 
-                            for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+                            for word in ${COMP_WORDS[@]::$COMP_CWORD} ; do
                                 if [[ $word == $option ]]; then
                                    found=1 
                                    break
@@ -107,7 +108,7 @@ _windows_schtasks()
                         for option in ${option_list[@]} ; do
                             local found=0
 
-                            for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+                            for word in ${COMP_WORDS[@]::$COMP_CWORD} ; do
                                 if [[ $word == $option ]]; then
                                    found=1 
                                    break
@@ -186,7 +187,7 @@ _windows_schtasks()
                         for option in ${option_list[@]} ; do
                             local found=0
 
-                            for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+                            for word in ${COMP_WORDS[@]::$COMP_CWORD} ; do
                                 if [[ $word == $option ]]; then
                                    found=1 
                                    break
@@ -228,7 +229,7 @@ _windows_schtasks()
                         for option in ${option_list[@]} ; do
                             local found=0
 
-                            for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+                            for word in ${COMP_WORDS[@]::$COMP_CWORD} ; do
                                 if [[ $word == $option ]]; then
                                    found=1 
                                    break
@@ -277,7 +278,7 @@ _windows_schtasks()
                         for option in ${option_list[@]} ; do
                             local found=0
 
-                            for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+                            for word in ${COMP_WORDS[@]::$COMP_CWORD} ; do
                                 if [[ $word == $option ]]; then
                                    found=1 
                                    break
@@ -349,7 +350,7 @@ _windows_schtasks()
                         for option in ${option_list[@]} ; do
                             local found=0
 
-                            for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+                            for word in ${COMP_WORDS[@]::$COMP_CWORD} ; do
                                 if [[ $word == $option ]]; then
                                    found=1 
                                    break
@@ -381,7 +382,7 @@ _windows_schtasks()
                         for option in ${option_list[@]} ; do
                             local found=0
 
-                            for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+                            for word in ${COMP_WORDS[@]::$COMP_CWORD} ; do
                                 if [[ $word == $option ]]; then
                                    found=1 
                                    break
@@ -400,7 +401,7 @@ _windows_schtasks()
         esac
 
         if [ -n "$options" -a -z "$COMPREPLY" ]; then
-            COMPREPLY=( $(compgen -W '${options}' -- ${cur} ) )
+            COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
         fi
     fi
 

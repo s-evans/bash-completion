@@ -1,11 +1,13 @@
 #!/usr/bin/env sh
 
+# TODO: cull options lists when options have been used
+
 _wevtutil()
 {
-	COMPREPLY=()
+    COMPREPLY=()
 
-    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
-    local prev=${COMP_WORDS[COMP_CWORD-1]}
+    local cur=$(printf '%q' "${COMP_WORDS[$COMP_CWORD]}")
+    local prev=${COMP_WORDS[$COMP_CWORD-1]}
     local options=''
     local common_options="/remote\\: /username\\: /password\\: \
         /authentication\\:default /authentication\\:negotiate \
@@ -38,7 +40,7 @@ _wevtutil()
             al)
                 ;&
             archive-log)
-                if [[ ${COMP_CWORD} -eq 2 ]]; then
+                if [[ $COMP_CWORD -eq 2 ]]; then
                     options=''
                 else
                     compopt -o nospace
@@ -49,7 +51,7 @@ _wevtutil()
             cl)
                 ;&
             clear-log)
-                if [[ ${COMP_CWORD} -eq 2 ]]; then
+                if [[ $COMP_CWORD -eq 2 ]]; then
                     local IFS=$'\n'
                     options=`wevtutil el`
                     options=${options// /\\\ }
@@ -78,25 +80,25 @@ _wevtutil()
             epl)
                 ;&
             export-log)
-                if [[ ${COMP_CWORD} -eq 2 ]]; then
+                if [[ $COMP_CWORD -eq 2 ]]; then
                     local IFS=$'\n'
                     options=`wevtutil el`
                     options=${options// /\\\ }
                     options=${options///}
                     options=${options,,}
-                elif [[ ${COMP_CWORD} -eq 3 ]]; then
+                elif [[ $COMP_CWORD -eq 3 ]]; then
                     options=''
                 else
                     options="/logfile\\:true /logfile\\:false \
                         /structuredquery\\:true /structuredquery\\:false /query\\: \
                         /overwrite\\:true /overwrite\\:false ${common_options}"
-                    fi
-                    ;;
+                fi
+                ;;
 
             gl)
                 ;&
             get-log)
-                if [[ ${COMP_CWORD} -eq 2 ]]; then
+                if [[ $COMP_CWORD -eq 2 ]]; then
                     local IFS=$'\n'
                     options=`wevtutil el`
                     options=${options// /\\\ }
@@ -110,7 +112,7 @@ _wevtutil()
             gp)
                 ;&
             get-publisher)
-                if [[ ${COMP_CWORD} -eq 2 ]]; then
+                if [[ $COMP_CWORD -eq 2 ]]; then
                     local IFS=$'\n'
                     options=`wevtutil ep`
                     options=${options// /\\\ }
@@ -126,7 +128,7 @@ _wevtutil()
             im)
                 ;&
             install-manifest)
-                if [[ ${COMP_CWORD} -eq 2 ]]; then
+                if [[ $COMP_CWORD -eq 2 ]]; then
                     options=''
                 else
                     options="/resourceFilePath\\: /messageFilePath\\: \
@@ -137,7 +139,7 @@ _wevtutil()
             qe)
                 ;&
             query-events)
-                if [[ ${COMP_CWORD} -eq 2 ]]; then
+                if [[ $COMP_CWORD -eq 2 ]]; then
                     local IFS=$'\n'
                     options=`wevtutil el`
                     options=${options// /\\\ }
@@ -156,7 +158,7 @@ _wevtutil()
             sl)
                 ;&
             set-log)
-                if [[ ${COMP_CWORD} -eq 2 ]]; then
+                if [[ $COMP_CWORD -eq 2 ]]; then
                     local IFS=$'\n'
                     options=`wevtutil el`
                     options=${options// /\\\ }
@@ -178,7 +180,7 @@ _wevtutil()
 
     fi
 
-	return 0
+    return 0
 }
 
 complete -o default -F _wevtutil wevtutil wevtutil.exe

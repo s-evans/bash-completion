@@ -3,6 +3,7 @@
 # TODO: remove recommendations immediately after switches that take parameters
 # TODO: handle mutually exclusive options, long and short form options that are equivalent
 # TODO: '--debug-dump=' completion doesn't work particularly well
+# TODO: see _split_longopt
 
 _readelf()
 {

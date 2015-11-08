@@ -1035,7 +1035,7 @@ _pids()
 elif [[ $OSTYPE == cygwin ]]; then
 _pids()
 {
-    COMPREPLY=( $( compgen -W '$( command tasklist /fo list | grep ^PID: | cut -c 5- | sed "s/ //g" | tr "\n" " " )' -- "$cur" ))
+    COMPREPLY=( $( compgen -W '$(tasklist /fo list | sed -e "/^PID/ !d" -e "s/PID: \+//" | tr "\n" " ")' -- "$cur" ))
 } 
 else
 _pids()

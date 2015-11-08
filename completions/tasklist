@@ -2,16 +2,16 @@
 
 _windows_tasklist()
 {
-	COMPREPLY=()
+    COMPREPLY=()
 
-    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+    local cur=$(printf '%q' "${COMP_WORDS[$COMP_CWORD]}")
+    local prev=${COMP_WORDS[$COMP_CWORD-1]}
     local options=''
-	local prev=${COMP_WORDS[COMP_CWORD-1]}
 
     if [[ $prev == "/?" ]]; then
-		COMPREPLY=( $( compgen -W "" -- $cur ) )
+        return 0
 
-	else
+    else
         options='/apps /v /fi /nh /fo /svc /m /p /s /u /?'
 
         # Command-specific arguments
@@ -45,11 +45,11 @@ _windows_tasklist()
         esac
 
         if [ -n "$options" -a -z "$COMPREPLY" ]; then
-            COMPREPLY=( $(compgen -W '${options}' -- ${cur} ) )
+            COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
         fi
     fi
 
-	return 0
+    return 0
 }
 
 complete -o default -F _windows_tasklist tasklist tasklist.exe

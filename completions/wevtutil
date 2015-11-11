@@ -2,6 +2,48 @@
 
 # TODO: cull options lists when options have been used
 
+_wevtutil_publishers()
+{
+    local options=`wevtutil ep`
+
+    # remove carriage returns
+    options=${options///}
+
+    # escape bash tokenizer strings and separate with newlines
+    local IFS=$'\n'
+    options=$(printf '%q\n' $options)
+
+    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
+    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
+
+    # make lowercase for convenience
+    options=${options,,}
+
+    # return as newline separated values
+    echo "$options"
+}
+
+_wevtutil_logs()
+{
+    local options=`wevtutil el`
+
+    # remove carriage returns
+    options=${options///}
+
+    # escape bash tokenizer strings and separate with newlines
+    local IFS=$'\n'
+    options=$(printf '%q\n' $options)
+
+    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
+    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
+
+    # make lowercase for convenience
+    options=${options,,}
+
+    # return as newline separated values
+    echo "$options"
+}
+
 _wevtutil()
 {
     COMPREPLY=()
@@ -9,10 +51,10 @@ _wevtutil()
     local cur=$(printf '%q' "${COMP_WORDS[$COMP_CWORD]}")
     local prev=${COMP_WORDS[$COMP_CWORD-1]}
     local options=''
-    local common_options="/remote\\: /username\\: /password\\: \
-        /authentication\\:default /authentication\\:negotiate \
-        /authentication\\:kerberos /authentication\\:ntlm /unicode\\:true \
-        /unicode\\:false"
+    local common_options="/remote\: /username\: /password\: \
+        /authentication\:default /authentication\:negotiate \
+        /authentication\:kerberos /authentication\:ntlm /unicode\:true \
+        /unicode\:false"
 
     if [[ $cur == *: ]]; then
         compopt -o nospace
@@ -24,12 +66,9 @@ _wevtutil()
             get-log-info export-log archive-log clear-log el gl sl ep gp im \
             um qe gli epl al cl /?'
 
-        COMPREPLY=( $( compgen -W "$commands" -- $cur ) )
+        COMPREPLY=( $( compgen -W "$commands" -- ${cur,,} ) )
 
     elif [[ $prev == '/?' ]]; then
-        return 0
-
-    elif [[ $cur == '/?' ]]; then
         return 0
 
     else
@@ -44,7 +83,7 @@ _wevtutil()
                     options=''
                 else
                     compopt -o nospace
-                    options="/locale\\: ${common_options}"
+                    options="/locale\: $common_options"
                 fi
                 ;;
 
@@ -53,13 +92,10 @@ _wevtutil()
             clear-log)
                 if [[ $COMP_CWORD -eq 2 ]]; then
                     local IFS=$'\n'
-                    options=`wevtutil el`
-                    options=${options// /\\\ }
-                    options=${options///}
-                    options=${options,,}
+                    options=$(_wevtutil_logs)
                 else
                     compopt -o nospace
-                    options="/backup\\: ${common_options}"
+                    options="/backup\: $common_options"
                 fi
                 ;;
 
@@ -74,7 +110,7 @@ _wevtutil()
             ep)
                 ;&
             enum-publishers)
-                options="${common_options}"
+                options="$common_options"
                 ;;
 
             epl)
@@ -82,16 +118,13 @@ _wevtutil()
             export-log)
                 if [[ $COMP_CWORD -eq 2 ]]; then
                     local IFS=$'\n'
-                    options=`wevtutil el`
-                    options=${options// /\\\ }
-                    options=${options///}
-                    options=${options,,}
+                    options=$(_wevtutil_logs)
                 elif [[ $COMP_CWORD -eq 3 ]]; then
                     options=''
                 else
-                    options="/logfile\\:true /logfile\\:false \
-                        /structuredquery\\:true /structuredquery\\:false /query\\: \
-                        /overwrite\\:true /overwrite\\:false ${common_options}"
+                    options="/logfile\:true /logfile\:false \
+                        /structuredquery\:true /structuredquery\:false /query\: \
+                        /overwrite\:true /overwrite\:false $common_options"
                 fi
                 ;;
 
@@ -100,12 +133,9 @@ _wevtutil()
             get-log)
                 if [[ $COMP_CWORD -eq 2 ]]; then
                     local IFS=$'\n'
-                    options=`wevtutil el`
-                    options=${options// /\\\ }
-                    options=${options///}
-                    options=${options,,}
+                    options=$(_wevtutil_logs)
                 else
-                    options="/format\\:xml /format\\:text ${common_options}"
+                    options="/format\:xml /format\:text $common_options"
                 fi
                 ;;
 
@@ -114,14 +144,11 @@ _wevtutil()
             get-publisher)
                 if [[ $COMP_CWORD -eq 2 ]]; then
                     local IFS=$'\n'
-                    options=`wevtutil ep`
-                    options=${options// /\\\ }
-                    options=${options///}
-                    options=${options,,}
+                    options=$(_wevtutil_publishers)
                 else
-                    options="/getevents\\:true /getevents\\:false \
-                        /getmessage\\:true /getmessage\\:false /format\\:xml \
-                        /format\\:text ${common_options}"
+                    options="/getevents\:true /getevents\:false \
+                        /getmessage\:true /getmessage\:false /format\:xml \
+                        /format\:text $common_options"
                 fi
                 ;;
 
@@ -131,8 +158,8 @@ _wevtutil()
                 if [[ $COMP_CWORD -eq 2 ]]; then
                     options=''
                 else
-                    options="/resourceFilePath\\: /messageFilePath\\: \
-                        /parameterFilePath\\: ${common_options}"
+                    options="/resourceFilePath\: /messageFilePath\: \
+                        /parameterFilePath\: $common_options"
                 fi
                 ;;
 
@@ -141,17 +168,14 @@ _wevtutil()
             query-events)
                 if [[ $COMP_CWORD -eq 2 ]]; then
                     local IFS=$'\n'
-                    options=`wevtutil el`
-                    options=${options// /\\\ }
-                    options=${options///}
-                    options=${options,,}
+                    options=$(_wevtutil_logs)
                 else
-                    options="/logfile\\:true /logfile\\:false \
-                        /structuredquery\\:true /structuredquery\\:false /query\\: \
-                        /bookmark\\: /savebookmark\\: /reversedirection\\:true \
-                        /reversedirection\\:false /format\\:xml /format\\:text \
-                        /format\\:renderedxml /locale\\: /count\\: /element\\: \
-                        ${common_options}"
+                    options="/logfile\:true /logfile\:false \
+                        /structuredquery\:true /structuredquery\:false /query\: \
+                        /bookmark\: /savebookmark\: /reversedirection\:true \
+                        /reversedirection\:false /format\:xml /format\:text \
+                        /format\:renderedxml /locale\: /count\: /element\: \
+                        $common_options"
                 fi
                 ;;
 
@@ -160,23 +184,20 @@ _wevtutil()
             set-log)
                 if [[ $COMP_CWORD -eq 2 ]]; then
                     local IFS=$'\n'
-                    options=`wevtutil el`
-                    options=${options// /\\\ }
-                    options=${options///}
-                    options=${options,,}
+                    options=$(_wevtutil_logs)
                 else
-                    options="/enabled\\:true /enabled\\:false /quiet\\:true \
-                        /quiet\\:false /filemax\\: /isolation\\:system \
-                        /isolation\\:application /isolation\\:custom \
-                        /logfilename\\: /retention\\:true /retention\\:false \
-                        /autobackup\\:true /autobackup\\:false /maxsize\\: /level\\: \
-                        /keywords\\: /config\\: ${common_options}"
+                    options="/enabled\:true /enabled\:false /quiet\:true \
+                        /quiet\:false /filemax\: /isolation\:system \
+                        /isolation\:application /isolation\:custom \
+                        /logfilename\: /retention\:true /retention\:false \
+                        /autobackup\:true /autobackup\:false /maxsize\: /level\: \
+                        /keywords\: /config\: $common_options"
                 fi
                 ;;
 
         esac
 
-        COMPREPLY=( $( compgen -W '${options}' -- ${cur} ) )
+        COMPREPLY=( $( compgen -W '$options' -- ${cur,,} ) )
 
     fi
 

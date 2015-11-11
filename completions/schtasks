@@ -36,11 +36,11 @@ _windows_schtasks()
     local options=''
 
     if [[ $COMP_CWORD -eq 1 ]] ; then
-        COMPREPLY=( $( compgen -W '/run /end /create /delete /query /change /showsid /?' -- "$cur" ) )
+        COMPREPLY=( $( compgen -W '/run /end /create /delete /query /change /showsid /?' -- "${cur,,}" ) )
         return 0
 
     elif [[ "${COMP_WORDS[$COMP_CWORD]}" == "/?" ]]; then
-        COMPREPLY=( $( compgen -W "/?" -- "$cur" ) )
+        COMPREPLY=( $( compgen -W "/?" -- "${cur,,}" ) )
         return 0
 
     elif [[ "$prev" == "/?" ]]; then
@@ -410,7 +410,7 @@ _windows_schtasks()
         esac
 
         if [ -n "$options" -a -z "$COMPREPLY" ]; then
-            COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+            COMPREPLY=( $(compgen -W '$options' -- "${cur,,}" ) )
         fi
     fi
 

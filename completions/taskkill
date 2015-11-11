@@ -1,53 +1,71 @@
 #!/usr/bin/env sh
 
+_windows_task_images()
+{
+    local options=`tasklist /fo list | sed -e '/^Image/ !d' -e 's/^Image Name: \+//' | sort | uniq`
+
+    # escape bash tokenizer strings and separate with newlines
+    local IFS=$'\n'
+    options=$(printf '%q\n' $options)
+
+    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
+    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
+
+    # make lowercase for convenience
+    options=${options,,}
+
+    # return as newline separated values
+    echo "$options"
+}
+
 _windows_taskkill()
 {
     COMPREPLY=()
 
     local cur=$(printf '%q' "${COMP_WORDS[$COMP_CWORD]}")
     local prev=${COMP_WORDS[$COMP_CWORD-1]}
-    local options=''
 
     if [[ $prev == "/?" ]]; then
-        COMPREPLY=( $( compgen -W "" -- $cur ) )
+        return 0
+    fi
 
-    else
-        options='/f /t /im /pid /fi /p /s /u /?'
+    # TODO: cull options list 
 
-        # Command-specific arguments
-        case "$prev" in
+    local options='/f /t /im /pid /fi /p /s /u /?'
 
-            /s)
-                options=''
-                ;;
+    # Command-specific arguments
+    case "$prev" in
 
-            /u)
-                options=''
-                ;;
+        /s)
+            options=''
+            ;;
 
-            /p)
-                options=''
-                ;;
+        /u)
+            options=''
+            ;;
 
-            /fi)
-                # TODO: lots of options here...
-                options=''
-                ;;
+        /p)
+            options=''
+            ;;
 
-            /pid)
-                _pids
-                ;;
+        /fi)
+            # TODO: lots of options here...
+            options=''
+            ;;
 
-            /im)
-                local IFS=$'\n'
-                options=`tasklist /fo list | sed -e '/^Image/ !d' -e 's/^Image Name: \+//' -e 's/.*/"&"/' | sort | uniq`
-                ;;
+        /pid)
+            _pids
+            ;;
 
-        esac
+        /im)
+            local IFS=$'\n'
+            options=$(_windows_task_images)
+            ;;
 
-        if [ -n "$options" -a -z "$COMPREPLY" ]; then
-            COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
-        fi
+    esac
+
+    if [ -n "$options" -a -z "$COMPREPLY" ]; then
+        COMPREPLY=( $(compgen -W '$options' -- "${cur,,}" ) )
     fi
 
     return 0

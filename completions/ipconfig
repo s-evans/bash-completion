@@ -1,10 +1,27 @@
 #!/usr/bin/env sh
 
+_ipconfig_interfaces()
+{
+    options=`netsh interface show interface name= | sed -e '/^$/ d' -e 's/.\{47\}//' `
+
+    # escape bash tokenizer strings and separate with newlines
+    local IFS=$'\n'
+    options=$(printf '%q\n' $options)
+
+    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
+    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
+
+    # make lowercase for convenience
+    options=${options,,}
+
+    echo "$options"
+}
+
 _ipconfig()
 {
 	COMPREPLY=()
 
-    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+    local cur=$(printf '%q' "${COMP_WORDS[$COMP_CWORD]}")
     local options=''
 	local command=${COMP_WORDS[1]}
 
@@ -12,7 +29,7 @@ _ipconfig()
         local commands='/all /renew /release /allcompartments /flushdns /renew6 /release6 \
         /displaydns /registerdns /showclassid /setclassid /showclassid6 \
         /setclassid6 /?'
-		COMPREPLY=( $( compgen -W "$commands" -- $cur ) )
+		COMPREPLY=( $( compgen -W "$commands" -- ${cur,,} ) )
 	else
         # Command-specific arguments
         case "$command" in
@@ -33,13 +50,13 @@ _ipconfig()
                 ;&
             /release)
                 local IFS=$'\n' # interfaces are newline separated
-                options=`netsh interface show interface name= | cut -c 48- | head -n -1 | sed 's/.*/\"&\"/'`
+                options=`_ipconfig_interfaces`
                 ;;
 
         esac
 
         if [ -n "$options" -a -z "$COMPREPLY" ]; then
-            COMPREPLY=( $(compgen -W '${options}' -- ${cur} ) )
+            COMPREPLY=( $(compgen -W '$options' -- ${cur,,} ) )
         fi
 	fi
 

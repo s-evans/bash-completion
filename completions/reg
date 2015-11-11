@@ -35,11 +35,8 @@ _windows_reg_keys()
         's/^hkey_current_user/hkcu/' -e 's/^hkey_current_config/hkcc/' -e \
         's/^hkey_users/hku/')
 
-    # combine sets
-    options+=$'\n'"$tmp"
-
     # return as newline separated values
-    echo "$options"
+    echo "$options"$'\n'"$tmp"
 }
 
 _windows_reg_values()
@@ -81,11 +78,11 @@ _windows_reg()
     if [[ $COMP_CWORD -eq 1 ]] ; then
         local commands='query add delete copy save restore load unload
             compare export import flags /?'
-        COMPREPLY=( $( compgen -W "$commands" -- "$cur" ) )
+        COMPREPLY=( $( compgen -W "$commands" -- "${cur,,}" ) )
         return 0
 
     elif [[ "${COMP_WORDS[COMP_CWORD]}" == "/?" ]]; then
-        COMPREPLY=( $( compgen -W "/?" -- "$cur" ) )
+        COMPREPLY=( $( compgen -W "/?" -- "${cur,,}" ) )
         return 0
 
     elif [[ "$prev" == "/?" ]]; then
@@ -525,7 +522,7 @@ _windows_reg()
         esac
 
         if [ -n "$options" -a -z "$COMPREPLY" ]; then
-            COMPREPLY=( $(compgen -W '$options' -- $(printf '%q' "$cur") ) )
+            COMPREPLY=( $(compgen -W '$options' -- $(printf '%q' "${cur,,}") ) )
         fi
     fi
 

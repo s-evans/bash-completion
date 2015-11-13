@@ -19,18 +19,23 @@ _ipconfig_interfaces()
 
 _ipconfig()
 {
-	COMPREPLY=()
+    COMPREPLY=()
 
     local cur=$(printf '%q' "${COMP_WORDS[$COMP_CWORD]}")
+    local prev=${COMP_WORDS[COMP_CWORD-1]}
+    local command=${COMP_WORDS[1]}
     local options=''
-	local command=${COMP_WORDS[1]}
 
-	if [[ $COMP_CWORD -eq 1 ]] ; then
-        local commands='/all /renew /release /allcompartments /flushdns /renew6 /release6 \
-        /displaydns /registerdns /showclassid /setclassid /showclassid6 \
-        /setclassid6 /?'
-		COMPREPLY=( $( compgen -W "$commands" -- ${cur,,} ) )
-	else
+    if [[ $COMP_CWORD -eq 1 ]] ; then
+        local commands='/all /renew /release /allcompartments /flushdns \
+            /renew6 /release6 /displaydns /registerdns /showclassid \
+            /setclassid /showclassid6 /setclassid6 /?'
+        COMPREPLY=( $( compgen -W "$commands" -- $cur ) )
+
+    elif [[ $prev == '/?' ]]; then
+        return 0
+
+    else
         # Command-specific arguments
         case "$command" in
 
@@ -58,9 +63,9 @@ _ipconfig()
         if [ -n "$options" -a -z "$COMPREPLY" ]; then
             COMPREPLY=( $(compgen -W '$options' -- ${cur,,} ) )
         fi
-	fi
+    fi
 
-	return 0
+    return 0
 }
 
 complete -o default -F _ipconfig ipconfig ipconfig.exe

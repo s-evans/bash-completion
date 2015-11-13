@@ -1,0 +1,79 @@
+#!/usr/bin/env sh
+
+_windows_driverquery_users()
+{
+    # TODO: this might break down if there a lot of users or usernames have spaces, special chars, etc.
+    local user_names=$(wmic useraccount get Name | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
+    user_names=${user_names,,}
+    echo "$user_names"
+}
+
+_driverquery()
+{
+    COMPREPLY=()
+
+    local cur=${COMP_WORDS[$COMP_CWORD]}
+    local prev=${COMP_WORDS[$COMP_CWORD-1]}
+    local options=''
+
+    # Command-specific arguments
+    case "$prev" in
+
+        /s)
+            ;;
+
+        /p)
+            ;;
+
+        /fo)
+            options='table list csv'
+            ;;
+
+        /u)
+            # local IFS=$'\n'
+            options=$(_windows_driverquery_users)
+            ;;
+
+        *)
+            local option_list=('/s' '/fo' '/nh' '/si' '/v')
+
+            case ${COMP_WORDS[$COMP_CWORD-2]} in
+
+                # recommned /u if /s is found
+                /s)
+                    option_list+=('/u')
+                    ;;
+
+                # recommned /p if /u is found
+                /u)
+                    option_list+=('/p')
+                    ;;
+            esac
+
+            for option in ${option_list[@]} ; do
+                local found=0
+
+                for word in ${COMP_WORDS[@]::$COMP_CWORD} ; do
+                    if [[ $word == $option ]]; then
+                        found=1 
+                        break
+                    fi
+                done
+
+                if [[ $found -eq 0 ]]; then
+                    options+="$option "
+                fi
+            done
+            ;;
+
+    esac
+
+    if [ -n "$options" -a -z "$COMPREPLY" ]; then
+        COMPREPLY=( $(compgen -W '${options}' -- ${cur} ) )
+    fi
+
+    return 0
+}
+
+complete -o default -F _driverquery driverquery driverquery.exe
+

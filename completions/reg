@@ -72,17 +72,13 @@ _windows_reg()
     local cur=${COMP_WORDS[$COMP_CWORD]}
     local key=${COMP_WORDS[2]}
     local command=${COMP_WORDS[1]}
-    local prev=${COMP_WORDS[COMP_CWORD-1]}
+    local prev=${COMP_WORDS[$COMP_CWORD-1]}
     local options=''
 
     if [[ $COMP_CWORD -eq 1 ]] ; then
         local commands='query add delete copy save restore load unload
             compare export import flags /?'
         COMPREPLY=( $( compgen -W "$commands" -- "${cur,,}" ) )
-        return 0
-
-    elif [[ "${COMP_WORDS[COMP_CWORD]}" == "/?" ]]; then
-        COMPREPLY=( $( compgen -W "/?" -- "${cur,,}" ) )
         return 0
 
     elif [[ "$prev" == "/?" ]]; then
@@ -133,7 +129,7 @@ _windows_reg()
                         for option in ${option_list[@]} ; do
                             local found=0
 
-                            for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+                            for word in ${COMP_WORDS[@]::$COMP_CWORD} ; do
                                 if [[ $word == $option ]]; then
                                     found=1 
                                     break

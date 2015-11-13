@@ -6,12 +6,12 @@
 
 _cut()
 {
-	COMPREPLY=()
+    COMPREPLY=()
 
     local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
     local options=''
     local option_list=( '-b' '--bytes=' '-c' '--characters=' '-d' \
-        '--delimiter=' '-f' '--fields=' '--complement' '-s'  \
+        '--delimiter=' '-f' '--fields=' '--complement' '-s' \
         '--only-delimited' '--output-delimiter=' '--help' '--version' )
 
     if [[ $cur == *= ]]; then
@@ -23,8 +23,8 @@ _cut()
 
         for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
             if [[ $word == $option ]]; then
-               found=1 
-               break
+                found=1 
+                break
             fi
         done
 
@@ -35,9 +35,8 @@ _cut()
 
     COMPREPLY=( $( compgen -f -W "$options" -- $cur ) )
 
-	return 0
+    return 0
 }
 
 complete -o default -F _cut cut
-
 

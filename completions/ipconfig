@@ -44,7 +44,7 @@ _ipconfig()
         esac
 
         if [ -n "$options" -a -z "$COMPREPLY" ]; then
-            COMPREPLY=( $(compgen -W '${options}' -- ${cur} ) )
+            COMPREPLY=( $(compgen -W '$options' -- $cur ) )
         fi
     fi
 

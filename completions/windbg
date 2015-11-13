@@ -1,0 +1,181 @@
+#!/usr/bin/env sh
+
+# TODO: implement mutual exclusivity and ordering
+# TODO: start pushing common functions down
+
+_windbg_services()
+{
+    # TODO: there might be a newer version of this that we can use
+    # TODO: this might break on special characters
+    local services=$(wmic service get name | sed -e '1d' -e '$d' -e 's/\r//' -e 's/ \+$//' -e 's/.*/"&"/')
+    services=${services,,}
+    echo "$services"
+}
+
+_windbg_task_images()
+{
+    local options=`tasklist /fo list | sed -e '/^Image/ !d' -e 's/^Image Name: \+//' | sort | uniq`
+
+    # escape bash tokenizer strings and separate with newlines
+    local IFS=$'\n'
+    options=$(printf '%q\n' $options)
+
+    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
+    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
+
+    # make lowercase for convenience
+    options=${options,,}
+
+    # return as newline separated values
+    echo "$options"
+}
+
+_windbg()
+{
+	COMPREPLY=()
+
+    local cur=$(printf '%q' "${COMP_WORDS[$COMP_CWORD]}")
+
+    local options=''
+
+    local terminal_options=( '-IA ' '-IAS' '-IU' '-I' '-IS' '-?' )
+
+    local first_options=( '-server' '-remote' )
+
+    first_options+=( ${terminal_options[@]} )
+
+    # TODO: lsrcpath should only follow "-remote"
+
+    local options_list=( '-lsrcpath' '-premote' '-ee' '-clines' '-d'
+        '-aExtension' '-e' '-failinc' '-g' '-G' '-hd' '-j' '-n' '-noshell' '-o'
+        '-Q' '-QY' '-QS' '-QSY' '-robp' '-secure' '-ses' '-sdce' '-sicv'
+        '-sins' '-snc' '-snul' '-sup' '-sflags' '-T' '-v' '-log' '-logo'
+        '-loga' '-noinh' '-i' '-y' '-srcpath' '-k' '-kl' '-kx' '-c' '-pb' '-pd'
+        '-pe' '-pr' '-pt' '-pv' '-W' '-WF' '-WX' '-zp' '-p' '-pn' '-psn' '-z' )
+
+	if [[ $COMP_CWORD -eq 1 ]] ; then
+        COMPREPLY=( $( compgen -W "${options_list[*]} ${first_options[*]}" -- $cur ) )
+        return 0
+    fi
+
+    for option in ${terminal_options[@]} ; do
+        if [[ $option == ${COMP_WORDS[1]} ]]; then
+            return 0
+        fi
+    done
+
+    # Command-specific arguments
+    case ${COMP_WORDS[$COMP_CWORD-1]} in
+
+        # TODO: implement
+
+        -server)
+            # TODO: anything we can do here?
+            options=''
+            ;;
+
+        -remote)
+            # TODO: anything we can do here?
+            options=''
+            ;;
+
+        -premote)
+            # TODO: anything we can do here?
+            options=''
+            ;;
+
+        -a)
+            # TODO: list dlls 
+            # TODO: no space following -a option
+            options=''
+            ;;
+
+        -sflags)
+            # TODO: ' 0x'
+            options=''
+            ;;
+
+        -p)
+            _pids
+            ;;
+
+        -pn)
+            local IFS=$'\n'
+            cur=${cur,,}
+            options=$(_windbg_task_images)
+            ;;
+
+        -psn)
+            local IFS=$'\n'
+            cur=${cur,,}
+            options=$(_windbg_services)
+            ;;
+
+        -ee)
+            options='masm c++'
+            ;;
+
+        -e)
+            ;&
+        -clines)
+            ;&
+        -T)
+            ;&
+        -log)
+            ;&
+        -logo)
+            ;&
+        -loga)
+            ;&
+        -i)
+            ;&
+        -y)
+            ;&
+        -srcpath)
+            ;&
+        -k)
+            ;&
+        -kx)
+            ;&
+        -c)
+            ;&
+        -pt)
+            ;&
+        -W)
+            ;&
+        -WF)
+            ;&
+        -zp)
+            ;&
+        -z)
+            options=''
+            ;;
+
+        *)
+            for option in ${options_list[@]} ; do
+                local found=0
+
+                for word in ${COMP_WORDS[@]::$COMP_CWORD} ; do
+                    if [[ $word == $option ]]; then
+                        found=1 
+                        break
+                    fi
+                done
+
+                if [[ $found -eq 0 ]]; then
+                    options+="$option "
+                fi
+            done
+            ;;
+
+    esac
+
+    if [ -n "$options" -a -z "$COMPREPLY" ]; then
+        COMPREPLY=( $(compgen -W '$options' -- $cur ) )
+    fi
+
+    return 0
+}
+
+complete -o default -F _windbg windbg windbg.exe
+

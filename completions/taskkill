@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-_windows_task_images()
+_taskkill_task_images()
 {
     local options=`tasklist /fo list | sed -e '/^Image/ !d' -e 's/^Image Name: \+//' | sort | uniq`
 
@@ -18,7 +18,7 @@ _windows_task_images()
     echo "$options"
 }
 
-_windows_taskkill()
+_taskkill()
 {
     COMPREPLY=()
 
@@ -59,7 +59,7 @@ _windows_taskkill()
 
         /im)
             local IFS=$'\n'
-            options=$(_windows_task_images)
+            options=$(_taskkill_task_images)
             ;;
 
     esac
@@ -71,5 +71,5 @@ _windows_taskkill()
     return 0
 }
 
-complete -o default -F _windows_taskkill taskkill taskkill.exe
+complete -o default -F _taskkill taskkill taskkill.exe
 

@@ -14,7 +14,11 @@ _windbg_services()
 
 _windbg_task_images()
 {
-    local options=`tasklist /fo list | sed -e '/^Image/ !d' -e 's/^Image Name: \+//' | sort | uniq`
+    # get the task list
+    local options=`tasklist /fo list`
+
+    # remote excess characters while not having sed appear in the task list
+    options=`echo "$options" | sed -e '/^Image/ !d' -e 's/^Image Name: \+//'`
 
     # escape bash tokenizer strings and separate with newlines
     local IFS=$'\n'

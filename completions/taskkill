@@ -2,7 +2,7 @@
 
 _taskkill_task_images()
 {
-    local options=`tasklist /fo list | sed -e '/^Image/ !d' -e 's/^Image Name: \+//' | sort | uniq`
+    local options=`tasklist /fo list | sed -e '/^Image/ !d' -e 's/^Image Name: \+//'`
 
     # escape bash tokenizer strings and separate with newlines
     local IFS=$'\n'

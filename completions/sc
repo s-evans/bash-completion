@@ -18,183 +18,273 @@ _servicecontrolmanager()
     local prev=${COMP_WORDS[$COMP_CWORD-1]}
     local options=''
 
-    # TODO: add more completion options
+    if [[ $prev == '/?' ]]; then
+        return
+    fi
+
 
     if [[ $COMP_CWORD -eq 1 ]] ; then
-        options='query queryex start pause interrogate continue stop \
+        options="query queryex start pause interrogate continue stop \
             config description failure failureflag sidtype privs qc \
             qdescription qfailure qfailureflag qsidtype qprivs qtriggerinfo \
             qpreferrednode delete create control sdshow sdset showsid \
-            triggerinfo preferrednode getdisplayname getkeyname enumdepend /?'
-
-    elif [[ $COMP_CWORD -eq 2 ]] ; then
-
-        # Command-specific arguments
-        case "$prev" in
-
-            query)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            queryex)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            start)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            pause)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            interrogate)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            continue)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            stop)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            config)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            description)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            failure)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            failureflag)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            sidtype)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            privs)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            qc)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            qdescription)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            qfailure)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            qfailureflag)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            qsidtype)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            qprivs)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            qtriggerinfo)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            qpreferrednode)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            delete)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            create)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            control)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            sdshow)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            sdset)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            showsid)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            triggerinfo)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            preferrednode)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            getdisplayname)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            getkeyname)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-            enumdepend)
-                local IFS=$'\n'
-                options=`_scm_services`
-                ;;
-
-        esac
-
+            triggerinfo preferrednode getdisplayname getkeyname enumdepend /?"
+        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+        return
     fi
+
+    local cmd=${COMP_WORDS[1]}
+
+    # Command-specific arguments
+    case "$cmd" in
+
+        query)
+            ;&
+        queryex)
+            case $prev in
+                'type\=')
+                    options='driver service userservice all'
+                    ;;
+
+                'state\=')
+                    options='inactive all'
+                    ;;
+
+                'bufsize\=')
+                    options=''
+                    ;;
+
+                'group\=')
+                    # TODO: list groups?
+                    options=''
+                    ;;
+
+                'ri\=')
+                    options=''
+                    ;;
+
+                *)
+                    local IFS=$'\n'
+                    if [[ $COMP_CWORD -eq 2 ]]; then
+                        options=`_scm_services`
+                    fi
+                    options+=$'\n''type\='
+                    options+=$'\n''state\='
+                    options+=$'\n''bufsize\='
+                    options+=$'\n''ri\='
+                    options+=$'\n''group\='
+                    ;;
+            esac
+
+            ;;
+
+            # TODO: update
+
+        failure)
+            local IFS=$'\n'
+            options=`_scm_services`
+            ;;
+
+            # TODO: update
+
+        failureflag)
+            local IFS=$'\n'
+            options=`_scm_services`
+            ;;
+
+            # TODO: update
+
+        sidtype)
+            local IFS=$'\n'
+            options=`_scm_services`
+            ;;
+
+            # TODO: update
+
+        privs)
+            local IFS=$'\n'
+            options=`_scm_services`
+            ;;
+
+        start)
+            ;&
+
+        pause)
+            ;&
+
+        interrogate)
+            ;&
+
+        continue)
+            ;&
+
+        stop)
+            ;&
+
+        description)
+            ;&
+
+        qc)
+            ;&
+
+        qdescription)
+            ;&
+
+        qfailure)
+            ;&
+
+        qfailureflag)
+            ;&
+
+        qsidtype)
+            ;&
+
+        qprivs)
+            ;&
+
+        qtriggerinfo)
+            ;&
+
+        qpreferrednode)
+            ;&
+
+        showsid)
+            ;&
+
+        getdisplayname)
+            ;&
+
+        getkeyname)
+            ;&
+
+        enumdepend)
+            ;&
+
+        delete)
+            local IFS=$'\n'
+            options=`_scm_services`
+            ;;
+
+        config)
+            ;&
+
+        create)
+            if [[ $COMP_CWORD -eq 2 ]]; then
+                local IFS=$'\n'
+                options=`_scm_services`
+
+            elif [[ $COMP_CWORD -eq 3 ]]; then
+                options='binpath\='
+
+            elif [[ $COMP_CWORD -gt 4 ]]; then
+
+                case $prev in
+
+                    'depend\=')
+                        # TODO: forwardslash separated
+                        # TODO: nospace
+                        local IFS=$'\n'
+                        options=`_scm_services`
+                        ;;
+
+                    'password\=')
+                        options=''
+                        ;;
+
+                    'displayname\=')
+                        options=''
+                        ;;
+
+                    'obj\=')
+                        # TODO: get objects?
+                        options=''
+                        ;;
+
+                    'group\=')
+                        # TODO: get groups?
+                        options=''
+                        ;;
+
+                    'tag\=')
+                        options='yes no'
+                        ;;
+
+                    'error\=')
+                        options='normal severe critical ignore'
+                        ;;
+
+                    'start\=')
+                        options='boot system auto demand disabled delayed-auto'
+                        ;;
+
+                    'type\=')
+                        options='own share interact kernel filesys rec'
+                        ;;
+
+                    *)
+                        # cull the list of switches if they've been used
+                        local option_list=( 'type\=' 'start\=' 'error\=' 'group\='
+                        'tag\=' 'depend\=' 'obj\=' 'displayname\=' 'password\=')
+
+                        for option in ${option_list[@]} ; do
+                            local found=0
+
+                            for word in ${COMP_WORDS[@]::$COMP_CWORD} ; do
+                                if [[ "$word" == "$option" ]]; then
+                                    found=1 
+                                    break
+                                fi
+                            done
+
+                            if [[ $found -eq 0 ]]; then
+                                options+="$option "
+                            fi
+                        done
+
+                        ;;
+                esac
+            fi
+            ;;
+
+        control)
+            if [[ $COMP_CWORD -eq 2 ]]; then
+                local IFS=$'\n'
+                options=`_scm_services`
+            else
+                options="paramchange netbindadd netbindremove netbindenable \
+                    netbinddisable"
+            fi
+            ;;
+
+            # TODO: update
+
+        sdshow)
+            local IFS=$'\n'
+            options=`_scm_services`
+            ;;
+
+            # TODO: update
+
+        sdset)
+            local IFS=$'\n'
+            options=`_scm_services`
+            ;;
+
+            # TODO: update
+
+        triggerinfo)
+            local IFS=$'\n'
+            options=`_scm_services`
+            ;;
+
+            # TODO: update
+
+        preferrednode)
+            local IFS=$'\n'
+            options=`_scm_services`
+            ;;
+
+    esac
 
     if [ -n "$options" -a -z "$COMPREPLY" ]; then
         COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )

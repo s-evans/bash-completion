@@ -22,7 +22,6 @@ _servicecontrolmanager()
         return
     fi
 
-
     if [[ $COMP_CWORD -eq 1 ]] ; then
         options="query queryex start pause interrogate continue stop \
             config description failure failureflag sidtype privs qc \
@@ -55,7 +54,6 @@ _servicecontrolmanager()
                     ;;
 
                 'group\=')
-                    # TODO: list groups?
                     options=''
                     ;;
 
@@ -68,6 +66,8 @@ _servicecontrolmanager()
                     if [[ $COMP_CWORD -eq 2 ]]; then
                         options=`_scm_services`
                     fi
+                    # TODO: if $COMP_WORDS[3] is a service, don't show the below options
+                    # TODO: cull the options list if used
                     options+=$'\n''type\='
                     options+=$'\n''state\='
                     options+=$'\n''bufsize\='
@@ -76,34 +76,6 @@ _servicecontrolmanager()
                     ;;
             esac
 
-            ;;
-
-            # TODO: update
-
-        failure)
-            local IFS=$'\n'
-            options=`_scm_services`
-            ;;
-
-            # TODO: update
-
-        failureflag)
-            local IFS=$'\n'
-            options=`_scm_services`
-            ;;
-
-            # TODO: update
-
-        sidtype)
-            local IFS=$'\n'
-            options=`_scm_services`
-            ;;
-
-            # TODO: update
-
-        privs)
-            local IFS=$'\n'
-            options=`_scm_services`
             ;;
 
         start)
@@ -161,8 +133,10 @@ _servicecontrolmanager()
             ;&
 
         delete)
-            local IFS=$'\n'
-            options=`_scm_services`
+            if [[ $COMP_CWORD -eq 2 ]]; then
+                local IFS=$'\n'
+                options=`_scm_services`
+            fi
             ;;
 
         config)
@@ -201,7 +175,6 @@ _servicecontrolmanager()
                         ;;
 
                     'group\=')
-                        # TODO: get groups?
                         options=''
                         ;;
 
@@ -250,38 +223,139 @@ _servicecontrolmanager()
             if [[ $COMP_CWORD -eq 2 ]]; then
                 local IFS=$'\n'
                 options=`_scm_services`
-            else
+            elif [[ $COMP_CWORD -eq 3 ]]; then
                 options="paramchange netbindadd netbindremove netbindenable \
                     netbinddisable"
             fi
             ;;
 
-            # TODO: update
+        failure)
+            if [[ $COMP_CWORD -eq 2 ]]; then
+                local IFS=$'\n'
+                options=`_scm_services`
+
+            else
+                case $prev in
+                    reset\=)
+                        ;;
+
+                    reboot\=)
+                        ;;
+
+                    command\=)
+                        ;;
+
+                    actions\=)
+                        # TODO: could be more detailed...
+                        options="run restart reboot"
+                        ;;
+
+                    *)
+                        # TODO: cull the options list
+                        options="reset\= reboot\= command\= actions\="
+                        ;;
+                esac
+            fi
+            ;;
+
+        failureflag)
+            if [[ $COMP_CWORD -eq 2 ]]; then
+                local IFS=$'\n'
+                options=`_scm_services`
+            elif [[ $COMP_CWORD -eq 3 ]]; then
+                # TODO: list flags?
+                options=''
+            fi
+            ;;
+
+        sidtype)
+            if [[ $COMP_CWORD -eq 2 ]]; then
+                local IFS=$'\n'
+                options=`_scm_services`
+            elif [[ $COMP_CWORD -eq 3 ]]; then
+                options="none unrestricted restricted"
+            fi
+            ;;
+
+        privs)
+            if [[ $COMP_CWORD -eq 2 ]]; then
+                local IFS=$'\n'
+                options=`_scm_services`
+
+            else
+                cur=$(echo "$cur" | sed -e 's,[^/]*/,,g')
+                compopt -o nospace
+                options="seassignprimarytokenprivilege/ seauditprivilege/
+                    sebackupprivilege/ sechangenotifyprivilege/
+                    secreateglobalprivilege/ secreatepagefileprivilege/
+                    secreatepermanentprivilege/ secreatesymboliclinkprivilege/
+                    secreatetokenprivilege/ sedebugprivilege/
+                    seenabledelegationprivilege/ seimpersonateprivilege/
+                    seincreasebasepriorityprivilege/ seincreasequotaprivilege/
+                    seincreaseworkingsetprivilege/ seloaddriverprivilege/
+                    selockmemoryprivilege/ semachineaccountprivilege/
+                    semanagevolumeprivilege/ seprofilesingleprocessprivilege/
+                    serelabelprivilege/ seremoteshutdownprivilege/
+                    serestoreprivilege/ sesecurityprivilege/
+                    seshutdownprivilege/ sesyncagentprivilege/
+                    sesystemenvironmentprivilege/ sesystemprofileprivilege/
+                    sesystemtimeprivilege/ setakeownershipprivilege/
+                    setcbprivilege/ setimezoneprivilege/
+                    setrustedcredmanaccessprivilege/ seundockprivilege/
+                    seunsolicitedinputprivilege/"
+
+            fi
+            ;;
 
         sdshow)
-            local IFS=$'\n'
-            options=`_scm_services`
+            if [[ $COMP_CWORD -eq 2 ]]; then
+                local IFS=$'\n'
+                options=`_scm_services`
+            elif [[ $COMP_CWORD -eq 3 ]]; then
+                # TODO: SDDL?
+                options=''
+            fi
             ;;
-
-            # TODO: update
 
         sdset)
-            local IFS=$'\n'
-            options=`_scm_services`
+            if [[ $COMP_CWORD -eq 2 ]]; then
+                local IFS=$'\n'
+                options=`_scm_services`
+            elif [[ $COMP_CWORD -eq 3 ]]; then
+                # TODO: SDDL?
+                options=''
+            fi
             ;;
-
-            # TODO: update
 
         triggerinfo)
-            local IFS=$'\n'
-            options=`_scm_services`
+            if [[ $COMP_CWORD -eq 2 ]]; then
+                local IFS=$'\n'
+                options=`_scm_services`
+
+            else
+                # TODO: get actual UUIDs and HwIds from the system
+                # TODO: compopt -o nospace if one return from compgen, and it ends with forwardslash
+                options="start/device/ start/custom/
+                    stop/custom/ start/strcustom/
+                    stop/strcustom/ start/lvlcustom/
+                    stop/lvlcustom/ start/kwanycustom/
+                    stop/kwanycustom/ start/kwallcustom/
+                    stop/kwallcustom/ start/networkon stop/networkoff
+                    start/domainjoin stop/domainleave start/portopen/parameter
+                    stop/portclose/parameter start/machinepolicy start/userpolicy
+                    start/rpcinterface/UUID start/namedpipe/pipename delete"
+
+            fi
             ;;
 
-            # TODO: update
-
         preferrednode)
-            local IFS=$'\n'
-            options=`_scm_services`
+            if [[ $COMP_CWORD -eq 2 ]]; then
+                local IFS=$'\n'
+                options=`_scm_services`
+            elif [[ $COMP_CWORD -eq 3 ]]; then
+                # TODO: list nodes?
+                options=''
+            fi
             ;;
 
     esac

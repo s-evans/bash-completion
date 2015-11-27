@@ -1,5 +1,42 @@
 #!/usr/bin/env sh
 
+# TODO: netsh interface ipv4 set /? | sed -e '/^$/,/Comm/d' -e 's/\w* //' -e 's/ .*//'
+
+# TODO: may not work, needs tested
+_netsh_bridges()
+{
+    local options=`netsh bridge show adapter | cut -c 48- | head -n -1 | sed 's/.*/"&"/'`
+
+    # escape bash tokenizer strings and separate with newlines
+    local IFS=$'\n'
+    options=$(printf '%q\n' $options)
+
+    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
+    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
+
+    # make lowercase for convenience
+    options=${options,,}
+
+    echo "$options"
+}
+
+_netsh_interfaces()
+{
+    local options=`netsh interface show interface name= | sed -e '/^$/ d' -e 's/.\{47\}//' `
+
+    # escape bash tokenizer strings and separate with newlines
+    local IFS=$'\n'
+    options=$(printf '%q\n' $options)
+
+    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
+    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
+
+    # make lowercase for convenience
+    options=${options,,}
+
+    echo "$options"
+}
+
 _netsh()
 {
     COMPREPLY=()
@@ -8,19 +45,20 @@ _netsh()
     local prev=${COMP_WORDS[$COMP_CWORD-1]}
     local options=''
 
-    local commands=('add' 'advfirewall' 'bridge' 'delete' 'dhcpclient'
-        'dnsclient' 'dump' 'exec' 'firewall' 'help' 'http' 'interface' 'ipsec'
-        'lan' 'namespace' 'nap' 'netio' 'p2p' 'ras' 'rpc' 'set' 'show' 'wfp'
-        'winhttp' 'winsock' 'wlan' )
+    local commands=('add' 'advfirewall' 'bridge' 'delete' 'dhcpclient' \
+        'dnsclient' 'dump' 'exec' 'firewall' 'help' 'http' 'interface' \
+        'ipsec' 'lan' 'namespace' 'nap' 'netio' 'p2p' 'ras' 'rpc' 'set' \
+        'show' 'wfp' 'winhttp' 'winsock' 'wlan' )
 
     local command=''
     declare -i count=0
 
-    for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+    # skip over non-command arguments to find the command
+    for word in ${COMP_WORDS[@]::$COMP_CWORD} ; do
 
         for option in ${commands[@]} ; do
-            if [[ "${option}" == "${word}" ]]; then
-                command=${option}
+            if [[ "$option" == "$word" ]]; then
+                command=$option
                 break
             fi
         done
@@ -41,256 +79,513 @@ _netsh()
     # Command-specific arguments
     case "$command" in
 
-        add) 
-            if [[ "$prev" == "$command" ]]; then
+        add)
+            if [[ $count -eq 1 ]]; then
                 options='helper'
-            elif [[ "$prev" == "helper" ]]; then
-                options=$(command ls *.dll 2> /dev/null) # TODO: may want to show all files
+                COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                return
             fi
+
+            case $subcmd in
+                helper)
+                    if [[ $count -eq 2 ]]; then
+                        options=$(command ls *.dll 2> /dev/null)
+                    fi
+                    ;;
+            esac
+
             ;;
 
         advfirewall)
 
-            if [[ "$prev" == "$command" ]]; then
-                options='consec dump export firewall import mainmode monitor
-                    reset set show'
+            if [[ $count -eq 1 ]]; then
+                options="consec dump export firewall import mainmode monitor \
+                    reset set show"
+                COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                return
+            fi
 
-            elif [[ "$subcmd"  == "consec" ]]; then
-                # TODO: more detail
-                if [[ "$prev" == "$subcmd" ]]; then
-                    options='add delete dump set show'
-                elif [[ "$subsubcmd" == "add" ]]; then
-                    options='rule'
-                elif [[ "$subsubcmd" == "delete" ]]; then
-                    options='rule'
-                elif [[ "$subsubcmd" == "set" ]]; then
-                    options='rule'
-                elif [[ "$subsubcmd" == "show" ]]; then
-                    options='rule'
-                fi
-
-            elif [[ "$subcmd"  == "firewall" ]]; then
-                if [[ "$prev" == "$subcmd" ]]; then
-                    options='add delete dump set show'
-                elif [[ "$subsubcmd" == "add" ]]; then
-                    options='rule'
-                elif [[ "$subsubcmd" == "delete" ]]; then
-                    options='rule'
-                elif [[ "$subsubcmd" == "set" ]]; then
-                    options='rule'
-                elif [[ "$subsubcmd" == "show" ]]; then
-                    options='rule'
-                fi
-
-            elif [[ "$subcmd"  == "mainmode" ]]; then
-                # TODO: more detail
-                if [[ "$prev" == "$subcmd" ]]; then
-                    options='add delete dump set show'
-                elif [[ "$subsubcmd" == "add" ]]; then
-                    options='rule'
-                elif [[ "$subsubcmd" == "delete" ]]; then
-                    options='rule'
-                elif [[ "$subsubcmd" == "set" ]]; then
-                    options='rule'
-                elif [[ "$subsubcmd" == "show" ]]; then
-                    options='rule'
-                fi
-
-            elif [[ "$subcmd"  == "monitor" ]]; then
-                # TODO: more detail
-                if [[ "$prev" == "$subcmd" ]]; then
-                    options='delete dump show'
-                elif [[ "$subsubcmd" == "delete" ]]; then
-                    options='mmsa qmsa'
-                    # TODO: next level contains 'all'
-                elif [[ "$subsubcmd" == "show" ]]; then
-                    options='consec currentprofile firewall mainmode mmsa qmsa'
-                fi
-
-            elif [[ "$subcmd" == "set" ]]; then
-                # TODO: more detail
-
-                if [[ "$prev" == "$subcmd" ]]; then
-                    options='allprofiles currentprofile domainprofile global
-                        privateprofile publicprofile'
-
-                elif [[ "$subsubcmd" == "privateprofile" || "$subsubcmd" == "publicprofile" || "$subsubcmd" == "domainprofile" || "$subsubcmd" == "currentprofiles" || "$subsubcmd" == "allprofiles" ]]; then
-                    if [[ "$prev" == "allprofiles" ]]; then
-                        options='state firewallpolicy settings logging'
-                    elif [[ "$subsubsubcmd" == "state" ]]; then
-                        options='on off notconfigured'
-                    elif [[ "$subsubsubcmd" == "firewallpolicy" ]]; then
-                        options='blockinbound blockinboundalways allowinbound
-                            notconfigured allowoutbound blockoutbound
-                            notconfigured'
-                    elif [[ "$subsubsubcmd" == "settings" ]]; then
-
-                        # TODO: more
-                        # Usage: settings (parameter) enable|disable|notconfigured
-
-                        options='localfirewallrules localconsecrules
-                            inboundusernotification remotemanagement
-                            unicastresponsetomulticast'
-                    elif [[ "$subsubsubcmd" == "logging" ]]; then
-
-                        # TODO: more
-                        # allowedconnections  - Log allowed connections.
-                        # Values: enable|disable|notconfigured
-                        # droppedconnections  - Log dropped connections.
-                        # Values: enable|disable|notconfigured
-                        # filename            - Name and location of the firewall log.
-                        # Values: <string>|notconfigured
-                        # maxfilesize         - Maximum log file size in kilobytes.
-                        # Values: 1 - 32767|notconfigured
-
-                        options='allowedconnections droppedconnections filename
-                            maxfilesize'
+            case $subcmd in
+                consec)
+                    if [[ $count -eq 2 ]]; then
+                        options='add delete dump set show'
+                        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                        return
                     fi
 
-                elif [[ "$subsubcmd" == "global" ]]; then
+                    # TODO: more detail
+                    case $subsubcmd in
 
-                    # TODO: statefulftp statefulpptp -> 'enable disable notconfigured'
+                        add)
+                            if [[ $count -eq 3 ]]; then
+                                options='rule'
+                            fi
+                            ;;
 
-                    # IPsec Parameters:
+                        delete)
+                            if [[ $count -eq 3 ]]; then
+                                options='rule'
+                            fi
+                            ;;
 
-                    #       strongcrlcheck    - Configures how CRL checking is enforced.
-                    #                           0: Disable CRL checking (default)
-                    #                           1: Fail if cert is revoked
-                    #                           2: Fail on any error
-                    #                           notconfigured: Returns the value to its not
-                    #                           configured state.
-                    #       saidletimemin     - Configures the security association idle time in
-                    #                           minutes.
-                    #                         - Usage: 5-60|notconfigured (default=5)
-                    #       defaultexemptions - Configures the default IPsec exemptions. Default is
-                    #                           to exempt IPv6 neighbordiscovery protocol and
-                    #                           DHCP from IPsec.
-                    #                         - Usage: none|neighbordiscovery|icmp|dhcp|notconfigured
-                    #       ipsecthroughnat   - Configures when security associations can be
-                    #                           established with a computer behind a network
-                    #                           address translator.
-                    #                         - Usage: never|serverbehindnat|
-                    #                                  serverandclientbehindnat|
-                    #                                  notconfigured(default=never)
-                    #       authzcomputergrp  - Configures the computers that are authorized to
-                    #                           establish tunnel mode connections.
-                    #                         - Usage: none|<SDDL string>|notconfigured
-                    #       authzusergrp      - Configures the users that are authorized to establish
-                    #                           tunnel mode connections.
-                    #                         - Usage: none|<SDDL string>|notconfigured
+                        dump)
+                            ;;
 
-                    # Main Mode Parameters:
+                        set)
+                            if [[ $count -eq 3 ]]; then
+                                options='rule'
+                            fi
+                            ;;
 
-                    #       mmkeylifetime     - Sets main mode key lifetime in minutes
-                    #                           or sessions, or both.
-                    #                         - Usage: <num>min,<num>sess
-                    #                           minlifetime: <1> min,
-                    #                           maxlifetime: <2880> min
-                    #                           minsessions: <0> sessions,
-                    #                           maxsessions: <2,147,483,647> sessions
-                    #       mmsecmethods      - configures the main mode list of proposals
-                    #                         - Usage:
-                    #                           keyexch:enc-integrity,keyexch:enc-integrity[,...]|default
-                    #                         - keyexch=dhgroup1|dhgroup2|dhgroup14|
-                    #                           ecdhp256|ecdhp384
-                    #                         - enc=3des|des|aes128|aes192|aes256
-                    #                         - integrity=md5|sha1|sha256|sha384
-                    #       mmforcedh         - configures the option to use DH to secure key exchange.
-                    #                         - Usage:
-                    #                           yes|no (default=no)
+                        show)
+                            if [[ $count -eq 3 ]]; then
+                                options='rule'
+                            fi
+                            ;;
 
-                    options='statefulftp statefulpptp ipsec mainmode'
-                fi
+                    esac
+                    ;;
 
-            elif [[ "$subcmd"  == "show" ]]; then
-                if [[ "$prev" == "$subcmd" ]]; then
-                    options='allprofiles currentprofile domainprofile global
-                        privateprofile publicprofile store'
-                elif [[ "$subsubcmd" == "allprofiles" ]]; then
-                    options='state firewallpolicy settings logging'
-                elif [[ "$subsubcmd" == "currentprofile" ]]; then
-                    options='state firewallpolicy settings logging'
-                elif [[ "$subsubcmd" == "domainprofile" ]]; then
-                    options='state firewallpolicy settings logging'
-                elif [[ "$subsubcmd" == "global" ]]; then
-                    options='ipsec statefulftp statefulpptp mainmode categories'
-                elif [[ "$subsubcmd" == "privateprofile" ]]; then
-                    options='state firewallpolicy settings logging'
-                elif [[ "$subsubcmd" == "publicprofile" ]]; then
-                    options='state firewallpolicy settings logging'
-                elif [[ "$subsubcmd" == "store" ]]; then
-                    options=''
-                fi
+                dump)
+                    ;;
 
-            fi
+                export)
+                    ;;
+
+                firewall)
+                    if [[ $count -eq 2 ]]; then
+                        options='add delete dump set show'
+                        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                        return
+                    fi
+
+                    # TODO: more detail
+                    case $subsubcmd in
+
+                        add)
+                            if [[ $count -eq 3 ]]; then
+                                options='rule'
+                            fi
+                            ;;
+
+                        delete)
+                            if [[ $count -eq 3 ]]; then
+                                options='rule'
+                            fi
+                            ;;
+
+                        dump)
+                            ;;
+
+                        set)
+                            if [[ $count -eq 3 ]]; then
+                                options='rule'
+                            fi
+                            ;;
+
+                        show)
+                            if [[ $count -eq 3 ]]; then
+                                options='rule'
+                            fi
+                            ;;
+
+                    esac
+                    ;;
+
+                import)
+                    ;;
+
+                mainmode)
+                    if [[ $count -eq 2 ]]; then
+                        options='add delete dump set show'
+                        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                        return
+                    fi
+
+                    # TODO: more detail
+                    case $subsubcmd in
+
+                        add)
+                            if [[ $count -eq 3 ]]; then
+                                options='rule'
+                            fi
+                            ;;
+
+                        delete)
+                            if [[ $count -eq 3 ]]; then
+                                options='rule'
+                            fi
+                            ;;
+
+                        dump)
+                            ;;
+
+                        set)
+                            if [[ $count -eq 3 ]]; then
+                                options='rule'
+                            fi
+                            ;;
+
+                        show)
+                            if [[ $count -eq 3 ]]; then
+                                options='rule'
+                            fi
+                            ;;
+
+                    esac
+                    ;;
+
+                monitor)
+                    # TODO: more detail
+                    if [[ $count -eq 2 ]]; then
+                        options='delete dump show'
+                        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                        return
+                    fi
+
+                    case $subsubcmd in
+                        delete)
+                            # TODO: next level contains 'all'
+                            if [[ $count -eq 3 ]]; then
+                                options='mmsa qmsa'
+                            fi
+                            ;;
+
+                        show)
+                            if [[ $count -eq 3 ]]; then
+                                options="consec currentprofile firewall \
+                                    mainmode mmsa qmsa"
+                            fi
+                            ;;
+                    esac
+                    ;;
+
+                reset)
+                    ;;
+
+                set)
+                    if [[ $count -eq 2 ]]; then
+                        options="allprofiles currentprofile domainprofile \
+                            global privateprofile publicprofile"
+                        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                        return
+                    fi
+
+                    case $subsubcmd in
+                        privateprofile)
+                            ;&
+                        publicprofile)
+                            ;&
+                        domainprofile)
+                            ;&
+                        currentprofiles)
+                            ;&
+                        allprofiles)
+                            if [[ $count -eq 3 ]]; then
+                                options='state firewallpolicy settings logging'
+                                COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                                return
+                            fi
+
+                            case $subsubsubcmd in
+
+                                state)
+                                    if [[ $count -eq 4 ]]; then
+                                        options='on off notconfigured'
+                                    fi
+                                    ;;
+
+                                firewallpolicy)
+                                    if [[ $count -eq 4 ]]; then
+                                        options="blockinbound blockinboundalways \
+                                            allowinbound notconfigured \
+                                            allowoutbound blockoutbound \
+                                            notconfigured" 
+                                    fi
+                                    ;;
+
+                                settings)
+                                    # TODO: more
+                                    # Usage: settings (parameter) enable|disable|notconfigured
+
+                                    if [[ $count -eq 4 ]]; then
+                                        options="localfirewallrules \
+                                            localconsecrules \
+                                            inboundusernotification \
+                                            remotemanagement \
+                                            unicastresponsetomulticast" 
+                                    fi
+                                    ;;
+
+                                logging)
+
+                                    # TODO: more
+                                    # allowedconnections  - Log allowed connections.
+                                    # Values: enable|disable|notconfigured
+                                    # droppedconnections  - Log dropped connections.
+                                    # Values: enable|disable|notconfigured
+                                    # filename            - Name and location of the firewall log.
+                                    # Values: <string>|notconfigured
+                                    # maxfilesize         - Maximum log file size in kilobytes.
+                                    # Values: 1 - 32767|notconfigured
+
+                                    if [[ $count -eq 4 ]]; then
+                                        options='allowedconnections droppedconnections filename
+                                        maxfilesize'
+                                    fi
+                                    ;;
+                            esac
+
+                            ;;
+
+                        global)
+
+                            # TODO: statefulftp statefulpptp -> 'enable disable notconfigured'
+
+                            # IPsec Parameters:
+
+                            #       strongcrlcheck    - Configures how CRL checking is enforced.
+                            #                           0: Disable CRL checking (default)
+                            #                           1: Fail if cert is revoked
+                            #                           2: Fail on any error
+                            #                           notconfigured: Returns the value to its not
+                            #                           configured state.
+                            #       saidletimemin     - Configures the security association idle time in
+                            #                           minutes.
+                            #                         - Usage: 5-60|notconfigured (default=5)
+                            #       defaultexemptions - Configures the default IPsec exemptions. Default is
+                            #                           to exempt IPv6 neighbordiscovery protocol and
+                            #                           DHCP from IPsec.
+                            #                         - Usage: none|neighbordiscovery|icmp|dhcp|notconfigured
+                            #       ipsecthroughnat   - Configures when security associations can be
+                            #                           established with a computer behind a network
+                            #                           address translator.
+                            #                         - Usage: never|serverbehindnat|
+                            #                                  serverandclientbehindnat|
+                            #                                  notconfigured(default=never)
+                            #       authzcomputergrp  - Configures the computers that are authorized to
+                            #                           establish tunnel mode connections.
+                            #                         - Usage: none|<SDDL string>|notconfigured
+                            #       authzusergrp      - Configures the users that are authorized to establish
+                            #                           tunnel mode connections.
+                            #                         - Usage: none|<SDDL string>|notconfigured
+
+                            # Main Mode Parameters:
+
+                            #       mmkeylifetime     - Sets main mode key lifetime in minutes
+                            #                           or sessions, or both.
+                            #                         - Usage: <num>min,<num>sess
+                            #                           minlifetime: <1> min,
+                            #                           maxlifetime: <2880> min
+                            #                           minsessions: <0> sessions,
+                            #                           maxsessions: <2,147,483,647> sessions
+                            #       mmsecmethods      - configures the main mode list of proposals
+                            #                         - Usage:
+                            #                           keyexch:enc-integrity,keyexch:enc-integrity[,...]|default
+                            #                         - keyexch=dhgroup1|dhgroup2|dhgroup14|
+                            #                           ecdhp256|ecdhp384
+                            #                         - enc=3des|des|aes128|aes192|aes256
+                            #                         - integrity=md5|sha1|sha256|sha384
+                            #       mmforcedh         - configures the option to use DH to secure key exchange.
+                            #                         - Usage:
+                            #                           yes|no (default=no)
+
+                            if [[ $count -eq 3 ]]; then
+                                options='statefulftp statefulpptp ipsec mainmode'
+                            fi
+                            ;;
+
+                    esac
+                    ;;
+
+                show)
+                    if [[ $count -eq 2 ]]; then
+                        options="allprofiles currentprofile domainprofile global \
+                            privateprofile publicprofile store"
+                        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                        return
+                    fi
+
+                    # TODO: more detail
+
+                    case $subsubcmd in
+                        allprofiles)
+                            if [[ $count -eq 3 ]]; then
+                                options='state firewallpolicy settings logging'
+                            fi
+                            ;;
+
+                        currentprofile)
+                            if [[ $count -eq 3 ]]; then
+                                options='state firewallpolicy settings logging'
+                            fi
+                            ;;
+
+                        domainprofile)
+                            if [[ $count -eq 3 ]]; then
+                                options='state firewallpolicy settings logging'
+                            fi
+                            ;;
+
+                        global)
+                            if [[ $count -eq 3 ]]; then
+                                options="ipsec statefulftp statefulpptp \
+                                    mainmode categories"
+                            fi
+                            ;;
+
+                        privateprofile)
+                            if [[ $count -eq 3 ]]; then
+                                options='state firewallpolicy settings logging'
+                            fi
+                            ;;
+
+                        publicprofile)
+                            if [[ $count -eq 3 ]]; then
+                                options='state firewallpolicy settings logging'
+                            fi
+                            ;;
+
+                        store)
+                            ;;
+
+                    esac
+
+                    ;;
+
+            esac
             ;;
 
         bridge)
-            if [[ "$prev" == "$command" ]]; then
+            if [[ $count -eq 1 ]]; then
                 options='dump install set show uninstall'
-            elif [[ "$subcmd" == "set" ]]; then
-                if [[ "$subsubcmd" == "adapter" ]]; then
-                    # TODO: improve
-                    local IFS=$'\n'
-                    options=`netsh bridge show adapter | cut -c 48- | head -n -1 | sed 's/.*/"&"/'`
-                    options+="
-                    forcecompatmode=enable
-                    forcecompatmode=disable"
-                else
-                    options='adapter'
-                fi
-            elif [[ "$subcmd" == "show" ]]; then
-                if [[ "$subsubcmd" == "adapter" ]]; then
-                    local IFS=$'\n'
-                    options=`netsh bridge show adapter | cut -c 48- | head -n -1 | sed 's/.*/"&"/'`
-                else
-                    options='adapter'
-                fi
+                COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                return
             fi
+
+            case $subcmd in
+                set)
+                    if [[ $count -eq 2 ]]; then
+                        options='adapter'
+                        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                        return
+                    fi
+
+                    case $subsubcmd in
+                        adapter)
+                            if [[ $count -eq 3 ]]; then
+                                local IFS=$'\n'
+                                options=$(_netsh_bridges)
+                            elif [[ $count -eq 4 ]]; then
+                                options="forcecompatmode\=enable \
+                                    forcecompatmode\=disable"
+                            fi
+                            ;;
+                    esac
+
+                    ;;
+
+                show)
+                    if [[ $count -eq 2 ]]; then
+                        options='adapter'
+                        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                        return
+                    fi
+
+                    case $subsubcmd in
+                        adapter)
+                            if [[ $count -eq 3 ]]; then
+                                local IFS=$'\n'
+                                options=$(_netsh_bridges)
+                            fi
+                            ;;
+                    esac
+
+                    ;;
+            esac
+
             ;;
 
         delete)
-            if [[ "$prev" == "$command" ]]; then
+            if [[ $count -eq 1 ]]; then
                 options='helper'
-            elif [[ "$prev" == "helper" ]]; then
-                options=$(command ls *.dll 2> /dev/null) # TODO: may want to show all files
+            elif [[ $count -eq 2 ]]; then
+                options=$(command ls *.dll 2> /dev/null)
             fi
             ;;
 
         dhcpclient)
-            if [[ "$prev" == "$command" ]]; then
+            if [[ $count -eq 1 ]]; then
                 options='list trace'
-            elif [[ "$prev" == "trace" ]]; then
+            elif [[ $count -eq 2 ]]; then
                 options='enable disable dump'
             fi
             ;;
 
         dnsclient)
-            if [[ "$prev" == "$command" ]]; then
+            if [[ $count -eq 1 ]]; then
                 options='add delete dump set show'
-            elif [[ "$subcmd" == "add" ]]; then
-                options='dnsservers'
-            elif [[ "$subcmd" == "delete" ]]; then
-                options='dnsservers'
-            elif [[ "$subcmd" == "set" ]]; then
-                if [[ "$subsubcmd" == "dnsservers" ]]; then
-                    local IFS=$'\n'
-                    options=`netsh interface show interface name= | cut -c 48- | head -n -1 | sed 's/.*/"&"/'`
-                    options+="
-                    source=dhcp
-                    source=static
-                    register=none
-                    register=primary
-                    register=both
-                    validate=yes
-                    validate=no"
-                else
-                    options='dnsservers'
-                fi
-            elif [[ "$subcmd" == "show" ]]; then
-                options='state'
+                COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                return
             fi
-            # TODO: more detail
+
+            case $subcmd in
+
+                add)
+                    if [[ $count -eq 2 ]]; then
+                        options='dnsservers'
+                    elif [[ $count -eq 3 ]]; then
+                        local IFS=$'\n'
+                        options=$(_netsh_interfaces)
+                    elif [[ $count -eq 4 ]]; then
+                        # TODO: recent ip addresses
+                        options="address\="
+                    elif [[ $count -eq 5 ]]; then
+                        options="index\="
+                    elif [[ $count -eq 6 ]]; then
+                        options="validate\=yes validate\=no"
+                    fi
+                    ;;
+
+                delete)
+                    if [[ $count -eq 2 ]]; then
+                        options='dnsservers'
+                    elif [[ $count -eq 3 ]]; then
+                        local IFS=$'\n'
+                        options=$(_netsh_interfaces)
+                    elif [[ $count -eq 4 ]]; then
+                        # TODO: recent ip addresses
+                        options="address\= all"
+                    elif [[ $count -eq 5 ]]; then
+                        options="validate\=yes validate\=no"
+                    fi
+                    ;;
+
+
+                set)
+                    if [[ $count -eq 2 ]]; then
+                        options='dnsservers'
+                    elif [[ $count -eq 3 ]]; then
+                        local IFS=$'\n'
+                        options=$(_netsh_interfaces)
+                    elif [[ $count -eq 4 ]]; then
+                        options='dhcp static'
+                    elif [[ $count -eq 5 ]]; then
+                        options='address\= none'
+                    elif [[ $count -eq 6 ]]; then
+                        options='register\=none register\=primary register\=both'
+                    elif [[ $count -eq 7 ]]; then
+                        options="validate\=yes validate\=no"
+                    fi
+                    ;;
+
+                show)
+                    if [[ $count -eq 2 ]]; then
+                        options='state'
+                    fi
+                    ;;
+
+            esac
             ;;
 
         dump)
@@ -298,13 +593,13 @@ _netsh()
             ;;
 
         exec)
-            if [[ "$prev" == "$command" ]]; then
+            if [[ $count -eq 1 ]]; then
                 options=$(command ls 2> /dev/null)
             fi
             ;;
 
         firewall)
-            if [[ "$prev" == "$command" ]]; then
+            if [[ $count -eq 1 ]]; then
                 options='add delete dump set show'
             fi
             # NOTE: no further commands available on win7
@@ -315,221 +610,1158 @@ _netsh()
             ;;
 
         http)
-            if [[ "$prev" == "$command" ]]; then
+            if [[ $count -eq 1 ]]; then
                 options='add delete dump flush show'
-            elif [[ "$subcmd" == "add" ]]; then
-                options='cacheparam iplisten sslcert timeout urlacl'
-            elif [[ "$subcmd" == "delete" ]]; then
-                options='cache iplisten sslcert timeout urlacl'
-            elif [[ "$subcmd" == "flush" ]]; then
-                options='logbuffer'
-            elif [[ "$subcmd" == "show" ]]; then
-                options='cacheparam cachestate iplisten servicestate sslcert
-                    timeout urlacl'
+                COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                return
             fi
+
+            case $subcmd in
+                add)
+                    if [[ $count -eq 2 ]]; then
+                        options='cacheparam iplisten sslcert timeout urlacl'
+                    fi
+                    ;;
+
+                delete)
+                    if [[ $count -eq 2 ]]; then
+                        options='cache iplisten sslcert timeout urlacl'
+                    fi
+                    ;;
+
+                flush)
+                    if [[ $count -eq 2 ]]; then
+                        options='logbuffer'
+                    fi
+                    ;;
+
+                show)
+                    if [[ $count -eq 2 ]]; then
+                        options="cacheparam cachestate iplisten servicestate sslcert \
+                            timeout urlacl"
+                    fi
+                    ;;
+            esac
+
             # TODO: more detail
             ;;
 
         interface)
-            if [[ "$subcmd" == "show" ]]; then
-                if [[ "$subsubcmd" == "interface" ]]; then
-                    local IFS=$'\n'
-                    options=`netsh interface show interface name= | cut -c 48- | head -n -1 | sed 's/.*/"&"/'`
-                else
-                    options='interface'
-                fi
 
-            elif [[ "$subcmd" == "set" ]]; then
-                if [[ "$subsubcmd" == "interface" ]]; then
-                    local IFS=$'\n'
-                    options=`netsh interface show interface name= | cut -c 48- | head -n -1 | sed 's/.*/"&"/'`
-                else
-                    options='interface'
-                fi
-
-            elif [[ "$subcmd" == "isatap" ]]; then
-                if [[ "$prev" == "$subcmd" ]]; then
-                    options='dump set show'
-                elif [[ "$subsubcmd" == "set" ]]; then
-                    # TODO: set router name= state=enabled|disabled|default interval=
-                    # TODO: set state enabled|disabled|default
-                    options='router state'
-                elif [[ "$subsubcmd" == "show" ]]; then
-                    options='router state'
-                fi
-
-            elif [[ "$subcmd" == "httpstunnel" ]]; then
-                # TODO: more detail
-                if [[ "$prev" == "$subcmd" ]]; then
-                    options='add delete dump reset set show'
-                elif [[ "$subsubcmd" == "add" ]]; then
-                    options='interface'
-                elif [[ "$subsubcmd" == "delete" ]]; then
-                    options='interface'
-                elif [[ "$subsubcmd" == "set" ]]; then
-                    options='interface'
-                elif [[ "$subsubcmd" == "show" ]]; then
-                    options='interfaces statistics'
-                fi
-
-            elif [[ "$subcmd" == "ipv4" ]]; then
-                # TODO: more detail
-                options='add delete dump install reset set show uninstall'
-
-            elif [[ "$subcmd" == "ipv6" ]]; then
-                # TODO: more detail
-                options='6to4 add delete dump isatap reset set show'
-
-            elif [[ "$subcmd" == "portproxy" ]]; then
-                # TODO: more detail
-                options='add delete dump reset set show'
-
-            elif [[ "$subcmd" == "tcp" ]]; then
-                # TODO: more detail
-                options='add delete dump reset set show'
-
-            elif [[ "$subcmd" == "teredo" ]]; then
-                # TODO: more detail
-                options='dump set show'
-
-            elif [[ "$prev" == "$command" ]]; then
-                options='6to4 dump httpstunnel ipv4 ipv6 isatap portproxy set
-                    show tcp teredo'
+            if [[ $count -eq 1 ]]; then
+                options="6to4 dump httpstunnel ipv4 ipv6 isatap portproxy set \
+                    show tcp teredo"
+                COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                return
             fi
+
+            case $subcmd in
+                6to4)
+                    if [[ $count -eq 2 ]]; then
+                        options='dump set show'
+                        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                        return
+                    fi
+
+                    # TODO: more
+                    ;;
+
+                dump)
+                    ;;
+
+                httpstunnel)
+
+                    if [[ $count -eq 2 ]]; then
+                        options='add delete dump reset set show'
+                        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                        return
+                    fi
+
+                    case $subsubcmd in
+                        add)
+                            if [[ $count -eq 3 ]]; then
+                                options='interface'
+                            else
+                                options="type\=client type\=server \
+                                    state\=enabled state\=disabled \
+                                    state\=default authmode\=none \
+                                    authmode\=certificate url\="
+                            fi
+                            ;;
+
+                        delete)
+                            if [[ $count -eq 3 ]]; then
+                                options='interface'
+                            fi
+                            ;;
+
+                        dump)
+                            ;;
+
+                        reset)
+                            ;;
+
+                        set)
+                            if [[ $count -eq 3 ]]; then
+                                options='interface'
+                            else
+                                options="state\=enabled state\=disabled \
+                                    state\=default authmode\=none \
+                                    authmode\=certificate url\="
+                            fi
+                            ;;
+
+                        show)
+                            if [[ $count -eq 3 ]]; then
+                                options='interfaces statistics'
+                            elif [[ $count -eq 4 ]]; then
+                                options='store\=active store\=persistent'
+                            fi
+                            ;;
+
+                    esac
+                    ;;
+
+                ipv4)
+                    if [[ $count -eq 2 ]]; then
+                        options='add delete dump install reset set show uninstall'
+                    fi
+
+                    case $subsubcmd in
+
+                        add)
+
+                            if [[ $count -eq 3 ]]; then
+								options="address dnsservers excludedportrange \
+									neighbors route winsservers"
+                                COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                                return
+                            fi
+
+                            case $subsubsubcmd in
+								address)
+                                    if [[ $count -eq 4 ]]; then
+                                        local IFS=$'\n'
+                                        options=$(_netsh_interfaces)
+                                    elif [[ $count -eq 5 ]]; then
+                                        compopt -o nospace
+                                        options='address\='
+                                    elif [[ $count -eq 6 ]]; then
+                                        compopt -o nospace
+                                        options='mask\='
+                                    elif [[ $count -eq 7 ]]; then
+                                        options='unicast anycast'
+                                    elif [[ $count -eq 8 ]]; then
+                                        # TODO: suggest a decent gateway using the address and mask
+                                        compopt -o nospace
+                                        options='gateway\='
+                                    elif [[ $count -eq 9 ]]; then
+                                        compopt -o nospace
+                                        options='gwmetric\='
+                                    elif [[ $count -eq 10 ]]; then
+                                        compopt -o nospace
+                                        options='validlifetime\='
+                                    elif [[ $count -eq 11 ]]; then
+                                        compopt -o nospace
+                                        options='preferredlifetime\='
+                                    elif [[ $count -eq 12 ]]; then
+                                        # TODO: list subinterfaces
+                                        compopt -o nospace
+                                        options='subinterface\='
+                                    elif [[ $count -eq 13 ]]; then
+                                        options='active persistent'
+                                    elif [[ $count -eq 14 ]]; then
+                                        options='skipassource\=true skipassource\=false'
+                                    fi
+									;;
+
+								dnsservers)
+                                    if [[ $count -eq 4 ]]; then
+                                        local IFS=$'\n'
+                                        options=$(_netsh_interfaces)
+                                    elif [[ $count -eq 5 ]]; then
+                                        compopt -o nospace
+                                        options='address\='
+                                    elif [[ $count -eq 6 ]]; then
+                                        compopt -o nospace
+                                        options='index\='
+                                    elif [[ $count -eq 7 ]]; then
+                                        options='validate\=yes validate\=no'
+                                    fi
+									;;
+
+								excludedportrange)
+                                    if [[ $count -eq 4 ]]; then
+                                        options='udp tcp'
+                                    elif [[ $count -eq 5 ]]; then
+                                        compopt -o nospace
+                                        options='startport\='
+                                    elif [[ $count -eq 6 ]]; then
+                                        compopt -o nospace
+                                        options='numberofports\='
+                                    elif [[ $count -eq 7 ]]; then
+                                        options='active persistent'
+                                    fi
+									;;
+
+								neighbors)
+                                    if [[ $count -eq 4 ]]; then
+                                        local IFS=$'\n'
+                                        options=$(_netsh_interfaces)
+                                    elif [[ $count -eq 5 ]]; then
+                                        compopt -o nospace
+                                        options='address\='
+                                    elif [[ $count -eq 6 ]]; then
+                                        compopt -o nospace
+                                        options='neighbor\='
+                                    elif [[ $count -eq 7 ]]; then
+                                        # TODO: list subinterfaces
+                                        compopt -o nospace
+                                        options='subinterface\='
+                                    elif [[ $count -eq 8 ]]; then
+                                        options='active persistent'
+                                    fi
+									;;
+
+								route)
+                                    if [[ $count -eq 4 ]]; then
+                                        compopt -o nospace
+                                        options='prefix\='
+                                    elif [[ $count -eq 5 ]]; then
+                                        local IFS=$'\n'
+                                        options=$(_netsh_interfaces)
+                                    elif [[ $count -eq 6 ]]; then
+                                        compopt -o nospace
+                                        options='nexthop\='
+                                    elif [[ $count -eq 7 ]]; then
+                                        compopt -o nospace
+                                        options='siteprefixlength\='
+                                    elif [[ $count -eq 8 ]]; then
+                                        compopt -o nospace
+                                        options='metric\='
+                                    elif [[ $count -eq 9 ]]; then
+                                        options='publish\=no publish\=age publish\=yes'
+                                    elif [[ $count -eq 10 ]]; then
+                                        compopt -o nospace
+                                        options='validlifetime\='
+                                    elif [[ $count -eq 11 ]]; then
+                                        compopt -o nospace
+                                        options='preferredlifetime\='
+                                    elif [[ $count -eq 12 ]]; then
+                                        options='store\=active store\=persistent'
+                                    fi
+									;;
+
+								winsservers)
+                                    if [[ $count -eq 4 ]]; then
+                                        local IFS=$'\n'
+                                        options=$(_netsh_interfaces)
+                                    elif [[ $count -eq 5 ]]; then
+                                        compopt -o nospace
+                                        options='address\='
+                                    elif [[ $count -eq 6 ]]; then
+                                        compopt -o nospace
+                                        options='index\='
+                                    fi
+									;;
+
+                            esac
+
+                            ;;
+
+                        delete)
+                            if [[ $count -eq 3 ]]; then
+                                options="address arpcache destinationcache \
+                                    dnsservers excludedportrange neighbors \
+                                    route winsservers"
+                                COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                                return
+                            fi
+
+                            case $subsubsubcmd in
+                                address)
+                                    if [[ $count -eq 4 ]]; then
+                                        local IFS=$'\n'
+                                        options=$(_netsh_interfaces)
+                                    elif [[ $count -eq 5 ]]; then
+                                        # TODO: list IP address for the interface
+                                        options='address\='
+                                    elif [[ $count -eq 6 ]]; then
+                                        # TODO: list gateway IP address for the interface
+                                        options='gateway\= gateway\=all'
+                                    elif [[ $count -eq 7 ]]; then
+                                        options='store\=active store\=persistent'
+                                    fi
+                                    ;;
+
+                                arpcache)
+                                    if [[ $count -eq 4 ]]; then
+                                        local IFS=$'\n'
+                                        options=$(_netsh_interfaces)
+                                    elif [[ $count -eq 5 ]]; then
+                                        # TODO: list IP address for the interface
+                                        options='address\='
+                                    elif [[ $count -eq 6 ]]; then
+                                        # TODO: list subinterfaces
+                                        options='subinterface\='
+                                    elif [[ $count -eq 7 ]]; then
+                                        options='store\=active store\=persistent'
+                                    fi
+                                    ;;
+
+                                destinationcache)
+                                    if [[ $count -eq 4 ]]; then
+                                        local IFS=$'\n'
+                                        options=$(_netsh_interfaces)
+                                    elif [[ $count -eq 5 ]]; then
+                                        # TODO: list IP address for the interface
+                                        options='address\='
+                                    fi
+                                    ;;
+
+                                dnsservers)
+                                    if [[ $count -eq 4 ]]; then
+                                        local IFS=$'\n'
+                                        options=$(_netsh_interfaces)
+                                    elif [[ $count -eq 5 ]]; then
+                                        # TODO: list IP address for the interface
+                                        options='address\=all address\='
+                                    elif [[ $count -eq 6 ]]; then
+                                        options='validate\=yes validate\=no'
+                                    fi
+                                    ;;
+
+                                excludedportrange)
+                                    if [[ $count -eq 4 ]]; then
+                                        options='tcp udp'
+                                    elif [[ $count -eq 5 ]]; then
+                                        options='startport\='
+                                    elif [[ $count -eq 6 ]]; then
+                                        options='numberofports\='
+                                    elif [[ $count -eq 7 ]]; then
+                                        options='store\=active store\=persistent'
+                                    fi
+                                    ;;
+
+                                neighbors)
+                                    if [[ $count -eq 4 ]]; then
+                                        local IFS=$'\n'
+                                        options=$(_netsh_interfaces)
+                                    elif [[ $count -eq 5 ]]; then
+                                        # TODO: list neighbor IP addresses
+                                        options='address\='
+                                    elif [[ $count -eq 6 ]]; then
+                                        # TODO: list subinterfaces
+                                        options='subinterface\='
+                                    elif [[ $count -eq 7 ]]; then
+                                        options='store\=active store\=persistent'
+                                    fi
+                                    ;;
+
+                                route)
+                                    if [[ $count -eq 4 ]]; then
+                                        # TODO: suggest existing route prefixes
+                                        options='prefix\='
+                                    elif [[ $count -eq 5 ]]; then
+                                        local IFS=$'\n'
+                                        options=$(_netsh_interfaces)
+                                    elif [[ $count -eq 6 ]]; then
+                                        # TODO: suggest existing next hop addresses
+                                        options='nexthop\='
+                                    elif [[ $count -eq 7 ]]; then
+                                        options='store\=active store\=persistent'
+                                    fi
+                                    ;;
+
+                                winsservers)
+                                    if [[ $count -eq 4 ]]; then
+                                        local IFS=$'\n'
+                                        options=$(_netsh_interfaces)
+                                    elif [[ $count -eq 5 ]]; then
+                                        # TODO: suggest existing winsservers
+                                        options='address\=all address\='
+                                    fi
+                                    ;;
+
+                            esac
+
+                            ;;
+
+                        dump)
+                            # no options
+                            ;;
+
+                        install)
+                            # no options
+                            ;;
+
+                        reset)
+                            # no options
+                            ;;
+
+                        set)
+
+                            if [[ $count -eq 3 ]]; then
+                                options="address compartment dnsservers \
+                                    dynamicportrange global interface  \
+                                    neighbors route subinterface winsservers"
+                                COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                                return
+                            fi
+
+                            case $subsubsubcmd in
+                                address)
+                                    if [[ $count -eq 4 ]]; then
+                                        local IFS=$'\n'
+                                        options=$(_netsh_interfaces)
+                                    elif [[ $count -eq 5 ]]; then
+                                        options='dhcp static'
+                                    elif [[ $count -eq 6 ]]; then
+                                        compopt -o nospace
+                                        options='address\='
+                                    elif [[ $count -eq 7 ]]; then
+                                        compopt -o nospace
+                                        options='mask\='
+                                    elif [[ $count -eq 8 ]]; then
+                                        options='gateway\=none gateway\='
+                                    elif [[ $count -eq 9 ]]; then
+                                        options='gwmetric\='
+                                    elif [[ $count -eq 10 ]]; then
+                                        options='unicast anycast'
+                                    elif [[ $count -eq 11 ]]; then
+                                        options='subinterface\='
+                                    elif [[ $count -eq 12 ]]; then
+                                        options='active persistent'
+                                    fi
+                                    ;;
+
+                                compartment)
+                                    if [[ $count -eq 4 ]]; then
+                                        options='compartment\='
+                                    elif [[ $count -eq 5 ]]; then
+                                        options='defaultcurhoplimit\='
+                                    elif [[ $count -eq 6 ]]; then
+                                        options='active persistent'
+                                    fi
+                                    ;;
+
+                                dnsservers)
+                                    if [[ $count -eq 4 ]]; then
+                                        local IFS=$'\n'
+                                        options=$(_netsh_interfaces)
+                                    elif [[ $count -eq 5 ]]; then
+                                        options='dhcp static'
+                                    elif [[ $count -eq 6 ]]; then
+                                        options='address\= address\=none'
+                                    elif [[ $count -eq 7 ]]; then
+                                        options='register\=none register\=primary register\=both'
+                                    elif [[ $count -eq 8 ]]; then
+                                        options='validate\=yes validate\=no'
+                                    fi
+                                    ;;
+
+                                dynamicportrange)
+                                    if [[ $count -eq 4 ]]; then
+                                        options='tcp udp'
+                                    elif [[ $count -eq 5 ]]; then
+                                        options='startport\='
+                                    elif [[ $count -eq 6 ]]; then
+                                        options='numberofports\='
+                                    elif [[ $count -eq 7 ]]; then
+                                        options='store\=active store\=persistent'
+                                    fi
+                                    ;;
+
+                                global)
+                                    # TODO: merge all conditional statements below
+                                    if [[ $count -eq 4 ]]; then
+                                        options='defaultcurhoplimit\='
+                                    elif [[ $count -eq 5 ]]; then
+                                        options='neighborcachelimit\='
+                                    elif [[ $count -eq 6 ]]; then
+                                        options='routecachelimit\='
+                                    elif [[ $count -eq 7 ]]; then
+                                        options='icmpredirects\=enabled icmpredirects\=disabled'
+                                    elif [[ $count -eq 8 ]]; then
+                                        options='sourceroutingbehavior\=drop sourceroutingbehavior\=forward sourceroutingbehavior\=dontforward'
+                                    elif [[ $count -eq 9 ]]; then
+                                        options='taskoffload\=enabled taskoffload\=disabled'
+                                    elif [[ $count -eq 10 ]]; then
+                                        options='dhcpmediasense\=enabled dhcpmediasense\=disabled'
+                                    elif [[ $count -eq 11 ]]; then
+                                        options='mediasenseeventlog\=disabled mediasenseeventlog\=enabled'
+                                    elif [[ $count -eq 12 ]]; then
+                                        options='mldlevel\=all mldlevel\=sendonly mldlevel\=none'
+                                    elif [[ $count -eq 13 ]]; then
+                                        options='mldversion\=version1 mldversion\=version2 mldversion\=version3'
+                                    elif [[ $count -eq 14 ]]; then
+                                        options='multicastforwarding\=disabled multicastforwarding\=enabled'
+                                    elif [[ $count -eq 15 ]]; then
+                                        options='groupforwardedfragments\=disabled groupforwardedfragments\=enabled'
+                                    elif [[ $count -eq 16 ]]; then
+                                        options='randomizeidentifiers\=disabled randomizeidentifiers\=enabled'
+                                    elif [[ $count -eq 17 ]]; then
+                                        options='store\=active store\=persistent'
+                                    elif [[ $count -eq 18 ]]; then
+                                        options='addressmaskreply\=disabled addressmaskreply\=enabled'
+                                    elif [[ $count -eq 19 ]]; then
+                                        options='minmtu\='
+                                    fi
+                                    ;;
+
+                                interface)
+                                    if [[ $count -eq 4 ]]; then
+                                        local IFS=$'\n'
+                                        options=$(_netsh_interfaces)
+                                    elif [[ $count -eq 5 ]]; then
+                                        # TODO: merge all conditional statements below
+                                        options='forwarding\=disabled forwarding\=enabled'
+                                    elif [[ $count -eq 6 ]]; then
+                                        options='advertise\=disabled advertise\=enabled'
+                                    elif [[ $count -eq 7 ]]; then
+                                        options='mtu\='
+                                    elif [[ $count -eq 8 ]]; then
+                                        options='siteid\='
+                                    elif [[ $count -eq 9 ]]; then
+                                        options='metric\= metric\=automatic'
+                                    elif [[ $count -eq 10 ]]; then
+                                        options='firewall\=disabled firewall\=enabled'
+                                    elif [[ $count -eq 11 ]]; then
+                                        options='siteprefixlength\='
+                                    elif [[ $count -eq 12 ]]; then
+                                        options='nud\=disabled nud\=enabled'
+                                    elif [[ $count -eq 13 ]]; then
+                                        options='basereachabletime\='
+                                    elif [[ $count -eq 14 ]]; then
+                                        options='retransmittime\='
+                                    elif [[ $count -eq 15 ]]; then
+                                        options='dadtransmits\='
+                                    elif [[ $count -eq 16 ]]; then
+                                        options='routerdiscovery\=dhcp routerdiscovery\=disabled routerdiscovery\=enabled'
+                                    elif [[ $count -eq 17 ]]; then
+                                        options='managedaddress\=enabled managedaddress\=disabled'
+                                    elif [[ $count -eq 18 ]]; then
+                                        options='otherstateful\=disabled otherstateful\=enabled'
+                                    elif [[ $count -eq 19 ]]; then
+                                        options='weakhostsend\=enabled weakhostsend\=disabled'
+                                    elif [[ $count -eq 20 ]]; then
+                                        options='weakhostreceive\=enabled weakhostreceive\=disabled'
+                                    elif [[ $count -eq 21 ]]; then
+                                        options='ignoredefaultroutes\=disabled ignoredefaultroutes\=enabled'
+                                    elif [[ $count -eq 22 ]]; then
+                                        options='advertisedrouterlifetime\='
+                                    elif [[ $count -eq 23 ]]; then
+                                        options='currenthoplimit\='
+                                    elif [[ $count -eq 24 ]]; then
+                                        options='advertisedefaultroute\=disabled advertisedefaultroute\=enabled'
+                                    elif [[ $count -eq 25 ]]; then
+                                        options='currenthoplimit\='
+                                    elif [[ $count -eq 26 ]]; then
+                                        options='store\=active store\=persistent'
+                                    elif [[ $count -eq 27 ]]; then
+                                        options='forcearpndwolpattern\=enabled forcearpndwolpattern\=disabled'
+                                    elif [[ $count -eq 28 ]]; then
+                                        options='enabledirectedmacwolpattern\=disabled enabledirectedmacwolpattern\=enabled'
+                                    elif [[ $count -eq 29 ]]; then
+                                        options='ecncapability\=ecndisabled ecncapability\=ect1 ecncapability\=ect0 ecncapability\=application'
+                                    fi
+                                    ;;
+
+                                # TODO: more
+
+                                neighbors)
+                                    ;;
+
+                                route)
+                                    ;;
+
+                                subinterface)
+                                    if [[ $count -eq 4 ]]; then
+                                        local IFS=$'\n'
+                                        options=$(_netsh_interfaces)
+                                    elif [[ $count -eq 5 ]]; then
+                                        options='mtu\='
+                                    elif [[ $count -eq 6 ]]; then
+                                        # TODO: list subinterfaces
+                                        options='subinterface\='
+                                    elif [[ $count -eq 7 ]]; then
+                                        options='store\=active store\=persistent'
+                                    fi
+                                    ;;
+
+                                winsservers)
+                                    if [[ $count -eq 4 ]]; then
+                                        local IFS=$'\n'
+                                        options=$(_netsh_interfaces)
+                                    elif [[ $count -eq 5 ]]; then
+                                        options='dhcp static'
+                                    elif [[ $count -eq 6 ]]; then
+                                        options='address\=none address\='
+                                    fi
+                                    ;;
+
+                            esac
+                            ;;
+
+                        show)
+
+                            if [[ $count -eq 3 ]]; then
+                                options="addresses compartments config \
+                                    destinationcache dnsservers dynamicportrange \
+                                    excludedportrange global icmpstats interfaces \
+                                    ipaddresses ipnettomedia ipstats joins neighbors \
+                                    offload route subinterfaces tcpconnections \
+                                    tcpstats udpconnections udpstats  winsservers"
+                                COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                                return
+                            fi
+
+                            case $subsubsubcmd in
+
+                                winsservers)
+                                    ;&
+                                offload)
+                                    ;&
+                                addresses)
+                                    ;&
+                                config)
+                                    ;&
+                                dnsservers)
+                                    if [[ $count -eq 4 ]]; then
+                                        local IFS=$'\n'
+                                        options=$(_netsh_interfaces)
+                                    fi
+                                    ;;
+
+                                compartments)
+                                    if [[ $count -eq 4 ]]; then
+                                        compopt -o nospace
+                                        options='compartment\='
+                                    elif [[ $count -eq 5 ]]; then
+                                        options='normal verbose'
+                                    elif [[ $count -eq 6 ]]; then
+                                        options='active persistent'
+                                    fi
+                                    ;;
+
+                                destinationcache)
+                                    if [[ $count -eq 4 ]]; then
+                                        local IFS=$'\n'
+                                        options=$(_netsh_interfaces)
+                                    elif [[ $count -eq 5 ]]; then
+                                        compopt -o nospace
+                                        options='address\='
+                                    elif [[ $count -eq 6 ]]; then
+                                        options='normal verbose'
+                                    fi
+                                    ;;
+
+                                excludedportrange)
+                                    ;&
+                                dynamicportrange)
+                                    if [[ $count -eq 4 ]]; then
+                                        options='tcp udp'
+                                    elif [[ $count -eq 5 ]]; then
+                                        options='active persistent'
+                                    fi
+                                    ;;
+
+                                global)
+                                    if [[ $count -eq 4 ]]; then
+                                        options='active persistent'
+                                    fi
+                                    ;;
+
+                                udpstats)
+                                    ;&
+                                tcpstats)
+                                    ;&
+                                ipnettomedia)
+                                    ;&
+                                ipstats)
+                                    ;&
+                                icmpstats)
+                                    if [[ $count -eq 4 ]]; then
+                                        compopt -o nospace
+                                        options='rr\='
+                                    fi
+                                    ;;
+
+                                interfaces)
+                                    if [[ $count -eq 4 ]]; then
+                                        local IFS=$'\n'
+                                        options=$(_netsh_interfaces)
+                                    elif [[ $count -eq 5 ]]; then
+                                        compopt -o nospace
+                                        options='rr\='
+                                    elif [[ $count -eq 6 ]]; then
+                                        options='normal verbose'
+                                    elif [[ $count -eq 7 ]]; then
+                                        options='active persistent'
+                                    fi
+                                    ;;
+
+                                ipaddresses)
+                                    if [[ $count -eq 4 ]]; then
+                                        local IFS=$'\n'
+                                        options=$(_netsh_interfaces)
+                                    elif [[ $count -eq 5 ]]; then
+                                        options='normal verbose'
+                                    elif [[ $count -eq 6 ]]; then
+                                        options='active persistent'
+                                    fi
+                                    ;;
+
+                                joins)
+                                    if [[ $count -eq 4 ]]; then
+                                        local IFS=$'\n'
+                                        options=$(_netsh_interfaces)
+                                    elif [[ $count -eq 5 ]]; then
+                                        options='normal verbose'
+                                    fi
+                                    ;;
+
+                                neighbors)
+                                    if [[ $count -eq 4 ]]; then
+                                        local IFS=$'\n'
+                                        options=$(_netsh_interfaces)
+                                    elif [[ $count -eq 5 ]]; then
+                                        # TODO: list neighbor addresses
+                                        compopt -o nospace
+                                        options='address\='
+                                    elif [[ $count -eq 6 ]]; then
+                                        # TODO: list subinterfaces
+                                        compopt -o nospace
+                                        options='subinterface\='
+                                    elif [[ $count -eq 7 ]]; then
+                                        options='normal verbose'
+                                    elif [[ $count -eq 8 ]]; then
+                                        options='active persistent'
+                                    fi
+                                    ;;
+
+                                route)
+                                    if [[ $count -eq 4 ]]; then
+                                        options='normal verbose'
+                                    elif [[ $count -eq 5 ]]; then
+                                        options='active persistent'
+                                    fi
+                                    ;;
+
+                                subinterfaces)
+                                    if [[ $count -eq 4 ]]; then
+                                        local IFS=$'\n'
+                                        options=$(_netsh_interfaces)
+                                    elif [[ $count -eq 5 ]]; then
+                                        # TODO: list subinterfaces
+                                        compopt -o nospace
+                                        options='subinterface\='
+                                    elif [[ $count -eq 6 ]]; then
+                                        options='normal verbose'
+                                    elif [[ $count -eq 7 ]]; then
+                                        options='active persistent'
+                                    fi
+                                    ;;
+
+                                tcpconnections)
+                                    if [[ $count -eq 4 ]]; then
+                                        # TODO: list local ip addresses
+                                        compopt -o nospace
+                                        options="localaddresses\="
+                                    elif [[ $count -eq 5 ]]; then
+                                        compopt -o nospace
+                                        options="localport\="
+                                    elif [[ $count -eq 6 ]]; then
+                                        # TODO: list remote addresses
+                                        compopt -o nospace
+                                        options='remoteaddress\='
+                                    elif [[ $count -eq 7 ]]; then
+                                        compopt -o nospace
+                                        options='remoteport\='
+                                    elif [[ $count -eq 8 ]]; then
+                                        compopt -o nospace
+                                        options='rr\='
+                                    fi
+                                    ;;
+
+                                udpconnections)
+                                    if [[ $count -eq 4 ]]; then
+                                        # TODO: list local ip addresses
+                                        compopt -o nospace
+                                        options="localaddresses\="
+                                    elif [[ $count -eq 5 ]]; then
+                                        compopt -o nospace
+                                        options="localport\="
+                                    elif [[ $count -eq 6 ]]; then
+                                        compopt -o nospace
+                                        options='rr\='
+                                    fi
+                                    ;;
+
+                            esac
+                            ;;
+
+                        uninstall)
+                            # no options
+                            ;;
+
+                    esac
+                    ;;
+
+                ipv6)
+                    # TODO: more detail
+                    if [[ $count -eq 2 ]]; then
+                        options='6to4 add delete dump isatap reset set show'
+                    fi
+                    ;;
+
+                isatap)
+
+                    if [[ $count -eq 2 ]]; then
+                        options='dump set show'
+                        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                        return
+                    fi
+
+                    case $subsubcmd in
+                        show)
+                            if [[ $count -eq 3 ]]; then
+                                options='router state'
+                            fi
+                            ;;
+
+                        set)
+                            if [[ $count -eq 3 ]]; then
+                                # TODO: set router name= state=enabled|disabled|default interval=
+                                # TODO: set state enabled|disabled|default
+                                options='router state'
+                            fi
+                            ;;
+                    esac
+
+                    ;;
+
+                portproxy)
+                    # TODO: more detail
+                    if [[ $count -eq 2 ]]; then
+                        options='add delete dump reset set show'
+                    fi
+                    ;;
+
+                set)
+                    if [[ $count -eq 2 ]]; then
+                        options='interface'
+                    elif [[ $count -eq 3 ]]; then
+                        local IFS=$'\n'
+                        options=$(_netsh_interfaces)
+                    elif [[ $count -eq 4 ]]; then
+                        options='enabled disabled'
+                    elif [[ $count -eq 5 ]]; then
+                        options='connected disconnected'
+                    elif [[ $count -eq 6 ]]; then
+                        compopt -o nospace
+                        options='newname\='
+                    fi
+                    ;;
+
+                show)
+                    if [[ $count -eq 2 ]]; then
+                        options='interface'
+                    elif [[ $count -eq 3 ]]; then
+                        local IFS=$'\n'
+                        options=$(_netsh_interfaces)
+                    fi
+                    ;;
+
+                tcp)
+                    # TODO: more detail
+                    if [[ $count -eq 2 ]]; then
+                        options='add delete dump reset set show'
+                        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                        return
+                    fi
+
+                    case $subsubcmd in
+                        add)
+                            if [[ $count -eq 3 ]]; then
+                                options="chimneyapplication chimneyport \
+                                    supplementalport supplementalsubnet" 
+                            fi
+                            ;;
+
+                        delete)
+                            if [[ $count -eq 3 ]]; then
+                                options="chimneyapplication chimneyport \
+                                    supplementalport supplementalsubnet" 
+                            fi
+                            ;;
+
+                        dump)
+                            ;;
+
+                        reset)
+                            ;;
+
+                        set)
+                            if [[ $count -eq 3 ]]; then
+                                options="global heuristics security \
+                                    supplimental"
+                            fi
+                            ;;
+
+                        show)
+                            if [[ $count -eq 3 ]]; then
+                                options="chimneyapplications chimneyports \
+                                    chimneystats global heuristics \
+                                    netdmastats rscstats security \
+                                    supplemental supplementalports \
+                                    supplementalsubnets"
+                            fi
+                            ;;
+
+
+                    esac
+                    ;;
+
+                teredo)
+                    # TODO: more detail
+                    if [[ $count -eq 2 ]]; then
+                        options='dump set show'
+                    fi
+                    ;;
+
+
+            esac
 
             # TODO: more detail
             ;;
 
         ipsec)
-            if [[ "$prev" == "$command" ]]; then
+            if [[ $count -eq 1 ]]; then
                 options='dump dynamic static'
             fi
             # TODO: more detail
             ;;
 
         lan)
-            if [[ "$prev" == "$command" ]]; then
+            if [[ $count -eq 1 ]]; then
                 options='add delete dump export reconnect set show'
             fi
             # TODO: more detail
             ;;
 
         namespace)
-            if [[ "$prev" == "$command" ]]; then
+            if [[ $count -eq 1 ]]; then
                 options='dump show'
             fi
             ;;
 
         nap)
-            if [[ "$prev" == "$command" ]]; then
+            if [[ $count -eq 1 ]]; then
                 options='client dump hra reset show'
             fi
             # TODO: more detail
             ;;
 
         netio)
-            if [[ "$prev" == "$command" ]]; then
+            if [[ $count -eq 1 ]]; then
                 options='add delete dump show'
             fi
             # TODO: more detail
             ;;
 
         p2p)
-            if [[ "$prev" == "$command" ]]; then
+            if [[ $count -eq 1 ]]; then
                 options='dump group idmgr pnrp'
             fi
             # TODO: more detail
             ;;
 
         ras)
-            if [[ "$prev" == "$command" ]]; then
+            if [[ $count -eq 1 ]]; then
                 options='aaaa add delete diagnostics dump ip ipv6 set show'
             fi
             # TODO: more detail
             ;;
 
         rpc)
-            if [[ "$prev" == "$command" ]]; then
+            if [[ $count -eq 1 ]]; then
                 options='add delete dump filter reset show'
             fi
             # TODO: more detail
             ;;
 
         set)
-            if [[ "$prev" == "$command" ]]; then
+            if [[ $count -eq 1 ]]; then
                 options='machine'
             else
-                options='name= user= pwd='
+                # TODO: cull the options list
+                options='name\= user=\ pwd=\'
             fi
             ;;
 
         show)
-            if [[ "$prev" == "$command" ]]; then
+            if [[ $count -eq 1 ]]; then
                 options='alias helper'
             fi
             # TODO: more detail
             ;;
 
         wfp)
-            if [[ "$prev" == "$command" ]]; then
+            if [[ $count -eq 1 ]]; then
                 options='capture dump set show'
             fi
             # TODO: more detail
             ;;
 
         winhttp)
-            if [[ "$prev" == "$command" ]]; then
+            if [[ $count -eq 1 ]]; then
                 options='dump import reset set show'
             fi
             # TODO: more detail
             ;;
 
         winsock)
-            if [[ "$prev" == "$command" ]]; then
+            if [[ $count -eq 1 ]]; then
                 options='audit dump remove reset set show'
-            elif [[ "$subcmd" == "audit" ]]; then
-                options='trail'
-            elif [[ "$subcmd" == "remove" ]]; then
-                options='provider'
-            elif [[ "$subcmd" == "set" ]]; then
-                if [[ "$subsubcmd" == "autotuning" ]]; then
-                    options='on off'
-                else 
-                    options='autotuning'
-                fi
-            elif [[ "$subcmd" == "show" ]]; then
-                options='autotuning catalog'
+                COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                return
             fi
+
+            case $subcmd in
+                audit)
+                    if [[ $count -eq 2 ]]; then
+                        options='trail'
+                    fi
+                    ;;
+
+                dump)
+                    ;;
+
+                remove)
+                    if [[ $count -eq 2 ]]; then
+                        options='provider'
+                    fi
+                    ;;
+
+                reset)
+                    ;;
+
+                set)
+                    if [[ $count -eq 2 ]]; then
+                        options='autotuning'
+                    fi
+
+                    case $subsubcmd in
+                        autotuning)
+                            if [[ $count -eq 3 ]]; then
+                                options='on off'
+                            fi
+                            ;;
+                    esac
+
+                    ;;
+
+                show)
+                    if [[ $count -eq 2 ]]; then
+                        options='autotuning catalog'
+                    fi
+                    ;;
+
+            esac
+
             ;;
 
         wlan)
-            if [[ "$prev" == "$command" ]]; then
-                options='add connect delete disconnect dump export refresh
-                    reportissues set show start stop'
-            elif [[ "$subcmd" == "add" ||  "$subcmd" == "delete" ]]; then
-                options='filter profile'
-            elif [[ "$subcmd" == "disconnect" ]]; then
-                local IFS=$'\n'
-                options=`netsh interface show interface name= | cut -c 48- | head -n -1 | sed 's/.*/"&"/'`
-            elif [[ "$subcmd" == "export" ]]; then
-                options='hostednetworkprofile profile'
-            elif [[ "$subcmd" == "refresh" || "$subcmd" == "start" || "$subcmd" == "stop" ]]; then
-                options='hostednetwork'
-            elif [[ "$subcmd" == "show" ]]; then
-                # TODO: go into more detail
-                options='all allowexplicitcreds autoconfig blockednetworks
-                    createalluserprofile drivers filters hostednetwork
-                    interfaces networks onlyUseGPProfilesforAllowedNetworks
-                    profiles settings tracing'
-            elif [[ "$subcmd" == "set" ]]; then
-                # TODO: go into more detail
-                options='allowexplicitcreds autoconfig blockednetworks
-                    blockperiod createalluserprofile hostednetwork profileorder
-                    profileparameter profiletype tracing'
+
+            if [[ $count -eq 1 ]]; then
+                options="add connect delete disconnect dump export refresh \
+                    reportissues set show start stop"
+                COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                return
             fi
+
+            case $subcmd in
+                add)
+                    if [[ $count -eq 2 ]]; then
+                        options='filter profile'
+                    fi
+                    ;;
+
+                connect)
+                    # TODO: more
+                    ;;
+
+                delete)
+                    if [[ $count -eq 2 ]]; then
+                        options='filter profile'
+                    fi
+                    ;;
+
+                disconnect)
+                    # TODO: this might not work (interface= prefix)
+                    if [[ $count -eq 2 ]]; then
+                        local IFS=$'\n'
+                        options=$(_netsh_interfaces)
+                    fi
+                    ;;
+
+                dump)
+                    ;;
+
+                export)
+                    if [[ $count -eq 2 ]]; then
+                        options='hostednetworkprofile profile'
+                    fi
+                    ;;
+
+                refresh)
+                    if [[ $count -eq 2 ]]; then
+                        options='hostednetwork'
+                    fi
+                    ;;
+
+                reportissues)
+                    ;;
+
+                set)
+                    if [[ $count -eq 2 ]]; then
+                        # TODO: go into more detail
+                        options="allowexplicitcreds autoconfig blockednetworks \
+                            blockperiod createalluserprofile hostednetwork \
+                            profileorder profileparameter profiletype tracing"
+                    fi
+                    ;;
+
+                show)
+                    # TODO: go into more detail
+                    if [[ $count -eq 2 ]]; then
+                        options="all allowexplicitcreds autoconfig \
+                            blockednetworks createalluserprofile drivers filters \
+                            hostednetwork interfaces networks  \
+                            onlyUseGPProfilesforAllowedNetworks profiles settings \
+                            tracing"
+                    fi
+                    ;;
+
+                start)
+                    if [[ $count -eq 2 ]]; then
+                        options='hostednetwork'
+                    fi
+                    ;;
+
+                stop)
+                    if [[ $count -eq 2 ]]; then
+                        options='hostednetwork'
+                    fi
+                    ;;
+
+            esac
+
             ;;
 
         *)
+            # TODO: cull the options list
             options="-a -c -r -u -p -f ${commands[@]} ?" 
             ;;
 

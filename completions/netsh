@@ -1073,97 +1073,54 @@ _netsh()
                                     ;;
 
                                 global)
-                                    # TODO: merge all conditional statements below
-                                    if [[ $count -eq 4 ]]; then
-                                        options='defaultcurhoplimit\='
-                                    elif [[ $count -eq 5 ]]; then
-                                        options='neighborcachelimit\='
-                                    elif [[ $count -eq 6 ]]; then
-                                        options='routecachelimit\='
-                                    elif [[ $count -eq 7 ]]; then
-                                        options='icmpredirects\=enabled icmpredirects\=disabled'
-                                    elif [[ $count -eq 8 ]]; then
-                                        options='sourceroutingbehavior\=drop sourceroutingbehavior\=forward sourceroutingbehavior\=dontforward'
-                                    elif [[ $count -eq 9 ]]; then
-                                        options='taskoffload\=enabled taskoffload\=disabled'
-                                    elif [[ $count -eq 10 ]]; then
-                                        options='dhcpmediasense\=enabled dhcpmediasense\=disabled'
-                                    elif [[ $count -eq 11 ]]; then
-                                        options='mediasenseeventlog\=disabled mediasenseeventlog\=enabled'
-                                    elif [[ $count -eq 12 ]]; then
-                                        options='mldlevel\=all mldlevel\=sendonly mldlevel\=none'
-                                    elif [[ $count -eq 13 ]]; then
-                                        options='mldversion\=version1 mldversion\=version2 mldversion\=version3'
-                                    elif [[ $count -eq 14 ]]; then
-                                        options='multicastforwarding\=disabled multicastforwarding\=enabled'
-                                    elif [[ $count -eq 15 ]]; then
-                                        options='groupforwardedfragments\=disabled groupforwardedfragments\=enabled'
-                                    elif [[ $count -eq 16 ]]; then
-                                        options='randomizeidentifiers\=disabled randomizeidentifiers\=enabled'
-                                    elif [[ $count -eq 17 ]]; then
-                                        options='store\=active store\=persistent'
-                                    elif [[ $count -eq 18 ]]; then
-                                        options='addressmaskreply\=disabled addressmaskreply\=enabled'
-                                    elif [[ $count -eq 19 ]]; then
-                                        options='minmtu\='
-                                    fi
+                                    options='defaultcurhoplimit\=
+                                    neighborcachelimit\=
+                                    routecachelimit\=
+                                    icmpredirects\=enabled icmpredirects\=disabled
+                                    sourceroutingbehavior\=drop sourceroutingbehavior\=forward sourceroutingbehavior\=dontforward
+                                    taskoffload\=enabled taskoffload\=disabled
+                                    dhcpmediasense\=enabled dhcpmediasense\=disabled
+                                    mediasenseeventlog\=disabled mediasenseeventlog\=enabled
+                                    mldlevel\=all mldlevel\=sendonly mldlevel\=none
+                                    mldversion\=version1 mldversion\=version2 mldversion\=version3
+                                    multicastforwarding\=disabled multicastforwarding\=enabled
+                                    groupforwardedfragments\=disabled groupforwardedfragments\=enabled
+                                    randomizeidentifiers\=disabled randomizeidentifiers\=enabled
+                                    store\=active store\=persistent
+                                    addressmaskreply\=disabled addressmaskreply\=enabled
+                                    minmtu\='
                                     ;;
 
                                 interface)
                                     if [[ $count -eq 4 ]]; then
                                         local IFS=$'\n'
                                         options=$(_netsh_interfaces)
-                                    elif [[ $count -eq 5 ]]; then
-                                        # TODO: merge all conditional statements below
-                                        options='forwarding\=disabled forwarding\=enabled'
-                                    elif [[ $count -eq 6 ]]; then
-                                        options='advertise\=disabled advertise\=enabled'
-                                    elif [[ $count -eq 7 ]]; then
-                                        options='mtu\='
-                                    elif [[ $count -eq 8 ]]; then
-                                        options='siteid\='
-                                    elif [[ $count -eq 9 ]]; then
-                                        options='metric\= metric\=automatic'
-                                    elif [[ $count -eq 10 ]]; then
-                                        options='firewall\=disabled firewall\=enabled'
-                                    elif [[ $count -eq 11 ]]; then
-                                        options='siteprefixlength\='
-                                    elif [[ $count -eq 12 ]]; then
-                                        options='nud\=disabled nud\=enabled'
-                                    elif [[ $count -eq 13 ]]; then
-                                        options='basereachabletime\='
-                                    elif [[ $count -eq 14 ]]; then
-                                        options='retransmittime\='
-                                    elif [[ $count -eq 15 ]]; then
-                                        options='dadtransmits\='
-                                    elif [[ $count -eq 16 ]]; then
-                                        options='routerdiscovery\=dhcp routerdiscovery\=disabled routerdiscovery\=enabled'
-                                    elif [[ $count -eq 17 ]]; then
-                                        options='managedaddress\=enabled managedaddress\=disabled'
-                                    elif [[ $count -eq 18 ]]; then
-                                        options='otherstateful\=disabled otherstateful\=enabled'
-                                    elif [[ $count -eq 19 ]]; then
-                                        options='weakhostsend\=enabled weakhostsend\=disabled'
-                                    elif [[ $count -eq 20 ]]; then
-                                        options='weakhostreceive\=enabled weakhostreceive\=disabled'
-                                    elif [[ $count -eq 21 ]]; then
-                                        options='ignoredefaultroutes\=disabled ignoredefaultroutes\=enabled'
-                                    elif [[ $count -eq 22 ]]; then
-                                        options='advertisedrouterlifetime\='
-                                    elif [[ $count -eq 23 ]]; then
-                                        options='currenthoplimit\='
-                                    elif [[ $count -eq 24 ]]; then
-                                        options='advertisedefaultroute\=disabled advertisedefaultroute\=enabled'
-                                    elif [[ $count -eq 25 ]]; then
-                                        options='currenthoplimit\='
-                                    elif [[ $count -eq 26 ]]; then
-                                        options='store\=active store\=persistent'
-                                    elif [[ $count -eq 27 ]]; then
-                                        options='forcearpndwolpattern\=enabled forcearpndwolpattern\=disabled'
-                                    elif [[ $count -eq 28 ]]; then
-                                        options='enabledirectedmacwolpattern\=disabled enabledirectedmacwolpattern\=enabled'
-                                    elif [[ $count -eq 29 ]]; then
-                                        options='ecncapability\=ecndisabled ecncapability\=ect1 ecncapability\=ect0 ecncapability\=application'
+                                    else
+                                        options='forwarding\=disabled forwarding\=enabled
+                                        advertise\=disabled advertise\=enabled
+                                        mtu\=
+                                        siteid\=
+                                        metric\= metric\=automatic
+                                        firewall\=disabled firewall\=enabled
+                                        siteprefixlength\=
+                                        nud\=disabled nud\=enabled
+                                        basereachabletime\=
+                                        retransmittime\=
+                                        dadtransmits\=
+                                        routerdiscovery\=dhcp routerdiscovery\=disabled routerdiscovery\=enabled
+                                        managedaddress\=enabled managedaddress\=disabled
+                                        otherstateful\=disabled otherstateful\=enabled
+                                        weakhostsend\=enabled weakhostsend\=disabled
+                                        weakhostreceive\=enabled weakhostreceive\=disabled
+                                        ignoredefaultroutes\=disabled ignoredefaultroutes\=enabled
+                                        advertisedrouterlifetime\=
+                                        currenthoplimit\=
+                                        advertisedefaultroute\=disabled advertisedefaultroute\=enabled
+                                        currenthoplimit\=
+                                        store\=active store\=persistent
+                                        forcearpndwolpattern\=enabled forcearpndwolpattern\=disabled
+                                        enabledirectedmacwolpattern\=disabled enabledirectedmacwolpattern\=enabled
+                                        ecncapability\=ecndisabled ecncapability\=ect1 ecncapability\=ect0 ecncapability\=application'
                                     fi
                                     ;;
 

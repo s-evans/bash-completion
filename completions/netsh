@@ -793,25 +793,19 @@ _netsh()
                                         local IFS=$'\n'
                                         options=$(_netsh_interfaces)
                                     elif [[ $count -eq 5 ]]; then
-                                        compopt -o nospace
                                         options='address\='
                                     elif [[ $count -eq 6 ]]; then
-                                        compopt -o nospace
                                         options='mask\='
                                     elif [[ $count -eq 7 ]]; then
                                         options='unicast anycast'
                                     elif [[ $count -eq 8 ]]; then
                                         # TODO: suggest a decent gateway using the address and mask
-                                        compopt -o nospace
                                         options='gateway\='
                                     elif [[ $count -eq 9 ]]; then
-                                        compopt -o nospace
                                         options='gwmetric\='
                                     elif [[ $count -eq 10 ]]; then
-                                        compopt -o nospace
                                         options='validlifetime\='
                                     elif [[ $count -eq 11 ]]; then
-                                        compopt -o nospace
                                         options='preferredlifetime\='
                                     elif [[ $count -eq 12 ]]; then
                                         local IFS=$'\n'
@@ -828,10 +822,8 @@ _netsh()
                                         local IFS=$'\n'
                                         options=$(_netsh_interfaces)
                                     elif [[ $count -eq 5 ]]; then
-                                        compopt -o nospace
                                         options='address\='
                                     elif [[ $count -eq 6 ]]; then
-                                        compopt -o nospace
                                         options='index\='
                                     elif [[ $count -eq 7 ]]; then
                                         options='validate\=yes validate\=no'
@@ -842,10 +834,8 @@ _netsh()
                                     if [[ $count -eq 4 ]]; then
                                         options='udp tcp'
                                     elif [[ $count -eq 5 ]]; then
-                                        compopt -o nospace
                                         options='startport\='
                                     elif [[ $count -eq 6 ]]; then
-                                        compopt -o nospace
                                         options='numberofports\='
                                     elif [[ $count -eq 7 ]]; then
                                         options='active persistent'
@@ -857,10 +847,8 @@ _netsh()
                                         local IFS=$'\n'
                                         options=$(_netsh_interfaces)
                                     elif [[ $count -eq 5 ]]; then
-                                        compopt -o nospace
                                         options='address\='
                                     elif [[ $count -eq 6 ]]; then
-                                        compopt -o nospace
                                         options='neighbor\='
                                     elif [[ $count -eq 7 ]]; then
                                         local IFS=$'\n'
@@ -872,27 +860,21 @@ _netsh()
 
 								route)
                                     if [[ $count -eq 4 ]]; then
-                                        compopt -o nospace
                                         options='prefix\='
                                     elif [[ $count -eq 5 ]]; then
                                         local IFS=$'\n'
                                         options=$(_netsh_interfaces)
                                     elif [[ $count -eq 6 ]]; then
-                                        compopt -o nospace
                                         options='nexthop\='
                                     elif [[ $count -eq 7 ]]; then
-                                        compopt -o nospace
                                         options='siteprefixlength\='
                                     elif [[ $count -eq 8 ]]; then
-                                        compopt -o nospace
                                         options='metric\='
                                     elif [[ $count -eq 9 ]]; then
                                         options='publish\=no publish\=age publish\=yes'
                                     elif [[ $count -eq 10 ]]; then
-                                        compopt -o nospace
                                         options='validlifetime\='
                                     elif [[ $count -eq 11 ]]; then
-                                        compopt -o nospace
                                         options='preferredlifetime\='
                                     elif [[ $count -eq 12 ]]; then
                                         options='store\=active store\=persistent'
@@ -904,10 +886,8 @@ _netsh()
                                         local IFS=$'\n'
                                         options=$(_netsh_interfaces)
                                     elif [[ $count -eq 5 ]]; then
-                                        compopt -o nospace
                                         options='address\='
                                     elif [[ $count -eq 6 ]]; then
-                                        compopt -o nospace
                                         options='index\='
                                     fi
 									;;
@@ -1064,10 +1044,8 @@ _netsh()
                                     elif [[ $count -eq 5 ]]; then
                                         options='dhcp static'
                                     elif [[ $count -eq 6 ]]; then
-                                        compopt -o nospace
                                         options='address\='
                                     elif [[ $count -eq 7 ]]; then
-                                        compopt -o nospace
                                         options='mask\='
                                     elif [[ $count -eq 8 ]]; then
                                         options='gateway\=none gateway\='
@@ -1257,7 +1235,6 @@ _netsh()
 
                                 compartments)
                                     if [[ $count -eq 4 ]]; then
-                                        compopt -o nospace
                                         options='compartment\='
                                     elif [[ $count -eq 5 ]]; then
                                         options='normal verbose'
@@ -1271,7 +1248,6 @@ _netsh()
                                         local IFS=$'\n'
                                         options=$(_netsh_interfaces)
                                     elif [[ $count -eq 5 ]]; then
-                                        compopt -o nospace
                                         options='address\='
                                     elif [[ $count -eq 6 ]]; then
                                         options='normal verbose'
@@ -1304,7 +1280,6 @@ _netsh()
                                     ;&
                                 icmpstats)
                                     if [[ $count -eq 4 ]]; then
-                                        compopt -o nospace
                                         options='rr\='
                                     fi
                                     ;;
@@ -1314,7 +1289,6 @@ _netsh()
                                         local IFS=$'\n'
                                         options=$(_netsh_interfaces)
                                     elif [[ $count -eq 5 ]]; then
-                                        compopt -o nospace
                                         options='rr\='
                                     elif [[ $count -eq 6 ]]; then
                                         options='normal verbose'
@@ -1349,7 +1323,6 @@ _netsh()
                                         options=$(_netsh_interfaces)
                                     elif [[ $count -eq 5 ]]; then
                                         # TODO: list neighbor addresses
-                                        compopt -o nospace
                                         options='address\='
                                     elif [[ $count -eq 6 ]]; then
                                         local IFS=$'\n'
@@ -1386,20 +1359,15 @@ _netsh()
                                 tcpconnections)
                                     if [[ $count -eq 4 ]]; then
                                         # TODO: list local ip addresses
-                                        compopt -o nospace
                                         options="localaddresses\="
                                     elif [[ $count -eq 5 ]]; then
-                                        compopt -o nospace
                                         options="localport\="
                                     elif [[ $count -eq 6 ]]; then
                                         # TODO: list remote addresses
-                                        compopt -o nospace
                                         options='remoteaddress\='
                                     elif [[ $count -eq 7 ]]; then
-                                        compopt -o nospace
                                         options='remoteport\='
                                     elif [[ $count -eq 8 ]]; then
-                                        compopt -o nospace
                                         options='rr\='
                                     fi
                                     ;;
@@ -1407,13 +1375,10 @@ _netsh()
                                 udpconnections)
                                     if [[ $count -eq 4 ]]; then
                                         # TODO: list local ip addresses
-                                        compopt -o nospace
                                         options="localaddresses\="
                                     elif [[ $count -eq 5 ]]; then
-                                        compopt -o nospace
                                         options="localport\="
                                     elif [[ $count -eq 6 ]]; then
-                                        compopt -o nospace
                                         options='rr\='
                                     fi
                                     ;;
@@ -1479,7 +1444,6 @@ _netsh()
                     elif [[ $count -eq 5 ]]; then
                         options='connected disconnected'
                     elif [[ $count -eq 6 ]]; then
-                        compopt -o nospace
                         options='newname\='
                     fi
                     ;;
@@ -1724,7 +1688,6 @@ _netsh()
 
                         profile)
                             if [[ $count -eq 3 ]]; then
-                                compopt -o nospace
                                 options='filename\='
                             elif [[ $count -eq 4 ]]; then
                                 local IFS=$'\n'
@@ -1806,7 +1769,6 @@ _netsh()
                                     local IFS=$'\n'
                                     options=$(_netsh_wlan_profiles)
                                 elif [[ $count -eq 4 ]]; then
-                                    compopt -o nospace
                                     options='folder\='
                                 elif [[ $count -eq 5 ]]; then
                                     local IFS=$'\n'
@@ -1862,7 +1824,6 @@ _netsh()
 
                             blockperiod)
                                 if [[ $count -eq 3 ]]; then
-                                    compopt -o nospace
                                     options='value\='
                                 fi
                                 ;;
@@ -1880,7 +1841,6 @@ _netsh()
                                     local IFS=$'\n'
                                     options=$(_netsh_wlan_profiles)
                                 elif [[ $count -eq 5 ]]; then
-                                    compopt -o nospace
                                     options='key\='
                                 elif [[ $count -eq 6 ]]; then
                                     options='persistent temporary'
@@ -1895,7 +1855,6 @@ _netsh()
                                     local IFS=$'\n'
                                     options=$(_netsh_wlan_interfaces)
                                 elif [[ $count -eq 5 ]]; then
-                                    compopt -o nospace
                                     options='priority\='
                                 fi
                                 ;;
@@ -1910,7 +1869,6 @@ _netsh()
                                 else
                                     # TODO: cull the options list
                                     # TODO: list options for ssidname
-                                    # TODO: compopt -o nospace for options ending in equals sign
 
                                     options='ssidname\= connectiontype\=ess
                                     connectiontype\=ibss autoswitch\=yes
@@ -2043,6 +2001,8 @@ _netsh()
     if [ -n "$options" -a -z "$COMPREPLY" ]; then
         COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
     fi
+
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
 
     return 0
 }

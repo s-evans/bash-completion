@@ -37,6 +37,37 @@ _netsh_interfaces()
     echo "$options"
 }
 
+_netsh_wlan_interfaces()
+{
+    local options=`netsh wlan show interfaces | sed -e '/[ ]\+Name[ ]\+: /! d' -e 's/[ ]\+Name[ ]\+: //'`
+
+    # escape bash tokenizer strings and separate with newlines
+    local IFS=$'\n'
+    options=$(printf '%q\n' $options)
+
+    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
+    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
+
+    # make lowercase for convenience
+    options=${options,,}
+
+    echo "$options"
+}
+
+_netsh_wlan_profiles()
+{
+    local options=`netsh wlan show profiles | sed -e '/^$/,/---/ d' -e '/<None>/ d' -e 's/.*: //'`
+
+    # escape bash tokenizer strings and separate with newlines
+    local IFS=$'\n'
+    options=$(printf '%q\n' $options)
+
+    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
+    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
+
+    echo "$options"
+}
+
 _netsh()
 {
     COMPREPLY=()
@@ -1642,24 +1673,65 @@ _netsh()
                 add)
                     if [[ $count -eq 2 ]]; then
                         options='filter profile'
+                        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                        return
                     fi
+
+                    case $subsubcmd in
+
+                        filter)
+                            if [[ $count -eq 3 ]]; then
+                                options='allow block denyall'
+                            elif [[ $count -eq 4 ]]; then
+                                local IFS=$'\n'
+                                options=$(_netsh_wlan_profiles)
+                            elif [[ $count -eq 5 ]]; then
+                                options='infrastructure adhoc'
+                            fi
+                            ;;
+
+                        profile)
+                            if [[ $count -eq 3 ]]; then
+                                compopt -o nospace
+                                options='filename\='
+                            elif [[ $count -eq 4 ]]; then
+                                local IFS=$'\n'
+                                options=$(_netsh_wlan_interfaces)
+                            elif [[ $count -eq 5 ]]; then
+                                options='all current'
+                            fi
+                            ;;
+
+                    esac
+
                     ;;
 
                 connect)
-                    # TODO: more
+                    if [[ $count -eq 2 ]]; then
+                        local IFS=$'\n'
+                        options=$(_netsh_wlan_profiles)
+                    elif [[ $count -eq 3 ]]; then
+                        local IFS=$'\n'
+                        options=$(_netsh_wlan_profiles)
+                    elif [[ $count -eq 4 ]]; then
+                        local IFS=$'\n'
+                        options=$(_netsh_wlan_interfaces)
+                    fi
                     ;;
 
                 delete)
                     if [[ $count -eq 2 ]]; then
                         options='filter profile'
+                    elif [[ $count -eq 3 ]]; then
+                        # TODO: more detail
+                        options=''
                     fi
                     ;;
 
                 disconnect)
-                    # TODO: this might not work (interface= prefix)
                     if [[ $count -eq 2 ]]; then
                         local IFS=$'\n'
-                        options=$(_netsh_interfaces)
+                        options=$(_netsh_wlan_interfaces)
                     fi
                     ;;
 
@@ -1669,6 +1741,9 @@ _netsh()
                 export)
                     if [[ $count -eq 2 ]]; then
                         options='hostednetworkprofile profile'
+                    elif [[ $count -eq 3 ]]; then
+                        # TODO: more detail
+                        options=''
                     fi
                     ;;
 
@@ -1683,21 +1758,58 @@ _netsh()
 
                 set)
                     if [[ $count -eq 2 ]]; then
-                        # TODO: go into more detail
                         options="allowexplicitcreds autoconfig blockednetworks \
                             blockperiod createalluserprofile hostednetwork \
                             profileorder profileparameter profiletype tracing"
+                    else
+                        # TODO: go into more detail
+                        options=''
                     fi
                     ;;
 
                 show)
-                    # TODO: go into more detail
                     if [[ $count -eq 2 ]]; then
                         options="all allowexplicitcreds autoconfig \
                             blockednetworks createalluserprofile drivers filters \
                             hostednetwork interfaces networks  \
                             onlyUseGPProfilesforAllowedNetworks profiles settings \
                             tracing"
+                    else
+
+                        case $subsubcmd in
+                            filters)
+                                if [[ $count -eq 3 ]]; then
+                                    options='allow block'
+                                fi
+                                ;;
+
+                            hostednetwork)
+                                if [[ $count -eq 3 ]]; then
+                                    options='security'
+                                fi
+                                ;;
+
+                            networks)
+                                if [[ $count -eq 3 ]]; then
+                                    local IFS=$'\n'
+                                    options=$(_netsh_wlan_interfaces)
+                                elif [[ $count -eq 4 ]]; then
+                                    options='ssid bssid'
+                                fi
+                                ;;
+
+                            profiles)
+                                if [[ $count -eq 3 ]]; then
+                                    local IFS=$'\n'
+                                    options=$(_netsh_wlan_profiles)
+                                elif [[ $count -eq 4 ]]; then
+                                    local IFS=$'\n'
+                                    options=$(_netsh_wlan_interfaces)
+                                elif [[ $count -eq 5 ]]; then
+                                    options='key\=clear'
+                                fi
+                                ;;
+                        esac
                     fi
                     ;;
 
@@ -1719,13 +1831,13 @@ _netsh()
 
         *)
             # TODO: cull the options list
-            options="-a -c -r -u -p -f ${commands[@]} ?" 
+            options="-a -c -r -u -p -f ${commands[@]}" 
             ;;
 
     esac
 
     if [[ "$prev" != "?" && -z "$IFS" ]]; then
-        options="$options ?"
+        options="$options"
     fi
 
     if [ -n "$options" -a -z "$COMPREPLY" ]; then

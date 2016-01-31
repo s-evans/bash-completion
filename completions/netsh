@@ -68,6 +68,23 @@ _netsh_wlan_profiles()
     echo "$options"
 }
 
+_netsh_ipv4_subinterfaces()
+{
+    local options=`netsh interface ipv4 show subinterfaces level=verbose | sed -e '/^SubInterface/!d' -e 's/[^ ]\+ //' -e 's/[^ ]\+$//' -e 's/[ ]\+$//'`
+
+    # escape bash tokenizer strings and separate with newlines
+    local IFS=$'\n'
+    options=$(printf '%q\n' $options)
+
+    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
+    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
+
+    # make lowercase for convenience
+    options=${options,,}
+
+    echo "$options"
+}
+
 _netsh()
 {
     COMPREPLY=()
@@ -647,6 +664,8 @@ _netsh()
                 return
             fi
 
+            # TODO: more detail
+
             case $subcmd in
                 add)
                     if [[ $count -eq 2 ]]; then
@@ -674,7 +693,6 @@ _netsh()
                     ;;
             esac
 
-            # TODO: more detail
             ;;
 
         interface)
@@ -796,9 +814,8 @@ _netsh()
                                         compopt -o nospace
                                         options='preferredlifetime\='
                                     elif [[ $count -eq 12 ]]; then
-                                        # TODO: list subinterfaces
-                                        compopt -o nospace
-                                        options='subinterface\='
+                                        local IFS=$'\n'
+                                        options=$(_netsh_ipv4_subinterfaces)
                                     elif [[ $count -eq 13 ]]; then
                                         options='active persistent'
                                     elif [[ $count -eq 14 ]]; then
@@ -846,9 +863,8 @@ _netsh()
                                         compopt -o nospace
                                         options='neighbor\='
                                     elif [[ $count -eq 7 ]]; then
-                                        # TODO: list subinterfaces
-                                        compopt -o nospace
-                                        options='subinterface\='
+                                        local IFS=$'\n'
+                                        options=$(_netsh_ipv4_subinterfaces)
                                     elif [[ $count -eq 8 ]]; then
                                         options='active persistent'
                                     fi
@@ -933,8 +949,8 @@ _netsh()
                                         # TODO: list IP address for the interface
                                         options='address\='
                                     elif [[ $count -eq 6 ]]; then
-                                        # TODO: list subinterfaces
-                                        options='subinterface\='
+                                        local IFS=$'\n'
+                                        options=$(_netsh_ipv4_subinterfaces)
                                     elif [[ $count -eq 7 ]]; then
                                         options='store\=active store\=persistent'
                                     fi
@@ -982,8 +998,8 @@ _netsh()
                                         # TODO: list neighbor IP addresses
                                         options='address\='
                                     elif [[ $count -eq 6 ]]; then
-                                        # TODO: list subinterfaces
-                                        options='subinterface\='
+                                        local IFS=$'\n'
+                                        options=$(_netsh_ipv4_subinterfaces)
                                     elif [[ $count -eq 7 ]]; then
                                         options='store\=active store\=persistent'
                                     fi
@@ -1060,7 +1076,8 @@ _netsh()
                                     elif [[ $count -eq 10 ]]; then
                                         options='unicast anycast'
                                     elif [[ $count -eq 11 ]]; then
-                                        options='subinterface\='
+                                        local IFS=$'\n'
+                                        options=$(_netsh_ipv4_subinterfaces)
                                     elif [[ $count -eq 12 ]]; then
                                         options='active persistent'
                                     fi
@@ -1105,21 +1122,29 @@ _netsh()
 
                                 global)
                                     options='defaultcurhoplimit\=
-                                    neighborcachelimit\=
-                                    routecachelimit\=
-                                    icmpredirects\=enabled icmpredirects\=disabled
-                                    sourceroutingbehavior\=drop sourceroutingbehavior\=forward sourceroutingbehavior\=dontforward
+                                    neighborcachelimit\= routecachelimit\=
+                                    icmpredirects\=enabled
+                                    icmpredirects\=disabled
+                                    sourceroutingbehavior\=drop
+                                    sourceroutingbehavior\=forward
+                                    sourceroutingbehavior\=dontforward
                                     taskoffload\=enabled taskoffload\=disabled
-                                    dhcpmediasense\=enabled dhcpmediasense\=disabled
-                                    mediasenseeventlog\=disabled mediasenseeventlog\=enabled
-                                    mldlevel\=all mldlevel\=sendonly mldlevel\=none
-                                    mldversion\=version1 mldversion\=version2 mldversion\=version3
-                                    multicastforwarding\=disabled multicastforwarding\=enabled
-                                    groupforwardedfragments\=disabled groupforwardedfragments\=enabled
-                                    randomizeidentifiers\=disabled randomizeidentifiers\=enabled
-                                    store\=active store\=persistent
-                                    addressmaskreply\=disabled addressmaskreply\=enabled
-                                    minmtu\='
+                                    dhcpmediasense\=enabled
+                                    dhcpmediasense\=disabled
+                                    mediasenseeventlog\=disabled
+                                    mediasenseeventlog\=enabled mldlevel\=all
+                                    mldlevel\=sendonly mldlevel\=none
+                                    mldversion\=version1 mldversion\=version2
+                                    mldversion\=version3
+                                    multicastforwarding\=disabled
+                                    multicastforwarding\=enabled
+                                    groupforwardedfragments\=disabled
+                                    groupforwardedfragments\=enabled
+                                    randomizeidentifiers\=disabled
+                                    randomizeidentifiers\=enabled store\=active
+                                    store\=persistent
+                                    addressmaskreply\=disabled
+                                    addressmaskreply\=enabled minmtu\=' 
                                     ;;
 
                                 interface)
@@ -1127,31 +1152,40 @@ _netsh()
                                         local IFS=$'\n'
                                         options=$(_netsh_interfaces)
                                     else
-                                        options='forwarding\=disabled forwarding\=enabled
-                                        advertise\=disabled advertise\=enabled
-                                        mtu\=
-                                        siteid\=
+                                        options='forwarding\=disabled
+                                        forwarding\=enabled advertise\=disabled
+                                        advertise\=enabled mtu\= siteid\=
                                         metric\= metric\=automatic
                                         firewall\=disabled firewall\=enabled
-                                        siteprefixlength\=
-                                        nud\=disabled nud\=enabled
-                                        basereachabletime\=
-                                        retransmittime\=
-                                        dadtransmits\=
-                                        routerdiscovery\=dhcp routerdiscovery\=disabled routerdiscovery\=enabled
-                                        managedaddress\=enabled managedaddress\=disabled
-                                        otherstateful\=disabled otherstateful\=enabled
-                                        weakhostsend\=enabled weakhostsend\=disabled
-                                        weakhostreceive\=enabled weakhostreceive\=disabled
-                                        ignoredefaultroutes\=disabled ignoredefaultroutes\=enabled
+                                        siteprefixlength\= nud\=disabled
+                                        nud\=enabled basereachabletime\=
+                                        retransmittime\= dadtransmits\=
+                                        routerdiscovery\=dhcp
+                                        routerdiscovery\=disabled
+                                        routerdiscovery\=enabled
+                                        managedaddress\=enabled
+                                        managedaddress\=disabled
+                                        otherstateful\=disabled
+                                        otherstateful\=enabled
+                                        weakhostsend\=enabled
+                                        weakhostsend\=disabled
+                                        weakhostreceive\=enabled
+                                        weakhostreceive\=disabled
+                                        ignoredefaultroutes\=disabled
+                                        ignoredefaultroutes\=enabled
                                         advertisedrouterlifetime\=
                                         currenthoplimit\=
-                                        advertisedefaultroute\=disabled advertisedefaultroute\=enabled
-                                        currenthoplimit\=
-                                        store\=active store\=persistent
-                                        forcearpndwolpattern\=enabled forcearpndwolpattern\=disabled
-                                        enabledirectedmacwolpattern\=disabled enabledirectedmacwolpattern\=enabled
-                                        ecncapability\=ecndisabled ecncapability\=ect1 ecncapability\=ect0 ecncapability\=application'
+                                        advertisedefaultroute\=disabled
+                                        advertisedefaultroute\=enabled
+                                        currenthoplimit\= store\=active
+                                        store\=persistent
+                                        forcearpndwolpattern\=enabled
+                                        forcearpndwolpattern\=disabled
+                                        enabledirectedmacwolpattern\=disabled
+                                        enabledirectedmacwolpattern\=enabled
+                                        ecncapability\=ecndisabled
+                                        ecncapability\=ect1 ecncapability\=ect0
+                                        ecncapability\=application' 
                                     fi
                                     ;;
 
@@ -1170,8 +1204,8 @@ _netsh()
                                     elif [[ $count -eq 5 ]]; then
                                         options='mtu\='
                                     elif [[ $count -eq 6 ]]; then
-                                        # TODO: list subinterfaces
-                                        options='subinterface\='
+                                        local IFS=$'\n'
+                                        options=$(_netsh_ipv4_subinterfaces)
                                     elif [[ $count -eq 7 ]]; then
                                         options='store\=active store\=persistent'
                                     fi
@@ -1318,9 +1352,8 @@ _netsh()
                                         compopt -o nospace
                                         options='address\='
                                     elif [[ $count -eq 6 ]]; then
-                                        # TODO: list subinterfaces
-                                        compopt -o nospace
-                                        options='subinterface\='
+                                        local IFS=$'\n'
+                                        options=$(_netsh_ipv4_subinterfaces)
                                     elif [[ $count -eq 7 ]]; then
                                         options='normal verbose'
                                     elif [[ $count -eq 8 ]]; then
@@ -1341,9 +1374,8 @@ _netsh()
                                         local IFS=$'\n'
                                         options=$(_netsh_interfaces)
                                     elif [[ $count -eq 5 ]]; then
-                                        # TODO: list subinterfaces
-                                        compopt -o nospace
-                                        options='subinterface\='
+                                        local IFS=$'\n'
+                                        options=$(_netsh_ipv4_subinterfaces)
                                     elif [[ $count -eq 6 ]]; then
                                         options='normal verbose'
                                     elif [[ $count -eq 7 ]]; then

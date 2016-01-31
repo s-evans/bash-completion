@@ -284,7 +284,6 @@ _netsh()
                     ;;
 
                 monitor)
-                    # TODO: more detail
                     if [[ $count -eq 2 ]]; then
                         options='delete dump show'
                         COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
@@ -293,9 +292,14 @@ _netsh()
 
                     case $subsubcmd in
                         delete)
-                            # TODO: next level contains 'all'
                             if [[ $count -eq 3 ]]; then
                                 options='mmsa qmsa'
+                            elif [[ $count -eq 4 ]]; then
+                                # TODO: list possible sources
+                                options='all'
+                            elif [[ $count -eq 5 ]]; then
+                                # TODO: list possible destinations
+                                options=''
                             fi
                             ;;
 
@@ -303,6 +307,9 @@ _netsh()
                             if [[ $count -eq 3 ]]; then
                                 options="consec currentprofile firewall \
                                     mainmode mmsa qmsa"
+                            elif [[ $count -eq 4 ]]; then
+                                # TODO: more detail
+                                options=''
                             fi
                             ;;
                     esac

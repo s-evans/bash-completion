@@ -1722,9 +1722,33 @@ _netsh()
                 delete)
                     if [[ $count -eq 2 ]]; then
                         options='filter profile'
-                    elif [[ $count -eq 3 ]]; then
-                        # TODO: more detail
-                        options=''
+                    else
+
+                        case $subsubcmd in
+
+                            filter)
+                                if [[ $count -eq 3 ]]; then
+                                    options='allow block denyall'
+                                elif [[ $count -eq 4 ]]; then
+                                    local IFS=$'\n'
+                                    options=$(_netsh_wlan_profiles)
+                                elif [[ $count -eq 5 ]]; then
+                                    options='infrastructure adhoc'
+                                fi
+                                ;;
+
+                            profile)
+                                if [[ $count -eq 3 ]]; then
+                                    local IFS=$'\n'
+                                    options=$(_netsh_wlan_profiles)
+                                elif [[ $count -eq 4 ]]; then
+                                    local IFS=$'\n'
+                                    options=$(_netsh_wlan_interfaces)
+                                fi
+                                ;;
+
+                        esac
+
                     fi
                     ;;
 
@@ -1741,9 +1765,27 @@ _netsh()
                 export)
                     if [[ $count -eq 2 ]]; then
                         options='hostednetworkprofile profile'
-                    elif [[ $count -eq 3 ]]; then
-                        # TODO: more detail
-                        options=''
+                    else
+
+                        case $subsubcmd in
+
+                            profile)
+                                if [[ $count -eq 3 ]]; then
+                                    local IFS=$'\n'
+                                    options=$(_netsh_wlan_profiles)
+                                elif [[ $count -eq 4 ]]; then
+                                    compopt -o nospace
+                                    options='folder\='
+                                elif [[ $count -eq 5 ]]; then
+                                    local IFS=$'\n'
+                                    options=$(_netsh_wlan_interfaces)
+                                elif [[ $count -eq 6 ]]; then
+                                    options='key\=clear'
+                                fi
+                                ;;
+
+                        esac
+
                     fi
                     ;;
 
@@ -1762,8 +1804,134 @@ _netsh()
                             blockperiod createalluserprofile hostednetwork \
                             profileorder profileparameter profiletype tracing"
                     else
-                        # TODO: go into more detail
-                        options=''
+
+                        case $subsubcmd in
+
+                            allowexplicitcreds)
+                                if [[ $count -eq 3 ]]; then
+                                    options='yes no'
+                                fi
+                                ;;
+
+                            autoconfig)
+                                if [[ $count -eq 3 ]]; then
+                                    options='yes no'
+                                elif [[ $count -eq 4 ]]; then
+                                    local IFS=$'\n'
+                                    options=$(_netsh_wlan_interfaces)
+                                fi
+                                ;;
+
+                            blockednetworks)
+                                if [[ $count -eq 3 ]]; then
+                                    options='show hide'
+                                fi
+                                ;;
+
+                            blockperiod)
+                                if [[ $count -eq 3 ]]; then
+                                    compopt -o nospace
+                                    options='value\='
+                                fi
+                                ;;
+
+                            createalluserprofile)
+                                if [[ $count -eq 3 ]]; then
+                                    options='yes no'
+                                fi
+                                ;;
+
+                            hostednetwork)
+                                if [[ $count -eq 3 ]]; then
+                                    options='allow disallow'
+                                elif [[ $count -eq 4 ]]; then
+                                    local IFS=$'\n'
+                                    options=$(_netsh_wlan_profiles)
+                                elif [[ $count -eq 5 ]]; then
+                                    compopt -o nospace
+                                    options='key\='
+                                elif [[ $count -eq 6 ]]; then
+                                    options='persistent temporary'
+                                fi
+                                ;;
+
+                            profileorder)
+                                if [[ $count -eq 3 ]]; then
+                                    local IFS=$'\n'
+                                    options=$(_netsh_wlan_profiles)
+                                elif [[ $count -eq 4 ]]; then
+                                    local IFS=$'\n'
+                                    options=$(_netsh_wlan_interfaces)
+                                elif [[ $count -eq 5 ]]; then
+                                    compopt -o nospace
+                                    options='priority\='
+                                fi
+                                ;;
+
+                            profileparameter) 
+                                if [[ $count -eq 3 ]]; then
+                                    local IFS=$'\n'
+                                    options=$(_netsh_wlan_profiles)
+                                elif [[ $count -eq 4 ]]; then
+                                    local IFS=$'\n'
+                                    options=$(_netsh_wlan_interfaces)
+                                else
+                                    # TODO: cull the options list
+                                    # TODO: list options for ssidname
+                                    # TODO: compopt -o nospace for options ending in equals sign
+
+                                    options='ssidname\= connectiontype\=ess
+                                    connectiontype\=ibss autoswitch\=yes
+                                    autoswitch\=no connectionmode\=auto
+                                    connectionmode\=manual nonbroadcast\=yes
+                                    nonbroadcast\=no randomization\=yes
+                                    randomization\=no randomization\=daily
+                                    authentication\=open authentication\=shared
+                                    authentication\=wpa authentication\=wpa2
+                                    authentication\=wpapsk
+                                    authentication\=wpa2psk encryption\=none
+                                    encryption\=wep encryption\=tkip
+                                    encryption\=aes keytype\=networkkey
+                                    keytype\=passphrase keyindex\=
+                                    keymaterial\= pmkcachemode\=yes
+                                    pmkcachemode\=no pmkcachesize\=
+                                    pmkcachettl\= preauthmode\=yes
+                                    preauthmode\=no preauththrottle\= fips\=yes
+                                    fips\=no useonex\=yes useonex\=no
+                                    authmode\=machineoruser
+                                    authmode\=machineonly authmode\=useronly
+                                    authmode\=guest ssomode\=prelogon
+                                    ssomode\=postlogon ssomode\=none maxdelay\=
+                                    allowdialog\=yes allowdialog\=no
+                                    uservlan\=yes uservlan\=no heldperiod\=
+                                    authperiod\= startperiod\= maxstart\=
+                                    maxauthfailures\= cacheuserdata\=yes
+                                    cacheuserdata\=no cost\=default
+                                    cost\=unrestricted cost\=fixed
+                                    cost\=variable'
+                                fi
+                                ;;
+
+                            profiletype)
+                                if [[ $count -eq 3 ]]; then
+                                    local IFS=$'\n'
+                                    options=$(_netsh_wlan_profiles)
+                                elif [[ $count -eq 4 ]]; then
+                                    options='all current'
+                                elif [[ $count -eq 5 ]]; then
+                                    local IFS=$'\n'
+                                    options=$(_netsh_wlan_interfaces)
+                                fi
+                                ;;
+
+                            tracing)
+                                if [[ $count -eq 3 ]]; then
+                                    options='yes no persistent'
+                                fi
+                                ;;
+
+                        esac
+
                     fi
                     ;;
 

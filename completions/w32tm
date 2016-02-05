@@ -1,0 +1,108 @@
+#!/usr/bin/env sh
+
+_w32tm()
+{
+    COMPREPLY=()
+
+    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+    local options=''
+
+    if [[ $COMP_CWORD -eq 1 ]] ; then
+        local commands='/register /unregister /monitor /ntte /ntpte /resync
+        /stripchart /config /tz /dumpreg /query /debug /?'
+        COMPREPLY=( $( compgen -W "$commands" -- "${cur,,}" ) )
+        return 0
+    fi
+
+    local cmd=$(printf '%q' "${COMP_WORDS[1]}")
+
+    case $cmd in
+
+        /ntte)
+            ;&
+        /register)
+            ;&
+        /ntpte)
+            ;&
+        /unregister)
+            ;&
+        /tz)
+            ;&
+        /?)
+            options=''
+            ;;
+
+        /monitor)
+            # TODO: cull options list
+            options='/domain\: /computers\: /threads\: /ipprotocol\:4 /ipprotocol\:6 /nowarn'
+            ;;
+
+        /resync)
+            # TODO: cull options list
+            options='/computer\: /nowait /rediscover /soft'
+            ;;
+
+        /stripchart)
+            if [[ $COMP_CWORD -eq 2 ]]; then
+                options='/computer\:'
+            else
+                # TODO: cull options list
+                options='/period\: /dataonly /samples\: /packetinfo /ipprotocol\:4
+                /ipprotocol\:6'
+            fi
+            ;;
+
+        /config)
+            # TODO: cull options list
+            options='/computer\: /update /manualpeerlist\: /syncfromflags\:all
+            /syncfromflags\:manual /syncfromflags\:domhier /syncfromflags\:no
+            /localclockdispersion\: /reliable\:yes /reliable\:no
+            /largephaseoffset\:'
+            ;;
+
+        /dumpreg)
+            # TODO: cull options list
+            options='/subkey\: /computer\:'
+            ;;
+
+        /query)
+            if [[ $COMP_CWORD -eq 2 ]]; then
+                options='/source /configuration /peers /status /computer\:'
+            elif [[ ${COMP_WORDS[2]} == /computer\\:* ]]; then
+                if [[ $COMP_CWORD -eq 3 ]]; then
+                    options='/source /configuration /peers /status'
+                elif [[ $COMP_CWORD -eq 4 ]]; then
+                    options='/verbose'
+                fi
+            elif [[ $COMP_CWORD -eq 3 ]]; then
+                options='/verbose'
+            fi
+            ;;
+
+        /debug)
+            if [[ $COMP_CWORD -eq 2 ]]; then
+                options='/disable /enable'
+            elif [[ ${COMP_WORDS[2]} == /enable ]]; then
+                if [[ $COMP_CWORD -eq 3 ]]; then
+                    options='/file\:'
+                elif [[ $COMP_CWORD -eq 4 ]]; then
+                    options='/size\:'
+                elif [[ $COMP_CWORD -eq 5 ]]; then
+                    options='/entries\:'
+                elif [[ $COMP_CWORD -eq 6 ]]; then
+                    options='/truncate'
+                fi
+            fi
+            ;;
+
+    esac
+
+    COMPREPLY=( $( compgen -W '$options' -- "${cur,,}" ) )
+
+    [[ $COMPREPLY == *: ]] && compopt -o nospace
+
+    return 0
+}
+
+complete -o default -F _w32tm w32tm w32tm.exe
+

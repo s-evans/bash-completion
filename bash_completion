@@ -1968,7 +1968,8 @@ complete -F _minimal ''
 __load_completion()
 {
     local -a dirs=( ${BASH_COMPLETION_USER_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/bash-completion}/completions )
-    local OIFS=$IFS IFS=: dir cmd="$1" compfile
+    local cmd=${1%.exe}
+    local OIFS=$IFS IFS=: dir cmd="$cmd" compfile
     for dir in ${XDG_DATA_DIRS:-/usr/local/share:/usr/share}; do
         dirs+=( $dir/bash-completion/completions )
     done

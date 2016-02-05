@@ -15,10 +15,6 @@ _sed()
         '--binary' '-l' '--line-length=' '--posix' '-r' '--regexp-extended' '-s' \
         '--separate' '-u' '--unbuffered' '-z' '--null-data' '--help' '--version' )
 
-    if [[ $cur == *= ]]; then
-        compopt -o nospace
-    fi
-
     for option in ${option_list[@]} ; do
         local found=0
 
@@ -35,6 +31,8 @@ _sed()
     done
 
     COMPREPLY=( $( compgen -f -W "$options" -- $cur ) )
+
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
 
     return 0
 }

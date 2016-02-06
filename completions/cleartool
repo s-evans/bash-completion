@@ -792,7 +792,7 @@ _cleartool()
 
     return 0
 }
-complete -o default -F _cleartool cleartool ct
+complete -o default -F _cleartool cleartool ct cleartool.exe
 
 _multitool()
 {
@@ -923,7 +923,7 @@ _multitool()
 
     return 0
 }
-complete -o default -F _multitool multitool mt
+complete -o default -F _multitool multitool mt multitool.exe
 
 _clearaudit()
 {
@@ -939,7 +939,7 @@ _clearaudit()
 
     return 0
 }
-complete -o default -A command -F _clearaudit clearaudit
+complete -o default -A command -F _clearaudit clearaudit clearaudit.exe
 
 _clearbug()
 {
@@ -955,7 +955,7 @@ _clearbug()
 
     return 0
 }
-complete -o default -F _clearbug clearbug
+complete -o default -F _clearbug clearbug clearbug.exe
 
 _cleardiffbl()
 {
@@ -971,7 +971,7 @@ _cleardiffbl()
 
     return 0
 }
-complete -o default -F _cleardiffbl cleardiffbl
+complete -o default -F _cleardiffbl cleardiffbl cleardiffbl.exe
 
 _cleardiff()
 {
@@ -990,7 +990,7 @@ _cleardiff()
 
     return 0
 }
-complete -o default -F _cleardiff cleardiff
+complete -o default -F _cleardiff cleardiff cleardiff.exe
 
 _clearexport_ccase()
 {
@@ -1006,7 +1006,7 @@ _clearexport_ccase()
 
     return 0
 }
-complete -o default -F _clearexport_ccase clearexport_ccase
+complete -o default -F _clearexport_ccase clearexport_ccase clearexport_ccase.exe
 
 _clearexport_cvs()
 {
@@ -1022,7 +1022,7 @@ _clearexport_cvs()
 
     return 0
 }
-complete -o default -F _clearexport_cvs clearexport_cvs
+complete -o default -F _clearexport_cvs clearexport_cvs clearexport_cvs.exe
 
 _clearexport_rcs()
 {
@@ -1038,7 +1038,7 @@ _clearexport_rcs()
 
     return 0
 }
-complete -o default -F _clearexport_rcs clearexport_rcs
+complete -o default -F _clearexport_rcs clearexport_rcs clearexport_rcs.exe
 
 _clearexport_sccs()
 {
@@ -1054,7 +1054,7 @@ _clearexport_sccs()
 
     return 0
 }
-complete -o default -F _clearexport_sccs clearexport_sccs
+complete -o default -F _clearexport_sccs clearexport_sccs clearexport_sccs.exe
 
 _clearexport_ffile()
 {
@@ -1070,7 +1070,7 @@ _clearexport_ffile()
 
     return 0
 }
-complete -o default -F _clearexport_ffile clearexport_ffile
+complete -o default -F _clearexport_ffile clearexport_ffile clearexport_ffile.exe
 
 _clearexport_pvcs()
 {
@@ -1086,7 +1086,7 @@ _clearexport_pvcs()
 
     return 0
 }
-complete -o default -F _clearexport_pvcs clearexport_pvcs
+complete -o default -F _clearexport_pvcs clearexport_pvcs clearexport_pvcs.exe
 
 _clearfsimport()
 {
@@ -1104,7 +1104,7 @@ _clearfsimport()
 
     return 0
 }
-complete -o default -F _clearfsimport clearfsimport
+complete -o default -F _clearfsimport clearfsimport clearfsimport.exe
 
 _cleargetlog()
 {
@@ -1120,7 +1120,7 @@ _cleargetlog()
 
     return 0
 }
-complete -o default -F _cleargetlog cleargetlog
+complete -o default -F _cleargetlog cleargetlog cleargetlog.exe
 
 _clearhistory()
 {
@@ -1137,7 +1137,7 @@ _clearhistory()
 
     return 0
 }
-complete -o default -F _clearhistory clearhistory
+complete -o default -F _clearhistory clearhistory clearhistory.exe
 
 _clearimport()
 {
@@ -1154,7 +1154,7 @@ _clearimport()
 
     return 0
 }
-complete -o default -F _clearimport clearimport
+complete -o default -F _clearimport clearimport clearimport.exe
 
 _clearlicense()
 {
@@ -1170,7 +1170,7 @@ _clearlicense()
 
     return 0
 }
-complete -o default -F _clearlicense clearlicense
+complete -o default -F _clearlicense clearlicense clearlicense.exe
 
 _clearmrgman()
 {
@@ -1189,7 +1189,7 @@ _clearmrgman()
 
     return 0
 }
-complete -o default -F _clearmrgman clearmrgman
+complete -o default -F _clearmrgman clearmrgman clearmrgman.exe
 
 _clearprompt()
 {
@@ -1207,7 +1207,7 @@ _clearprompt()
 
     return 0
 }
-complete -o default -F _clearprompt clearprompt
+complete -o default -F _clearprompt clearprompt clearprompt.exe
 
 _clearviewupdate()
 {
@@ -1223,7 +1223,7 @@ _clearviewupdate()
 
     return 0
 }
-complete -o default -F _clearviewupdate clearviewupdate
+complete -o default -F _clearviewupdate clearviewupdate clearviewupdate.exe
 
 _clearvobadmin()
 {
@@ -1239,6 +1239,6 @@ _clearvobadmin()
 
     return 0
 }
-complete -o default -F _clearvobadmin clearvobadmin
+complete -o default -F _clearvobadmin clearvobadmin clearvobadmin.exe
 
 # vi: ft=sh

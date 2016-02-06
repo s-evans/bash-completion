@@ -1,0 +1,88 @@
+#!/usr/bin/env sh
+
+_msbuild_end()
+{
+    if [ -n "$options" -a -z "$COMPREPLY" ]; then
+        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+    fi
+
+    [[ $COMPREPLY == *: ]] && compopt -o nospace
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+    [[ $COMPREPLY == *\; ]] && compopt -o nospace
+}
+
+_msbuild()
+{
+    COMPREPLY=()
+
+    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+    local options=''
+
+    # TODO: cull used options and remove mutually exclusive options
+
+    case ${COMP_WORDS[COMP_CWORD]} in
+
+        /consoleloggerparameters\\:*)
+            local existing_options=$(echo "${COMP_WORDS[COMP_CWORD]}" | sed -e 's/[^:;]*$//')
+
+            for new_option in 'performancesummary' 'summary' 'nosummary' \
+                'errorsonly' 'warningsonly' 'noitemandpropertylist' \
+                'showcommandline' 'showtimestamp' 'showeventid' 'forcenoalign' \
+                'disableconsolecolor' 'verbosity\=quiet' 'verbosity\=minimal' \
+                'verbosity\=normal' 'verbosity\=detailed' \
+                'verbosity\=diagnostic' 'disablemplogging' 'enablemplogging';
+            do
+                options+=" ${existing_options}${new_option}\; "
+            done
+
+            _msbuild_end
+            return 0
+            ;;
+
+        /fileloggerparameters\\:*)
+            local existing_options=$(echo "${COMP_WORDS[COMP_CWORD]}" | sed -e 's/[^:;]*$//')
+
+            # TODO: fix logfile= so that it will stop and suggest files
+            for new_option in 'logfile\=' 'append' 'encoding\=utf-8' \
+                'encoding\=unicode' 'encoding\=ascii'; do
+                options+=" ${existing_options}${new_option}\; "
+            done
+
+            _msbuild_end
+            return 0
+            ;;
+
+        @*)
+            # TODO: list files
+            options='@'
+            _msbuild_end
+            return 0
+            ;;
+
+        /target\\:*)
+            # TODO: list avilable targets from the given project file, if available in the command string or in the current directory
+            options='/target\:'
+            _msbuild_end
+            return 0
+            ;;
+
+        *)
+            options='/target\: /property\: /maxcpucount\: /maxcpucount
+            /toolsversion\: /verbosity\:quiet /verbosity\:minimal
+            /verbosity\:normal /verbosity\:detailed /verbosity\:diagnostic
+            /consoleloggerparameters\: /noconsolelogger /filelogger
+            /fileloggerparameters\: /distributedlogger\: /distributedfilelogger
+            /logger\: /validate /validate\: /ignoreprojectextensions\:
+            /nodereuse\:true /nodereuse\:false /preprocess /preprocess\:
+            /detailedsummary @ /noautoresponse /nologo /version /help' 
+            _msbuild_end
+            return 0
+            ;;
+
+    esac
+
+    return 0
+}
+
+complete -o default -F _msbuild msbuild msbuild.exe MSBuild MSBuild.exe
+

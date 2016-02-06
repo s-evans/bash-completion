@@ -1,0 +1,121 @@
+#!/usr/bin/env sh
+
+_msiexec_pkgs()
+{
+    local options=$( ( reg query 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall'; reg query 'HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall' ) | sed -e 's/[^{]*//')
+
+    # escape bash tokenizer strings and separate with newlines
+    local IFS=$'\n'
+    options=$(printf '%q\n' $options)
+
+    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
+    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
+
+    echo "$options"
+}
+
+_msiexec_end()
+{
+    if [ -n "$options" -a -z "$COMPREPLY" ]; then
+        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+    fi
+
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+}
+
+_msiexec()
+{
+    COMPREPLY=()
+
+    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+    local options=''
+
+    local install_options='/package /i /a /j /ju /jm /uninstall /x /update'
+    local repair_options='/f /fp /fo /fe /fd /fc /fa /fu /fm /fs /fv' 
+    local restart_options='/norestart /promptrestart /forcerestart'
+    local display_options='/quiet /passive /q /qn /qb /qr /qf /help'
+    local log_options='/l /li /lw /le /la /lr /lu /lc /lm /lo /lp /lv /lx /l\+ /l\! /l\* /log'
+
+    if [[ $COMP_CWORD -eq 1 ]]; then
+        options="$install_options $repair_options"
+        _msiexec_end
+        return 0
+    fi
+
+    case ${COMP_WORDS[COMP_CWORD-1]} in
+        /l|/li|/lw|/le|/la|/lr|/lu|/lc|/lm|/lo|/lp|/lv|/lx|/l\+|/l\!|/l\*|/log)
+            return 0
+            ;;
+    esac
+
+    case ${COMP_WORDS[1]} in
+
+        /a)
+            ;&
+        /uninstall)
+            ;&
+        /x)
+            ;&
+        /update)
+            ;&
+        /i)
+            ;&
+        /package)
+            if [[ $COMP_CWORD -gt 2 ]]; then
+                options="$restart_options $display_options $log_options"
+                _msiexec_end
+                return 0
+            fi
+            ;;
+
+        /j*)
+            if [[ $COMP_CWORD -eq 2 ]]; then
+                # TODO: suggest msi files?
+                options=''
+            else
+                options="/t /g $restart_options $display_options $log_options"
+
+                case ${COMP_WORDS[COMP_CWORD-1]} in
+
+                    /t)
+                        # TODO: list transforms
+                        options=''
+                        ;;
+
+                    /g)
+                        # TODO: list language ids
+                        options=''
+                        ;;
+
+                esac
+
+            fi
+
+            _msiexec_end
+            return 0
+            ;;
+
+        /f*)
+            ;&
+        /x)
+            ;&
+        /uninstall)
+            if [[ $COMP_CWORD -eq 2 ]]; then
+                # TODO: suggest msi files?
+                local IFS=$'\n'
+                options=$(_msiexec_pkgs)
+            else
+                options="$restart_options $display_options $log_options"
+            fi
+
+            _msiexec_end
+            return 0
+            ;;
+
+    esac
+
+    return 0
+}
+
+complete -o default -F _msiexec msiexec msiexec.exe
+

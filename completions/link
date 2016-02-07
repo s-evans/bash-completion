@@ -1,0 +1,67 @@
+#!/usr/bin/env sh
+
+_link()
+{
+    COMPREPLY=()
+    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+    local options='/align /align\: /allowbind /allowbind\:no /allowisolation
+    /allowisolation\:no /appcontainer /appcontainer\:no /assemblydebug
+    /assemblydebug\:disable /assemblylinkresource\: /assemblymodule\:
+    /assemblyresource\: /base\: /clrimagetype\:ijw /clrimagetype\:pure
+    /clrimagetype\:safe /clrimagetype\:safe32bitpreferred
+    /clrloaderoptimization\:md /clrloaderoptimization\:mdh
+    /clrloaderoptimization\:none /clrloaderoptimization\:sd
+    /clrsupportlasterror /clrsupportlasterror\:no
+    /clrsupportlasterror\:systemdll /clrthreadattribute\:mta
+    /clrthreadattribute\:none /clrthreadattribute\:sta /clrunmanagedcodecheck
+    /clrunmanagedcodecheck\:no /debug /debug\:fastlink /debug\:full
+    /debug\:none /def\: /defaultlib\: /delay\:nobind /def\:unload /delayload\:
+    /delaysign /delaysign\:no /dll /driver /driver\:uponly /delaysign\:wdm
+    /dynamicbase /dynamicbase\:no /entry\: /errorreport\:none
+    /errorreport\:prompt /errorreport\:queue /errorreport\:send /export\:
+    /exportpadmin /exportpadmin\: /fastgenprofile /fastgenprofile\:counter32
+    /fastgenprofile\:counter64 /fastgenprofile\:exact /fastgenprofile\:memmax=
+    /fastgenprofile\:memmin= /fastgenprofile\:noexact /fastgenprofile\:nopath
+    /fastgenprofile\:notrackeh /fastgenprofile\:path /fastgenprofile\:pgd=
+    /fastgenprofile\:trackeh /fixed /fixed\:no /force /force\:multiple
+    /force\:unresolved /functionpadmin /functionpadmin\: /guard\:cf /guard\:no
+    /genprofile /genprofile\:counter32 /genprofile\:counter64
+    /genprofile\:exact /genprofile\:memmax= /genprofile\:memmin=
+    /genprofile\:noexact /genprofile\:nopath /genprofile\:notrackeh
+    /genprofile\:path /genprofile\:pgd= /genprofile\:trackeh /heap\:
+    /highentropyva /highentropyva\:no /idlout\: /ignore\: /ignoreidl /implib\:
+    /include\: /incremental /incremental\:no /integritycheck /kernel
+    /keycontainer\: /keyfile\: /largeaddressaware /largeaddressaware\:no
+    /libpath\: /ltcg /ltcg\:incremental /ltcg\:nostatus /ltcg\:off
+    /ltcg\:status /machine\:arm /machine\:arm64 /machine\:ebc /machine\:x64
+    /machine\:x86 /manifest /manifest\: /manifest\:no /manifestdependency\:
+    /manifestfile\: /manifestinput\: /manifestuac /manifestuac\:
+    /manifestuac\:no /map /map\: /mapinfo\: /merge\: /midl\: /noassembly
+    /nodefaultlib /nodefaultlib\: /noentry /noimplib /nologo /nxcompat
+    /nxcompat\:no /opt\:icf /opt\:lbr /opt\:noicf /opt\:nolbr /opt\:noref
+    /opt\:ref /order\: /out\: /pdb\: /pdbstripped\: /profile /release /safeseh
+    /safeseh\:no /section\: /stack\: /stub\: /subsystem\:boot_application
+    /subsystem\:console /subsystem\:efi_application
+    /subsystem\:efi_boot_service_driver /subsystem\:efi_rom
+    /subsystem\:efi_runtime_driver /subsystem\:native /subsystem\:posix
+    /subsystem\:windows /subsystem\:windowsce /swaprun\:cd /swaprun\:net
+    /tlbid\: /tlbout\: /time /tsaware /tsaware\:no /useprofile
+    /useprofile\:pgd= /verbose /verbose\:clr /verbose\:icf /verbose\:incr
+    /verbose\:lib /verbose\:ref /verbose\:safeseh /verbose\:unusedlibs
+    /version\: /winmd /winmd\:no /winmd\:only /winmddelaysign
+    /winmddelaysign\:no /winmdfile\: /winmdkeycontainer\: /winmdkeyfile\: /wx
+    /wx\:no' 
+
+    if [ -n "$options" -a -z "$COMPREPLY" ]; then
+        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+    fi
+
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+    [[ $COMPREPLY == *: ]] && compopt -o nospace
+    [[ $COMPREPLY == *, ]] && compopt -o nospace
+
+    return 0 
+}
+
+complete -o default -F _link link link.exe
+

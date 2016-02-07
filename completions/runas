@@ -1,0 +1,39 @@
+#!/usr/bin/env sh
+
+_runas()
+{
+    COMPREPLY=()
+    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+    local options=''
+
+    case ${COMP_WORDS[COMP_CWORD-1]} in
+
+        /user\\:*)
+            # TODO: list available users
+            options=''
+            ;;
+
+        /trustlevel\\:*)
+            # TODO: list available trust levels
+            options=''
+            ;;
+
+        *)
+            # TODO: cull duplicate and mutually exclusive options
+            options='/noprofile /profile /env /savecred /netonly /user\:
+            /showtrustlevels /smartcard /trustlevel\:'
+            ;;
+
+    esac
+
+    if [ -n "$options" -a -z "$COMPREPLY" ]; then
+        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+    fi
+
+    [[ $COMPREPLY == *: ]] && compopt -o nospace
+
+    return 0
+}
+
+complete -o default -F _runas runas runas.exe
+

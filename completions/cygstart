@@ -1,0 +1,29 @@
+#!/usr/bin/env sh
+
+# TODO: pass completion off to other function for the associated command
+# TODO: remove duplicate and mutual exclusive options
+
+_cygstart()
+{
+    COMPREPLY=()
+
+    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+
+    local options='--help -? --usage --version --license --reference -v
+    --verbose -w -a --action\=open --action\=explore --action\=edit
+    --action\=find --action\=print -o --open -x --explore -e --edit -f --find
+    -p --print --hide --maximize --minimize --restore --show --shownormal
+    --showmaximized --showminimized --showminnoactive --showna --shownoactivate
+    --wait -d --directory='
+
+    if [ -n "$options" -a -z "$COMPREPLY" ]; then
+        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+    fi
+
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+
+    return 0
+}
+
+complete -o default -F _cygstart cygstart cygstart.exe
+

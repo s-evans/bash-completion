@@ -2,20 +2,30 @@
 
 _windows_wmic_users()
 {
-    # TODO: this might break down if there a lot of users or usernames have spaces, special chars, etc.
-    local user_names=$(wmic useraccount get Name | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
-    user_names=${user_names,,}
-    echo "$user_names"
+    local options=$(wmic useraccount get name | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
+
+    # escape bash tokenizer strings and separate with newlines
+    local IFS=$'\n'
+    options=$(printf '%q\n' $options)
+
+    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
+    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
+
+    echo "$options"
 }
 
 _wmic_services()
 {
-    local services=$(wmic service get name | sed -e '1d' -e '$d' -e 's/\r//' -e 's/ \+$//')
+    local options=$(wmic service get name | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
+
+    # escape bash tokenizer strings and separate with newlines
     local IFS=$'\n'
-    services=$(printf '%q\n' $services)
-    services=`echo "$services" | sed 's/[:=]/\\\&/g'`
-    services=${services,,}
-    echo "$services"
+    options=$(printf '%q\n' $options)
+
+    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
+    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
+
+    echo "$options"
 }
 
 _wmic()

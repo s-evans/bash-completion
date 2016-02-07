@@ -12,10 +12,12 @@ _windows_net_services()
 
 _windows_net_users()
 {
-    # TODO: this might break down if there a lot of users or usernames have spaces, special chars, etc.
-    local user_names=$(wmic useraccount get Name | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
-    user_names=${user_names,,}
-    echo "$user_names"
+    local options=$(wmic useraccount get name | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
+    local IFS=$'\n'
+    options=$(printf '%q\n' $options)
+    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
+    options=${options,,}
+    echo "$options"
 }
 
 _windows_net()

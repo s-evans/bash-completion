@@ -283,6 +283,7 @@ _servicecontrolmanager()
                 options=`_scm_services`
 
             else
+                # TODO: subsequent completions replace the current option instead of appending to it
                 cur=$(echo "$cur" | sed -e 's,[^/]*/,,g')
                 compopt -o nospace
                 options="seassignprimarytokenprivilege/ seauditprivilege/

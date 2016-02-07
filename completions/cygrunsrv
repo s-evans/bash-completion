@@ -1,0 +1,189 @@
+#!/usr/bin/env sh
+
+_cygrunsrv_end()
+{
+    if [ -n "$options" -a -z "$COMPREPLY" ]; then
+        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+    fi
+}
+
+_cygrunsrv_list_users()
+{
+    local options=$(wmic useraccount get Name | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
+
+    # escape bash tokenizer strings and separate with newlines
+    local IFS=$'\n'
+    options=$(printf '%q\n' $options)
+
+    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
+    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
+
+    echo "$options"
+}
+
+_cygrunsrv_list_svcs()
+{
+    local options=$(cygrunsrv --list)
+
+    # escape bash tokenizer strings and separate with newlines
+    local IFS=$'\n'
+    options=$(printf '%q\n' $options)
+
+    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
+    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
+
+    echo "$options"
+}
+
+_cygrunsrv()
+{
+    COMPREPLY=()
+    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+    local options=''
+
+    if [[ $COMP_CWORD -eq 1 ]]; then
+        options='-I --install -R --remove -S --start -E --stop -Q --query -L
+        --list -h --help -v --version'
+        _cygrunsrv_end
+        return 0
+    fi
+
+    case ${COMP_WORDS[1]} in
+
+        -R)
+            ;&
+        -S)
+            ;&
+        -E)
+            ;&
+        -Q)
+            ;&
+        -L)
+            ;&
+        --remove)
+            ;&
+        --start)
+            ;&
+        --stop)
+            ;&
+        --query)
+            ;&
+        --list)
+            local IFS=$'\n'
+            options=$(_cygrunsrv_list_svcs)
+            ;;
+
+        -I)
+            ;&
+        --install)
+            if [[ $COMP_CWORD -eq 2 ]]; then
+                options=''
+            elif [[ $COMP_CWORD -eq 3 ]]; then
+                options='-p --path'
+            elif [[ $COMP_CWORD -eq 4 ]]; then
+                options=''
+            else
+
+                case ${COMP_WORDS[COMP_CWORD-1]} in
+
+                    -P)
+                        ;&
+                    --crs-path)
+                        ;&
+                    -a)
+                        ;&
+                    --args)
+                        # TODO: completion for the program specified by the --path / -p argument?
+                        ;&
+                    -c)
+                        ;&
+                    --chdir)
+                        ;&
+                    -e)
+                        ;&
+                    --env)
+                        ;&
+                    -d)
+                        ;&
+                    --disp)
+                        ;&
+                    -f)
+                        ;&
+                    --desc)
+                        ;&
+                    -w)
+                        ;&
+                    --passwd)
+                        ;&
+                    -0)
+                        ;&
+                    --stdin)
+                        ;&
+                    -1)
+                        ;&
+                    --stdout)
+                        ;&
+                    -2)
+                        ;&
+                    --stderr)
+                        ;&
+                    -x)
+                        ;&
+                    --pidfile)
+                        return 0
+                        ;;
+
+                    -t)
+                        ;&
+                    --type)
+                        options='auto manual'
+                        ;;
+
+                    -u)
+                        ;&
+                    --user)
+                        local IFS=$'\n'
+                        options=$(_cygrunsrv_list_users)
+                        ;;
+
+                    -s)
+                        ;&
+                    --termsig)
+                        ;&
+                    -z)
+                        ;&
+                    --shutsig)
+                        _signals -
+                        ;;
+
+                    -y)
+                        ;&
+                    --dep)
+                        local IFS=$'\n'
+                        options=$(_cygrunsrv_list_svcs)
+                        ;;
+
+                    *)
+                        # TODO: cull duplicate and mutually exclusive options
+                        options='-P --crs-path -a --args -c --chdir -e --env -d
+                        --disp -f --desc -t --type -u --user -w --passwd -s
+                        --termsig -z --shutsig -y --dep -0 --stdin -1 --stdout
+                        -2 --stderr -x --pidfile -n --neverexits -O
+                        --preshutdown -o --shutdown -i --interactive -j
+                        --nohide'
+                        ;;
+
+                esac
+
+            fi
+            ;;
+
+    esac
+
+    _cygrunsrv_end
+
+    return 0
+}
+
+complete -o default -F _cygrunsrv cygrunsrv cygrunsrv.exe
+

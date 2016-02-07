@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+
+_regsvr32()
+{
+    COMPREPLY=()
+
+    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+
+    local options='/u /s /n /i'
+
+    if [ -n "$options" -a -z "$COMPREPLY" ]; then
+        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+    fi
+
+    return 0
+}
+
+complete -o default -F _regsvr32 regsvr32 regsvr32.exe
+

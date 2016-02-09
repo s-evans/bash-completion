@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 
-# TODO: netsh interface ipv4 set /? | sed -e '/^$/,/Comm/d' -e 's/\w* //' -e 's/ .*//'
+# TODO: useful for isolating next level of options
+# netsh interface ipv6 /? | sed -e '/ - /!d' -e 's/[ ]\+-.*//' -e 's/[^ ]\+ //' -e '/?/d' -e '/help/d' -e 's/^[ ]\+//'
 
 # TODO: may not work, needs tested
 _netsh_bridges()
@@ -68,6 +69,23 @@ _netsh_wlan_profiles()
     echo "$options"
 }
 
+_netsh_ipv6_subinterfaces()
+{
+    local options=`netsh interface ipv6 show subinterfaces level=verbose | sed -e '/^SubInterface/!d' -e 's/[^ ]\+ //' -e 's/[^ ]\+$//' -e 's/[ ]\+$//'`
+
+    # escape bash tokenizer strings and separate with newlines
+    local IFS=$'\n'
+    options=$(printf '%q\n' $options)
+
+    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
+    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
+
+    # make lowercase for convenience
+    options=${options,,}
+
+    echo "$options"
+}
+
 _netsh_ipv4_subinterfaces()
 {
     local options=`netsh interface ipv4 show subinterfaces level=verbose | sed -e '/^SubInterface/!d' -e 's/[^ ]\+ //' -e 's/[^ ]\+$//' -e 's/[ ]\+$//'`
@@ -94,7 +112,7 @@ _netsh()
     local options=''
 
     local commands=('add' 'advfirewall' 'bridge' 'delete' 'dhcpclient' \
-        'dnsclient' 'dump' 'exec' 'firewall' 'help' 'http' 'interface' \
+        'dnsclient' 'dump' 'exec' 'firewall' 'http' 'interface' \
         'ipsec' 'lan' 'namespace' 'nap' 'netio' 'p2p' 'ras' 'rpc' 'set' \
         'show' 'wfp' 'winhttp' 'winsock' 'wlan' )
 
@@ -118,9 +136,10 @@ _netsh()
         count+=1
     done
 
-    local subcmd=${COMP_WORDS[$count+1]}
-    local subsubcmd=${COMP_WORDS[$count+2]}
-    local subsubsubcmd=${COMP_WORDS[$count+3]}
+    local subcmd=${COMP_WORDS[count+1]}
+    local subsubcmd=${COMP_WORDS[count+2]}
+    local subsubsubcmd=${COMP_WORDS[count+3]}
+    local subsubsubsubcmd=${COMP_WORDS[count+4]}
 
     count=$COMP_CWORD-$count
 
@@ -658,10 +677,6 @@ _netsh()
                 options='add delete dump set show'
             fi
             # NOTE: no further commands available on win7
-            ;;
-
-        help)
-            # NOTE: no options worth mentioning
             ;;
 
         http)
@@ -1401,10 +1416,181 @@ _netsh()
                     ;;
 
                 ipv6)
-                    # TODO: more detail
                     if [[ $count -eq 2 ]]; then
                         options='6to4 add delete dump isatap reset set show'
+                        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                        return
                     fi
+
+                    case $subsubcmd in
+
+                        6to4)
+                            if [[ $count -eq 3 ]]; then
+                                options='dump set show'
+                            fi
+
+                            case $subsubsubcmd in
+
+                                set)
+                                    if [[ $count -eq 4 ]]; then
+                                        options='interface relay routing state'
+                                    fi
+
+                                    case $subsubsubsubcmd in
+
+                                        # TODO: may want to prepend the property name onto some of the options below to be more usable and readable
+
+                                        interface)
+                                            if [[ $count -eq 5 ]]; then
+                                                options='name\='
+                                            elif [[ $count -eq 6 ]]; then
+                                                options='enabled disabled default'
+                                            fi
+                                            ;;
+
+                                        relay)
+                                            if [[ $count -eq 5 ]]; then
+                                                options='default name\='
+                                            elif [[ $count -eq 6 ]]; then
+                                                options='enabled disabled automatic default'
+                                            elif [[ $count -eq 7 ]]; then
+                                                options='interval\='
+                                            fi
+                                            ;;
+
+                                        routing)
+                                            if [[ $count -eq 5 ]]; then
+                                                options='enabled disabled automatic default'
+                                            elif [[ $count -eq 6 ]]; then
+                                                options='enabled disabled default'
+                                            fi
+                                            ;;
+
+                                        state)
+                                            if [[ $count -eq 5 ]]; then
+                                                options='enabled disabled default'
+                                            elif [[ $count -eq 6 ]]; then
+                                                options='enabled disabled default'
+                                            fi
+                                            ;;
+
+                                    esac
+                                    ;;
+
+                                show)
+                                    if [[ $count -eq 4 ]]; then
+                                        options='interface relay routing state'
+                                    fi
+                                    ;;
+
+                            esac
+                            ;; 
+
+                        add)
+                            if [[ $count -eq 3 ]]; then
+                                options='address dnsservers excludedportrange
+                                neighbors potentialrouter prefixpolicy route
+                                v6v4tunnel'
+                            fi
+
+                            case $subsubsubcmd in
+
+                                address)
+                                    if [[ $count -eq 4 ]]; then
+                                        local IFS=$'\n'
+                                        options=$(_netsh_ipv6_subinterfaces)
+                                    elif [[ $count -eq 5 ]]; then
+                                        options='address\='
+                                    elif [[ $count -eq 6 ]]; then
+                                        options='unicast anycast'
+                                    elif [[ $count -eq 7 ]]; then
+                                        options='validlifetime\= validlifetime\=infinite'
+                                    elif [[ $count -eq 8 ]]; then
+                                        options='preferredlifetime\= preferredlifetime\=infinite'
+                                    elif [[ $count -eq 9 ]]; then
+                                        options='store\=active store\=persistent'
+                                    elif [[ $count -eq 10 ]]; then
+                                        options='skipassource\=true skipassource\=false'
+                                    fi
+                                    ;;
+
+                                dnsservers)
+                                    # TODO: implement
+                                    if [[ $count -eq 4 ]]; then
+                                        options=''
+                                    fi
+                                    ;;
+
+                                excludedportrange)
+                                    # TODO: implement
+                                    if [[ $count -eq 4 ]]; then
+                                        options=''
+                                    fi
+                                    ;;
+
+                                neighbors)
+                                    # TODO: implement
+                                    if [[ $count -eq 4 ]]; then
+                                        options=''
+                                    fi
+                                    ;;
+
+                                potentialrouter)
+                                    # TODO: implement
+                                    if [[ $count -eq 4 ]]; then
+                                        options=''
+                                    fi
+                                    ;;
+
+                                prefixpolicy)
+                                    # TODO: implement
+                                    if [[ $count -eq 4 ]]; then
+                                        options=''
+                                    fi
+                                    ;;
+
+                                route)
+                                    # TODO: implement
+                                    if [[ $count -eq 4 ]]; then
+                                        options=''
+                                    fi
+                                    ;;
+
+                                v6v4tunnel)
+                                    # TODO: implement
+                                    if [[ $count -eq 4 ]]; then
+                                        options=''
+                                    fi
+                                    ;;
+
+                            esac
+                            ;;
+
+                        delete)
+                            # TODO: implement
+                            ;;
+
+                        dump)
+                            # TODO: implement
+                            ;;
+
+                        isatap)
+                            # TODO: implement
+                            ;;
+
+                        reset)
+                            # TODO: implement
+                            ;;
+
+                        set)
+                            # TODO: implement
+                            ;;
+
+                        show)
+                            # TODO: implement
+                            ;;
+
+                    esac
                     ;;
 
                 isatap)
@@ -1523,8 +1709,6 @@ _netsh()
 
 
             esac
-
-            # TODO: more detail
             ;;
 
         ipsec)

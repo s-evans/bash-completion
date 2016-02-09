@@ -195,9 +195,6 @@ _netsh()
                             fi
                             ;;
 
-                        dump)
-                            ;;
-
                         set)
                             if [[ $count -eq 3 ]]; then
                                 options='rule'
@@ -211,9 +208,6 @@ _netsh()
                             ;;
 
                     esac
-                    ;;
-
-                dump)
                     ;;
 
                 export)
@@ -239,9 +233,6 @@ _netsh()
                             if [[ $count -eq 3 ]]; then
                                 options='rule'
                             fi
-                            ;;
-
-                        dump)
                             ;;
 
                         set)
@@ -282,9 +273,6 @@ _netsh()
                             if [[ $count -eq 3 ]]; then
                                 options='rule'
                             fi
-                            ;;
-
-                        dump)
                             ;;
 
                         set)
@@ -662,10 +650,6 @@ _netsh()
             esac
             ;;
 
-        dump)
-            # NOTE: no options
-            ;;
-
         exec)
             if [[ $count -eq 1 ]]; then
                 options=$(command ls 2> /dev/null)
@@ -737,9 +721,6 @@ _netsh()
                     # TODO: more
                     ;;
 
-                dump)
-                    ;;
-
                 httpstunnel)
 
                     if [[ $count -eq 2 ]]; then
@@ -764,9 +745,6 @@ _netsh()
                             if [[ $count -eq 3 ]]; then
                                 options='interface'
                             fi
-                            ;;
-
-                        dump)
                             ;;
 
                         reset)
@@ -1034,18 +1012,6 @@ _netsh()
 
                             esac
 
-                            ;;
-
-                        dump)
-                            # no options
-                            ;;
-
-                        install)
-                            # no options
-                            ;;
-
-                        reset)
-                            # no options
                             ;;
 
                         set)
@@ -1408,10 +1374,6 @@ _netsh()
                             esac
                             ;;
 
-                        uninstall)
-                            # no options
-                            ;;
-
                     esac
                     ;;
 
@@ -1673,9 +1635,6 @@ _netsh()
                             fi
                             ;;
 
-                        dump)
-                            ;;
-
                         reset)
                             ;;
 
@@ -1762,16 +1721,32 @@ _netsh()
         rpc)
             if [[ $count -eq 1 ]]; then
                 options='add delete dump filter reset show'
+            else
+
+                case $subcmd in
+
+                    delete)
+                        # TODO: implement
+                        ;;
+
+                    filter)
+                        # TODO: implement
+                        ;;
+
+                esac
+
             fi
-            # TODO: more detail
             ;;
 
         set)
             if [[ $count -eq 1 ]]; then
                 options='machine'
-            else
-                # TODO: cull the options list
-                options='name\= user=\ pwd=\'
+            elif [[ $count -eq 2 ]]; then
+                options='name\='
+            elif [[ $count -eq 3 ]]; then
+                options='user=\'
+            elif [[ $count -eq 4 ]]; then
+                options='pwd=\'
             fi
             ;;
 
@@ -1779,7 +1754,6 @@ _netsh()
             if [[ $count -eq 1 ]]; then
                 options='alias helper'
             fi
-            # TODO: more detail
             ;;
 
         wfp)
@@ -1792,8 +1766,49 @@ _netsh()
         winhttp)
             if [[ $count -eq 1 ]]; then
                 options='dump import reset set show'
+            else
+                case $subsubcmd in
+
+                    import)
+                        if [[ $count -eq 2 ]]; then
+                            options='proxy'
+                        elif [[ $count -eq 3 ]]; then
+                            options='ie'
+                        fi
+                        ;;
+
+                    reset)
+                        if [[ $count -eq 2 ]]; then
+                            options='proxy tracing'
+                        fi
+                        ;;
+
+                    set)
+                        if [[ $count -eq 2 ]]; then
+                            options='proxy tracing'
+                        else
+                            case $subsubsubcmd in
+
+                                proxy)
+                                    # TODO: implement
+                                    ;;
+
+                                tracing)
+                                    # TODO: implement
+                                    ;;
+
+                            esac
+                        fi
+                        ;;
+
+                    show)
+                        if [[ $count -eq 2 ]]; then
+                            options='proxy tracing'
+                        fi
+                        ;;
+
+                esac
             fi
-            # TODO: more detail
             ;;
 
         winsock)
@@ -1808,9 +1823,6 @@ _netsh()
                     if [[ $count -eq 2 ]]; then
                         options='trail'
                     fi
-                    ;;
-
-                dump)
                     ;;
 
                 remove)
@@ -1943,9 +1955,6 @@ _netsh()
                         local IFS=$'\n'
                         options=$(_netsh_wlan_interfaces)
                     fi
-                    ;;
-
-                dump)
                     ;;
 
                 export)

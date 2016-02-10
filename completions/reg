@@ -1,13 +1,26 @@
 #!/usr/bin/env sh
 
-# TODO: make registry path handling more robust (ie. hkcu\software<tab>)
-
 _reg_keys()
 {
     local IFS options
+
+    # get candidate keys
     IFS=$'\n'
     options=$(_windows_reg_keys $key)
-    COMPREPLY=( $(compgen -W '$options' -- $(printf %q $cur) ) )
+
+    # unescape backslashes and then escape the entire string
+    cur=$(printf %q ${cur//\\\\/\\})
+
+    # make key lowercase
+    cur=${cur,,}
+
+    # attempt to get a completion
+    COMPREPLY=( $(compgen -W '$options' -- $cur) )
+
+    # if no completion, try again with more backslashes
+    [[ -z $COMPREPLY ]] && COMPREPLY=( $(compgen -W '$options' -- $(printf %q $cur)) )
+
+    # keep completion rolling
     [[ $COMPREPLY == *\\ ]] && compopt -o nospace
 }
 

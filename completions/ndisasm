@@ -1,0 +1,48 @@
+#!/usr/bin/env sh
+
+_ndisasm()
+{
+    COMPREPLY=()
+    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
+    local options=''
+
+    if [[ $COMP_CWORD -eq 1 ]]; then
+        options='-a -i -v -u -b -h -r -e -k -p -o -s'
+        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+        return 0
+    fi
+
+    case $(printf '%q' "${COMP_WORDS[COMP_CWORD-1]}") in
+
+        -b)
+            ;&
+        -o)
+            ;&
+        -s)
+            ;&
+        -e)
+            ;&
+        -k)
+            options=''
+            ;;
+
+        -p)
+            options='intel amd cyrix idt'
+            ;;
+
+        *)
+            # TODO: remove duplicate options
+            options='-a -i -u -b -e -k -p -o -s'
+            ;; 
+
+    esac
+
+    if [ -n "$options" -a -z "$COMPREPLY" ]; then
+        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+    fi
+
+    return 0
+}
+
+complete -o default -F _ndisasm ndisasm ndisasm.exe
+

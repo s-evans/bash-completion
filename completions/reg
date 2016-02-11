@@ -1,64 +1,84 @@
 #!/usr/bin/env sh
 
+_reg_keys()
+{
+    local IFS options
+
+    # get candidate keys
+    IFS=$'\n'
+    options=$(_windows_reg_keys $key)
+
+    # unescape backslashes and then escape the entire string
+    cur=$(printf %q ${cur//\\\\/\\})
+
+    # make key lowercase
+    cur=${cur,,}
+
+    # attempt to get a completion
+    COMPREPLY=( $(compgen -W '$options' -- $cur) )
+
+    # if no completion, try again with more backslashes
+    [[ -z $COMPREPLY ]] && COMPREPLY=( $(compgen -W '$options' -- $(printf %q $cur)) )
+
+    # keep completion rolling
+    [[ $COMPREPLY == *\\ ]] && compopt -o nospace
+}
+
+_reg_values()
+{
+    local IFS options
+    IFS=$'\n'
+    options=$(_windows_reg_values $key)
+    COMPREPLY=( $(compgen -W '$options' -- $(printf %q $cur) ) )
+}
+
 _windows_reg_keys()
 {
+    local tmp options IFS
+
     # process the string so that the reg utility will understand it
-    local tmp=$(echo "$1" | sed -e 's/\\\(.\)/\1/g' -e 's/\\[^\]*$//')
+    tmp=$(echo "$1" | sed -e 's/\\[^\]*$//')
 
     # query for additional keys
-    local options=`reg query "$tmp" | sed -e '1d' -e '/^ / d' -e '/^$/ d' -e '1d'`
-
-    # add a line ending to the very end for consistency
-    options+=$'\n'
-
-    # add separators at ends of lines for convenience
-    options=${options//$'\n'/\\$'\n'}
+    options=$(reg query "$tmp" /f "*" /k 2> /dev/null | sed -e '1d' -e '$d' -e 's/$/\\/')
 
     # escape bash tokenizer strings and separate with newlines
-    local IFS=$'\n'
-    options=$(printf '%q\n' $options)
-
-    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
-    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
-
-    # NOTE: the above string ':=' was generated using the command below
-    # local nuisances=$(printf '%q' $COMP_WORDBREAKS | sed -e 's/\\.//g')
-
-    # NOTE: for some reason, the following does not work
-    # options=`echo "$options" | sed "s/[${nuisances}]/\\\\\&/g"`
-
-    # make lowercase for convenience
-    options=${options,,}
+    IFS=$'\n'
+    options=$(printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d")
 
     # create additional completions with short root key names for convenience
-    tmp=$(echo "$options" | sed -e 's/^hkey_local_machine/hklm/' -e \
+    echo "$options" | sed -e 's/^hkey_local_machine/hklm/' -e \
         's/^hkey_current_user/hkcu/' -e 's/^hkey_current_config/hkcc/' -e \
-        's/^hkey_users/hku/')
+        's/^hkey_users/hku/'
 
     # return as newline separated values
-    echo "$options"$'\n'"$tmp"
+    echo "$options"
+
+    # return root keys
+    echo 'hkey_local_machine\\'
+    echo 'hklm\\'
+    echo 'hkey_current_user\\'
+    echo 'hkcu\\'
+    echo 'hkey_current_config\\'
+    echo 'hkcc\\'
+    echo 'hkey_users\\'
+    echo 'hku\\'
+    echo '/?'
 }
 
 _windows_reg_values()
 {
-    # process the string so that the reg utility will understand it
-    local tmp=$(echo "$1" | sed -e 's/\\\(.\)/\1/g')
+    local options IFS
 
     # query for values
-    options=`reg query "$tmp" | sed -e '/^ / !d' -e '/(Default)/ d' -e '/^$/ d' -e 's/    REG_.*$//g' -e 's/^    //' `
+    options=$(reg query "$1" /f "*" /d 2> /dev/null | sed -e '1,2d' -e '$d' -e 's/^[ ]\+//' -e '/^(Default)/ d' -e 's/    REG_.*$//g' )
 
+    # make lowercase
     # escape bash tokenizer strings and separate with newlines
-    local IFS=$'\n'
-    options=$(printf '%q\n' $options)
-
     # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
-    # also remove the quoted blank string that occurs if there are no values
-    options=`echo "$options" | sed -e 's/[:=]/\\\&/g' -e "/''/d"`
-
-    # make lowercase for convenience
-    options=${options,,}
-
-    echo "$options"
+    # remove the quoted blank string that occurs if there are no values echo "${options,,}" | sed -e 's/[:=]/\\\&/g'
+    IFS=$'\n'
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
 }
 
 # TODO: mutually exclusive options (ie. reg:32 and reg:64)
@@ -67,462 +87,319 @@ _windows_reg_values()
 
 _windows_reg()
 {
-    COMPREPLY=()
-
-    local cur=${COMP_WORDS[$COMP_CWORD]}
-    local key=${COMP_WORDS[2]}
-    local command=${COMP_WORDS[1]}
-    local prev=${COMP_WORDS[$COMP_CWORD-1]}
-    local options=''
-
-    if [[ $COMP_CWORD -eq 1 ]] ; then
-        local commands='query add delete copy save restore load unload
-            compare export import flags /?'
-        COMPREPLY=( $( compgen -W "$commands" -- "${cur,,}" ) )
-        return 0
-
-    elif [[ "$prev" == "/?" ]]; then
-        return 0
-
-    else
-        # Command-specific arguments
-        case "$command" in
-
-            query)
-                options='/?'
-
-                if [[ $COMP_CWORD -eq 2 ]]; then
-                    # complete the registry key path
-                    compopt -o nospace
-
-                    if [[ "$cur" == *\\* ]]; then
-                        # use the existing string to get next level of keys
-                        local IFS=$'\n'
-                        options=$(_windows_reg_keys "$cur")
-
-                    else
-                        # list root keys
-                        options='hkey_local_machine\\ hklm\\ hkey_current_user\\ hkcu\\
-                            hkey_current_config\\ hkcc\\ hkey_users\\ hku\\ /?'
-
-                    fi
-                elif [[ $COMP_CWORD -gt 2 ]]; then
-
-                    if [[ "$prev" == "/v" ]]; then
-                        # list values available for the key
-                        local IFS=$'\n'
-                        options=$(_windows_reg_values "$key")
-
-                    elif [[ "$prev" == "/t" ]]; then
-                        options='reg_sz reg_multi_sz reg_expand_sz reg_dword
-                            reg_qword reg_binary reg_none'
-
-                    elif [[ "$prev" == "/se" || "$prev" == "/f" ]]; then
-                        options=''
-
-                    else
-                        # cull the list of switches if they've been used
-                        options=''
-                        local option_list=( '/v' '/ve' '/s' '/f' '/k' '/d' '/c'
-                            '/e' '/t' '/z' '/se' '/reg\:32' '/reg\:64' )
-
-                        for option in ${option_list[@]} ; do
-                            local found=0
-
-                            for word in ${COMP_WORDS[@]::$COMP_CWORD} ; do
-                                if [[ $word == $option ]]; then
-                                    found=1 
-                                    break
-                                fi
-                            done
-
-                            if [[ $found -eq 0 ]]; then
-                                options+="$option "
-                            fi
-                        done
-                    fi
-                fi
-                ;;
-
-            add)
-                options='/?'
-
-                if [[ $COMP_CWORD -eq 2 ]]; then
-                    # complete the registry key path
-                    compopt -o nospace
-
-                    if [[ "$cur" == *\\* ]]; then
-                        # use the existing string to get next level of keys
-                        local IFS=$'\n'
-                        options=$(_windows_reg_keys "$cur")
-
-                    else
-                        # list root keys
-                        options='hkey_local_machine\\ hklm\\ hkey_current_user\\ hkcu\\
-                            hkey_current_config\\ hkcc\\ hkey_users\\ hku\\ /?'
-
-                    fi
-                elif [[ $COMP_CWORD -gt 2 ]]; then
-
-                    if [[ "$prev" == "/v" ]]; then
-                        # list values available for the key
-                        local IFS=$'\n'
-                        options=$(_windows_reg_values "$key")
-
-                    elif [[ "$prev" == "/t" ]]; then
-                        options='reg_sz reg_multi_sz reg_expand_sz reg_dword
-                            reg_qword reg_binary reg_none'
-
-                    elif [[ "$prev" == "/s" || "$prev" == "/d" ]]; then
-                        options=''
-
-                    else
-                        # cull the list of switches if they've been used
-                        options=''
-                        local option_list=( '/v' '/ve' '/s' '/f' '/d' '/t' '/s'
-                            '/reg\:32' '/reg\:64' )
-
-                        for option in ${option_list[@]} ; do
-                            local found=0
-
-                            for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
-                                if [[ $word == $option ]]; then
-                                    found=1 
-                                    break
-                                fi
-                            done
-
-                            if [[ $found -eq 0 ]]; then
-                                options+="$option "
-                            fi
-                        done
-                    fi
-                fi
-                ;;
-
-            delete)
-                options='/?'
-
-                if [[ $COMP_CWORD -eq 2 ]]; then
-                    # complete the registry key path
-                    compopt -o nospace
-
-                    if [[ "$cur" == *\\* ]]; then
-                        # use the existing string to get next level of keys
-                        local IFS=$'\n'
-                        options=$(_windows_reg_keys "$cur")
-
-                    else
-                        # list root keys
-                        options='hkey_local_machine\\ hklm\\ hkey_current_user\\ hkcu\\
-                            hkey_current_config\\ hkcc\\ hkey_users\\ hku\\ /?'
-
-                    fi
-                elif [[ $COMP_CWORD -gt 2 ]]; then
-
-                    if [[ "$prev" == "/v" ]]; then
-                        # list values available for the key
-                        local IFS=$'\n'
-                        options=$(_windows_reg_values "$key")
-
-                    else
-                        # cull the list of switches if they've been used
-                        options=''
-                        local option_list=( '/v' '/ve' '/va' '/f' '/reg\:32'
-                        '/reg\:64' )
-
-                        for option in ${option_list[@]} ; do
-                            local found=0
-
-                            for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
-                                if [[ $word == $option ]]; then
-                                    found=1 
-                                    break
-                                fi
-                            done
-
-                            if [[ $found -eq 0 ]]; then
-                                options+="$option "
-                            fi
-                        done
-                    fi
-                fi
-                ;;
-
-            copy)
-                options='/?'
-
-                if [[ $COMP_CWORD -eq 3 || $COMP_CWORD -eq 2 ]]; then
-                    # complete the registry key path
-                    compopt -o nospace
-
-                    if [[ "$cur" == *\\* ]]; then
-                        # use the existing string to get next level of keys
-                        local IFS=$'\n'
-                        options=$(_windows_reg_keys "$cur")
-
-                    else
-                        # list root keys
-                        options='hkey_local_machine\\ hklm\\ hkey_current_user\\ hkcu\\
-                            hkey_current_config\\ hkcc\\ hkey_users\\ hku\\ /?'
-
-                    fi
-                elif [[ $COMP_CWORD -gt 3 ]]; then
-
-                    # cull the list of switches if they've been used
-                    options=''
-                    local option_list=( "/s" "/f" "/reg\:32" "/reg\:64" )
-
-                    for option in ${option_list[@]} ; do
-                        local found=0
-
-                        for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
-                            if [[ $word == $option ]]; then
-                                found=1 
-                                break
-                            fi
-                        done
-
-                        if [[ $found -eq 0 ]]; then
-                            options+="$option "
-                        fi
-                    done
-                fi
-                ;;
-
-            export)
-                ;&
-
-            save)
-                options='/?'
-
-                if [[ $COMP_CWORD -eq 2 ]]; then
-                    # complete the registry key path
-                    compopt -o nospace
-
-                    if [[ "$cur" == *\\* ]]; then
-                        # use the existing string to get next level of keys
-                        local IFS=$'\n'
-                        options=$(_windows_reg_keys "$cur")
-
-                    else
-                        # list root keys
-                        options='hkey_local_machine\\ hklm\\ hkey_current_user\\ hkcu\\
-                            hkey_current_config\\ hkcc\\ hkey_users\\ hku\\ /?'
-
-                    fi
-
-                elif [[ $COMP_CWORD -eq 3 ]]; then
-                    options=''
-
-                elif [[ $COMP_CWORD -gt 3 ]]; then
-
-                    # cull the list of switches if they've been used
-                    options=''
-                    local option_list=( "/y" "/reg\:32" "/reg\:64" )
-
-                    for option in ${option_list[@]} ; do
-                        local found=0
-
-                        for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
-                            if [[ $word == $option ]]; then
-                                found=1 
-                                break
-                            fi
-                        done
-
-                        if [[ $found -eq 0 ]]; then
-                            options+="$option "
-                        fi
-                    done
-                fi
-                ;;
-
-            load)
-                ;&
-
-            restore)
-                options='/?'
-
-                if [[ $COMP_CWORD -eq 2 ]]; then
-                    # complete the registry key path
-                    compopt -o nospace
-
-                    if [[ "$cur" == *\\* ]]; then
-                        # use the existing string to get next level of keys
-                        local IFS=$'\n'
-                        options=$(_windows_reg_keys "$cur")
-
-                    else
-                        # list root keys
-                        options='hkey_local_machine\\ hklm\\ hkey_current_user\\ hkcu\\
-                            hkey_current_config\\ hkcc\\ hkey_users\\ hku\\ /?'
-
-                    fi
-
-                elif [[ $COMP_CWORD -eq 3 ]]; then
-                    options=''
-
-                elif [[ $COMP_CWORD -gt 3 ]]; then
-
-                    # cull the list of switches if they've been used
-                    options=''
-                    local option_list=( "/reg\:32" "/reg\:64" )
-
-                    for option in ${option_list[@]} ; do
-                        local found=0
-
-                        for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
-                            if [[ $word == $option ]]; then
-                                found=1 
-                                break
-                            fi
-                        done
-
-                        if [[ $found -eq 0 ]]; then
-                            options+="$option "
-                        fi
-                    done
-                fi
-                ;;
-
-            unload)
-                options='/?'
-
-                if [[ $COMP_CWORD -eq 2 ]]; then
-                    # complete the registry key path
-                    compopt -o nospace
-
-                    if [[ "$cur" == *\\* ]]; then
-                        # use the existing string to get next level of keys
-                        local IFS=$'\n'
-                        options=$(_windows_reg_keys "$cur")
-
-                    else
-                        # list root keys
-                        options='hkey_local_machine\\ hklm\\ hkey_current_user\\ hkcu\\
-                            hkey_current_config\\ hkcc\\ hkey_users\\ hku\\ /?'
-
-                    fi
-                fi
-                ;;
-
-            compare)
-                options='/?'
-
-                if [[ $COMP_CWORD -eq 3 || $COMP_CWORD -eq 2 ]]; then
-                    # complete the registry key path
-                    compopt -o nospace
-
-                    if [[ "$cur" == *\\* ]]; then
-                        # use the existing string to get next level of keys
-                        local IFS=$'\n'
-                        options=$(_windows_reg_keys "$cur")
-
-                    else
-                        # list root keys
-                        options='hkey_local_machine\\ hklm\\ hkey_current_user\\ hkcu\\
-                            hkey_current_config\\ hkcc\\ hkey_users\\ hku\\ /?'
-
-                    fi
-                elif [[ $COMP_CWORD -gt 3 ]]; then
-
-                    if [[ "$prev" == "/v" ]]; then
-                        # list values available for the key
-                        local IFS=$'\n'
-                        options=$(_windows_reg_values "$key")
-
-                    else
-                        # cull the list of switches if they've been used
-                        options=''
-                        local option_list=( '/v' '/ve' '/s' '/oa' '/od' '/os'
-                        '/on' '/reg\:32' '/reg\:64' )
-
-                        for option in ${option_list[@]} ; do
-                            local found=0
-
-                            for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
-                                if [[ $word == $option ]]; then
-                                    found=1 
-                                    break
-                                fi
-                            done
-
-                            if [[ $found -eq 0 ]]; then
-                                options+="$option "
-                            fi
-                        done
-
-                    fi
-                fi
-                ;;
-
-            import)
-                if [[ $COMP_CWORD -eq 2 ]]; then
-                    options=''
-                elif [[ $COMP_CWORD -eq 3 ]]; then
-                    options='/reg\:32 /reg\:64'
-                fi
-                ;;
-
-            flags)
-                options='/?'
-
-                if [[ $COMP_CWORD -eq 2 ]]; then
-                    # complete the registry key path
-                    compopt -o nospace
-
-                    if [[ "$cur" == *\\* ]]; then
-                        # use the existing string to get next level of keys
-                        local IFS=$'\n'
-                        options=$(_windows_reg_keys "$cur")
-
-                    else
-                        # list root keys
-                        options='hkey_local_machine\\software\\'
-
-                    fi
-
-                elif [[ $COMP_CWORD -eq 3 ]]; then
-                    options='query set'
-
-                elif [[ $COMP_CWORD -gt 3 ]]; then
-
-                    if [[ "${COMP_WORDS[3]}" == "query" ]]; then
-                        options=''
-                    else
-                        # cull the list of switches if they've been used
-                        options=''
-                        local option_list=( 'dont_virtualize'
-                            'dont_silent_fail' 'recurse_flag' '/reg\:32' '/reg\:64')
-
-                        for option in ${option_list[@]} ; do
-                            local found=0
-
-                            for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
-                                if [[ $word == $option ]]; then
-                                    found=1 
-                                    break
-                                fi
-                            done
-
-                            if [[ $found -eq 0 ]]; then
-                                options+="$option "
-                            fi
-                        done
-
-                    fi
-                fi
-                ;;
-
-        esac
-
-        if [ -n "$options" -a -z "$COMPREPLY" ]; then
-            COMPREPLY=( $(compgen -W '$options' -- $(printf '%q' "${cur,,}") ) )
-        fi
+    local cur prev words cword split options cmd key IFS
+    _init_completion || return
+
+    if [[ $cword -eq 1 ]] ; then
+        cmd='query add delete copy save restore load unload compare export
+        import flags /?'
+        COMPREPLY=( $( compgen -W '$cmd' -- "$cur" ) )
+        return
     fi
 
-    return 0
+    if [[ $prev == "/?" ]]; then
+        return
+    fi
+
+    cmd=${words[1]}
+    key=$(printf %b ${words[2]})
+
+    case $cmd in
+
+        query)
+            if [[ $cword -eq 2 ]]; then
+                _reg_keys
+                return
+            fi
+
+            if [[ "$prev" == "/v" ]]; then
+                _reg_values
+                return
+            fi
+
+            if [[ "$prev" == "/se" || "$prev" == "/f" ]]; then
+                return
+            fi
+
+            if [[ "$prev" == "/t" ]]; then
+                COMPREPLY=( $(compgen -W 'reg_sz reg_multi_sz reg_expand_sz
+                reg_dword reg_qword reg_binary reg_none' -- $cur ) )
+                return
+            fi
+
+            # cull the list of switches if they've been used
+            local option_list=( '/v' '/ve' '/s' '/f' '/k' '/d' '/c'
+            '/e' '/t' '/z' '/se' '/reg\:32' '/reg\:64' )
+
+            for option in ${option_list[@]} ; do
+                local found=0
+
+                for word in ${words[@]::$cword} ; do
+                    if [[ $word == $option ]]; then
+                        found=1 
+                        break
+                    fi
+                done
+
+                if [[ $found -eq 0 ]]; then
+                    options+="$option "
+                fi
+            done
+            ;;
+
+        add)
+            if [[ $cword -eq 2 ]]; then
+                _reg_keys
+                return
+            fi
+
+            if [[ "$prev" == "/v" ]]; then
+                _reg_values
+                return
+            fi
+
+            if [[ "$prev" == "/s" || "$prev" == "/d" ]]; then
+                return
+            fi
+
+            if [[ "$prev" == "/t" ]]; then
+                COMPREPLY=( $(compgen -W 'reg_sz reg_multi_sz reg_expand_sz
+                reg_dword reg_qword reg_binary reg_none' -- $cur ) )
+                return
+            fi
+
+            # cull the list of switches if they've been used
+            local option_list=( '/v' '/ve' '/s' '/f' '/d' '/t' '/s'
+            '/reg\:32' '/reg\:64' )
+
+            for option in ${option_list[@]} ; do
+                local found=0
+
+                for word in ${words[@]::${cword}} ; do
+                    if [[ $word == $option ]]; then
+                        found=1 
+                        break
+                    fi
+                done
+
+                if [[ $found -eq 0 ]]; then
+                    options+="$option "
+                fi
+            done
+            ;;
+
+        delete)
+            if [[ $cword -eq 2 ]]; then
+                _reg_keys
+                return
+            fi
+
+            if [[ "$prev" == "/v" ]]; then
+                _reg_values
+                return
+            fi
+
+            # cull the list of switches if they've been used
+            local option_list=( '/v' '/ve' '/va' '/f' '/reg\:32'
+            '/reg\:64' )
+
+            for option in ${option_list[@]} ; do
+                local found=0
+
+                for word in ${words[@]::${cword}} ; do
+                    if [[ $word == $option ]]; then
+                        found=1 
+                        break
+                    fi
+                done
+
+                if [[ $found -eq 0 ]]; then
+                    options+="$option "
+                fi
+            done
+            ;;
+
+        copy)
+            if [[ $cword -eq 3 || $cword -eq 2 ]]; then
+                _reg_keys
+                return
+            fi
+
+            # cull the list of switches if they've been used
+            local option_list=( "/s" "/f" "/reg\:32" "/reg\:64" )
+
+            for option in ${option_list[@]} ; do
+                local found=0
+
+                for word in ${words[@]::${cword}} ; do
+                    if [[ $word == $option ]]; then
+                        found=1 
+                        break
+                    fi
+                done
+
+                if [[ $found -eq 0 ]]; then
+                    options+="$option "
+                fi
+            done
+            ;;
+
+        export)
+            ;&
+
+        save)
+            if [[ $cword -eq 2 ]]; then
+                _reg_keys
+                return
+            fi
+
+            if [[ $cword -eq 3 ]]; then
+                return
+            fi
+
+            # cull the list of switches if they've been used
+            local option_list=( "/y" "/reg\:32" "/reg\:64" )
+
+            for option in ${option_list[@]} ; do
+                local found=0
+
+                for word in ${words[@]::${cword}} ; do
+                    if [[ $word == $option ]]; then
+                        found=1 
+                        break
+                    fi
+                done
+
+                if [[ $found -eq 0 ]]; then
+                    options+="$option "
+                fi
+            done
+            ;;
+
+        load)
+            ;&
+
+        restore)
+            if [[ $cword -eq 2 ]]; then
+                _reg_keys
+                return
+            fi
+
+            if [[ $cword -eq 3 ]]; then
+                return
+            fi
+
+            # cull the list of switches if they've been used
+            local option_list=( "/reg\:32" "/reg\:64" )
+
+            for option in ${option_list[@]} ; do
+                local found=0
+
+                for word in ${words[@]::${cword}} ; do
+                    if [[ $word == $option ]]; then
+                        found=1 
+                        break
+                    fi
+                done
+
+                if [[ $found -eq 0 ]]; then
+                    options+="$option "
+                fi
+            done
+            ;;
+
+        unload)
+            if [[ $cword -eq 2 ]]; then
+                _reg_keys
+                return
+            fi
+            ;;
+
+        compare)
+            if [[ $cword -eq 3 || $cword -eq 2 ]]; then
+                _reg_keys
+                return
+            fi
+
+            if [[ "$prev" == "/v" ]]; then
+                _reg_values
+                return
+            fi
+
+            # cull the list of switches if they've been used
+            local option_list=( '/v' '/ve' '/s' '/oa' '/od' '/os'
+            '/on' '/reg\:32' '/reg\:64' )
+
+            for option in ${option_list[@]} ; do
+                local found=0
+
+                for word in ${words[@]::${cword}} ; do
+                    if [[ $word == $option ]]; then
+                        found=1 
+                        break
+                    fi
+                done
+
+                if [[ $found -eq 0 ]]; then
+                    options+="$option "
+                fi
+            done
+
+            ;;
+
+        import)
+            if [[ $cword -eq 2 ]]; then
+                return
+            fi
+
+            if [[ $cword -eq 3 ]]; then
+                options='/reg\:32 /reg\:64'
+            fi
+            ;;
+
+        flags)
+            if [[ $cword -eq 2 ]]; then
+                _reg_keys
+                return
+            fi
+
+            if [[ "${words[3]}" == "query" ]]; then
+                return
+            fi
+
+            if [[ $cword -eq 3 ]]; then
+                COMPREPLY=( $(compgen -W 'query set' -- $cur ) )
+                return
+            fi
+
+            # cull the list of switches if they've been used
+            local option_list=( 'dont_virtualize'
+            'dont_silent_fail' 'recurse_flag' '/reg\:32' '/reg\:64')
+
+            for option in ${option_list[@]} ; do
+                local found=0
+
+                for word in ${words[@]::$cword} ; do
+                    if [[ $word == $option ]]; then
+                        found=1 
+                        break
+                    fi
+                done
+
+                if [[ $found -eq 0 ]]; then
+                    options+="$option "
+                fi
+            done
+
+            ;;
+
+    esac
+
+    COMPREPLY=( $(compgen -W '$options' -- $cur ) )
+
+    [[ $COMPREPLY == *\\ ]] && compopt -o nospace
+
+    return
 }
 
 complete -o default -F _windows_reg reg reg.exe

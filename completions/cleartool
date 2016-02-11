@@ -20,8 +20,6 @@
 # date: 2015-06-09 
 # source: http://jan.tomka.name/project/clearcase-completion-bash
 
-# TODO: on windows, CRLF's cause view names to have a trailing ^M character
-
 _cleartool()
 {
     local cur prev cword words commands options command pname

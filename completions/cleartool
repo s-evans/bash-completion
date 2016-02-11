@@ -723,62 +723,62 @@ _cleartool()
                         clearexport_pvcs clearexport_sccs"
                     ;;
                 mount)
-                    options=$(cleartool lsvob |sed -e "/^\*/d" -e "s/^\s\+\(\S*\).*/\1/")
+                    options=$(cleartool lsvob |sed -e "/^\*/d" -e "s/^\s\+\(\S*\).*/\1/" -e 's/\r//')
                     ;;
                 umount)
-                    options=$(cleartool lsvob |sed -e "/^\s/d" -e "s/^\*\s\+\(\S*\).*/\1/")
+                    options=$(cleartool lsvob |sed -e "/^\s/d" -e "s/^\*\s\+\(\S*\).*/\1/" -e 's/\r//')
                     ;;
                 setview)
                     if [[ "$prev" == -exe?(c) ]]; then
                         COMPREPLY=( $(compgen -A command -- $cur) )
                     else
-                        options=$(cleartool lsview -short)
+                        options=$(cleartool lsview -short | sed -e 's/\r//')
                     fi
                     ;;
                 lsview)
                     if [[ "$prev" == -hos?(t) ]]; then
                         _known_hosts
                     elif [[ "$prev" == -reg?(ion) ]]; then
-                        options=$(cleartool lsregion -short)
+                        options=$(cleartool lsregion -short | sed -e 's/\r//')
                     elif [[ "$prev" == -sto?(rage) ]]; then
                         # TODO: Doesn't work OK.
-                        options=$(cleartool lsview |sed -e "s/.*\s\(\S*\)$/\1/")
+                        options=$(cleartool lsview |sed -e "s/.*\s\(\S*\)$/\1/" -e 's/\r//')
                     elif [[ "$prev" == -uui?(d) ]]; then
-                        options=$(cleartool lsview -long |grep "^View uuid: " |sed -e "s/^View uuid: //" |sort |uniq)
+                        options=$(cleartool lsview -long |grep "^View uuid: " |sed -e "s/^View uuid: //" -e 's/\r//' |sort |uniq)
                     else
-                        options=$(cleartool lsview -short)
+                        options=$(cleartool lsview -short | sed -e 's/\r//')
                     fi
                     ;;
                 uncheckout|unco)
                     # List of user's checked out elements
                     # TODO: Include list of activities for checkin
-                    options=$(cleartool lscheckout -short -me)
+                    options=$(cleartool lscheckout -short -me | sed -e 's/\r//')
                     ;;
                 checkin|ci)
                     if [[ "$prev" != @(-fro?(m)|-cfi?(le)) ]]; then
-                        options=$(cleartool lscheckout -short -me)
+                        options=$(cleartool lscheckout -short -me | sed -e 's/\r//')
                     fi
                     ;;
                 lsregion)
-                    options=$(cleartool lsregion -short)
+                    options=$(cleartool lsregion -short | sed -e 's/\r//')
                     ;;
                 rmregion)
                     if [[ "$prev" != -pas?(sword) ]]; then
-                        options=$(cleartool lsregion -short)
+                        options=$(cleartool lsregion -short | sed -e 's/\r//')
                     fi
                     ;;
                 lsvob)
                     if [[ "$prev" == -reg?(ion) ]]; then
-                        options=$(cleartool lsregion -short)
+                        options=$(cleartool lsregion -short | sed -e 's/\r//')
                     elif [[ "$prev" == -hos?(t) ]]; then
                         _known_hosts
                     elif [[ "$prev" == -uui?(d) ]]; then
-                        options=$(cleartool lsvob -long |grep "^Vob replica uuid: " |sed -e "s/^Vob replica uuid: //" |sort |uniq)
+                        options=$(cleartool lsvob -long |grep "^Vob replica uuid: " |sed -e "s/^Vob replica uuid: //" -e 's/\r//' |sort |uniq)
                     elif [[ "$prev" == -fam?(ily) ]]; then
-                        options=$(cleartool lsvob -long |grep "^Vob family uuid: " |sed -e "s/^Vob family uuid: //" |sort |uniq)
+                        options=$(cleartool lsvob -long |grep "^Vob family uuid: " |sed -e "s/^Vob family uuid: //" -e 's/\r//' |sort |uniq)
                     elif [[ "$prev" == -sto?(rage) ]]; then
                         # TODO: Doesn't work OK
-                        options=$(cleartool lsvob |sed -e "s/^\*\?\ \S*\s*\(\S*\).*/\1/")
+                        options=$(cleartool lsvob |sed -e "s/^\*\?\ \S*\s*\(\S*\).*/\1/" -e 's/\r//')
                     fi
                     ;;
             esac

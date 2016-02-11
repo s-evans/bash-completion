@@ -6,19 +6,19 @@
 
 _sed()
 {
-    COMPREPLY=()
+    local cur prev words cword options option_list found
+    _init_completion
 
-    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
-    local options=''
-    local option_list=( '-n' '--quiet' '--silent' '-e' '--expression=' '-f' \
+    cur=$(printf '%q' "$cur")
+    option_list=( '-n' '--quiet' '--silent' '-e' '--expression=' '-f' \
         '--file=' '--follow-symlinks' '-i' '--in-place' '--in-place=' '-b' \
         '--binary' '-l' '--line-length=' '--posix' '-r' '--regexp-extended' '-s' \
         '--separate' '-u' '--unbuffered' '-z' '--null-data' '--help' '--version' )
 
     for option in ${option_list[@]} ; do
-        local found=0
+        found=0
 
-        for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
+        for word in ${words[@]::${cword}} ; do
             if [[ $word == $option ]]; then
                 found=1 
                 break
@@ -31,10 +31,7 @@ _sed()
     done
 
     COMPREPLY=( $( compgen -f -W "$options" -- $cur ) )
-
     [[ $COMPREPLY == *= ]] && compopt -o nospace
-
-    return 0
 }
 
 complete -o default -F _sed sed

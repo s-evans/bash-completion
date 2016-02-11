@@ -20,15 +20,14 @@
 # date: 2015-06-09 
 # source: http://jan.tomka.name/project/clearcase-completion-bash
 
+# TODO: on windows, CRLF's cause view names to have a trailing ^M character
+
 _cleartool()
 {
-    local cur prev commands options command pname
+    local cur prev cword words commands options command pname
+    _init_completion
 
-    COMPREPLY=()
-
-    command=${COMP_WORDS[1]}
-    prev=${COMP_WORDS[COMP_CWORD-1]}
-    cur=${COMP_WORDS[COMP_CWORD]}
+    command=${words[1]}
 
     commands='annotate apropos catcr catcs cd chactivity chbl checkin ci \
         checkout co checkvob chevent chflevel chfolder chmaster \
@@ -51,7 +50,7 @@ _cleartool()
         shell space startview umount uncheckout unco unlock unregister \
         unreserve update winkin'
 
-    if [[ $COMP_CWORD -eq 1 ]] ; then
+    if [[ $cword -eq 1 ]] ; then
         COMPREPLY=( $( compgen -W "$commands" -- $cur ) )
     else
         if [[ "$cur" == -* ]]; then
@@ -789,27 +788,22 @@ _cleartool()
             fi
         fi
     fi
-
-    return 0
 }
 complete -o default -F _cleartool cleartool ct cleartool.exe
 
 _multitool()
 {
-    local cur prev commands options command pname
+    local cur prev cword words commands options command pname
+    _init_completion
 
-    COMPREPLY=()
-
-    command=${COMP_WORDS[1]}
-    prev=${COMP_WORDS[COMP_CWORD-1]}
-    cur=${COMP_WORDS[COMP_CWORD]}
+    command=${words[1]}
 
     commands="help man quit cd pwd shell apropos lstype rmtype mkreplica \
         chreplica syncreplica lsreplica rmreplica rename chmaster \
         lsmaster reqmaster lsepoch chepoch recoverpacket \
         restorereplica describe describe lspacket"
 
-    if [[ $COMP_CWORD -eq 1 ]] ; then
+    if [[ $cword -eq 1 ]] ; then
         COMPREPLY=( $( compgen -W "$commands" -- $cur ) )
     else
         if [[ "$cur" == -* ]]; then
@@ -920,324 +914,208 @@ _multitool()
             fi
         fi
     fi
-
-    return 0
 }
 complete -o default -F _multitool multitool mt multitool.exe
 
 _clearaudit()
 {
-    local cur
-
-    COMPREPLY=()
-
-    cur=${COMP_WORDS[COMP_CWORD]}
-
+    local cur prev cword words
+    _init_completion
     if [[ "$cur" == -* ]]; then
         COMPREPLY=( $( compgen -W "-h" -- $cur ) )
     fi
-
-    return 0
 }
 complete -o default -A command -F _clearaudit clearaudit clearaudit.exe
 
 _clearbug()
 {
-    local cur
-
-    COMPREPLY=()
-
-    cur=${COMP_WORDS[COMP_CWORD]}
-
+    local cur prev cword words
+    _init_completion
     if [[ "$cur" == -* ]]; then
         COMPREPLY=( $( compgen -W "-short -p -r -l -h" -- $cur ) )
     fi
-
-    return 0
 }
 complete -o default -F _clearbug clearbug clearbug.exe
 
 _cleardiffbl()
 {
-    local cur
-
-    COMPREPLY=()
-
-    cur=${COMP_WORDS[COMP_CWORD]}
-
+    local cur prev cword words
+    _init_completion
     if [[ "$cur" == -* ]]; then
         COMPREPLY=( $( compgen -W "-ispred" -- $cur ) )
     fi
-
-    return 0
 }
 complete -o default -F _cleardiffbl cleardiffbl cleardiffbl.exe
 
 _cleardiff()
 {
-    local cur
-
-    COMPREPLY=()
-
-    cur=${COMP_WORDS[COMP_CWORD]}
-
+    local cur prev cword words
+    _init_completion
     if [[ "$cur" == -* ]]; then
         COMPREPLY=( $( compgen -W "-tiny -window -diff_format \
             -serial_format -columns -headers_only -quiet \
             -status_only -blank_ignore -out -base -q -qall -abort \
             -favor_contrib" -- $cur ) )
     fi
-
-    return 0
 }
 complete -o default -F _cleardiff cleardiff cleardiff.exe
 
 _clearexport_ccase()
 {
-    local cur
-
-    COMPREPLY=()
-
-    cur=${COMP_WORDS[COMP_CWORD]}
-
+    local cur prev cword words
+    _init_completion
     if [[ "$cur" == -* ]]; then
         COMPREPLY=( $( compgen -W "-r -s -I -t -T -p -o" -- $cur ) )
     fi
-
-    return 0
 }
 complete -o default -F _clearexport_ccase clearexport_ccase clearexport_ccase.exe
 
 _clearexport_cvs()
 {
-    local cur
-
-    COMPREPLY=()
-
-    cur=${COMP_WORDS[COMP_CWORD]}
-
+    local cur prev cword words
+    _init_completion
     if [[ "$cur" == -* ]]; then
         COMPREPLY=( $( compgen -W "-r -A -s -p -I -V -S -t -T -p -o" -- $cur ) )
     fi
-
-    return 0
 }
 complete -o default -F _clearexport_cvs clearexport_cvs clearexport_cvs.exe
 
 _clearexport_rcs()
 {
-    local cur
-
-    COMPREPLY=()
-
-    cur=${COMP_WORDS[COMP_CWORD]}
-
+    local cur prev cword words
+    _init_completion
     if [[ "$cur" == -* ]]; then
         COMPREPLY=( $( compgen -W "-r -s -p -I -V -S -t -T -o" -- $cur ) )
     fi
-
-    return 0
 }
 complete -o default -F _clearexport_rcs clearexport_rcs clearexport_rcs.exe
 
 _clearexport_sccs()
 {
-    local cur
-
-    COMPREPLY=()
-
-    cur=${COMP_WORDS[COMP_CWORD]}
-
+    local cur prev cword words
+    _init_completion
     if [[ "$cur" == -* ]]; then
         COMPREPLY=( $( compgen -W "-r -s -p -I -V -t -T -o" -- $cur ) )
     fi
-
-    return 0
 }
 complete -o default -F _clearexport_sccs clearexport_sccs clearexport_sccs.exe
 
 _clearexport_ffile()
 {
-    local cur
-
-    COMPREPLY=()
-
-    cur=${COMP_WORDS[COMP_CWORD]}
-
+    local cur prev cword words
+    _init_completion
     if [[ "$cur" == -* ]]; then
         COMPREPLY=( $( compgen -W "-r -o -L -s -l -b -v -p -t" -- $cur ) )
     fi
-
-    return 0
 }
 complete -o default -F _clearexport_ffile clearexport_ffile clearexport_ffile.exe
 
 _clearexport_pvcs()
 {
-    local cur
-
-    COMPREPLY=()
-
-    cur=${COMP_WORDS[COMP_CWORD]}
-
+    local cur prev cword words
+    _init_completion
     if [[ "$cur" == -* ]]; then
         COMPREPLY=( $( compgen -W "-r -s -I -G -V -t -T -p -o" -- $cur ) )
     fi
-
-    return 0
 }
 complete -o default -F _clearexport_pvcs clearexport_pvcs clearexport_pvcs.exe
 
 _clearfsimport()
 {
-    local cur
-
-    COMPREPLY=()
-
-    cur=${COMP_WORDS[COMP_CWORD]}
-
+    local cur prev cword words
+    _init_completion
     if [[ "$cur" == -* ]]; then
         COMPREPLY=( $( compgen -W "-follow -recurse -rmname -mklabel \
             -nsetevent -identical -master -comment \
             -unco -preview -h" -- $cur ) )
     fi
-
-    return 0
 }
 complete -o default -F _clearfsimport clearfsimport clearfsimport.exe
 
 _cleargetlog()
 {
-    local cur
-
-    COMPREPLY=()
-
-    cur=${COMP_WORDS[COMP_CWORD]}
-
+    local cur prev cword words
+    _init_completion
     if [[ "$cur" == -* ]]; then
         COMPREPLY=( $( compgen -W "-host -vob -cview -tag" -- $cur ) )
     fi
-
-    return 0
 }
 complete -o default -F _cleargetlog cleargetlog cleargetlog.exe
 
 _clearhistory()
 {
-    local cur
-
-    COMPREPLY=()
-
-    cur=${COMP_WORDS[COMP_CWORD]}
-
+    local cur prev cword words
+    _init_completion
     if [[ "$cur" == -* ]]; then
         COMPREPLY=( $( compgen -W "-nopreferences -minor -nco -user \
             -branch -recurse -directory -all -avobs -pname" -- $cur ) )
     fi
-
-    return 0
 }
 complete -o default -F _clearhistory clearhistory clearhistory.exe
 
 _clearimport()
 {
-    local cur
-
-    COMPREPLY=()
-
-    cur=${COMP_WORDS[COMP_CWORD]}
-
+    local cur prev cword words
+    _init_completion
     if [[ "$cur" == -* ]]; then
         COMPREPLY=( $( compgen -W "-verbose -identical -nsetevent
         -master -directory -comment -noload -nolabeldir -h" -- $cur ) )
     fi
-
-    return 0
 }
 complete -o default -F _clearimport clearimport clearimport.exe
 
 _clearlicense()
 {
-    local cur
-
-    COMPREPLY=()
-
-    cur=${COMP_WORDS[COMP_CWORD]}
-
+    local cur prev cword words
+    _init_completion
     if [[ "$cur" == -* ]]; then
         COMPREPLY=( $( compgen -W "-product -hostid -release" -- $cur ) )
     fi
-
-    return 0
 }
 complete -o default -F _clearlicense clearlicense clearlicense.exe
 
 _clearmrgman()
 {
-    local cur
-
-    COMPREPLY=()
-
-    cur=${COMP_WORDS[COMP_CWORD]}
-
+    local cur prev cword words
+    _init_completion
     if [[ "$cur" == -* ]]; then
         COMPREPLY=( $( compgen -W "-deliver -stream -to -target -query \
             -ttag -rebase -view -ftag -fbranch -flabel -fversion \
             -directory -nrecurse -follow -noautomerge -query -avobs \
             -qall -file" -- $cur ) )
     fi
-
-    return 0
 }
 complete -o default -F _clearmrgman clearmrgman clearmrgman.exe
 
 _clearprompt()
 {
-    local cur
-
-    COMPREPLY=()
-
-    cur=${COMP_WORDS[COMP_CWORD]}
-
+    local cur prev cword words
+    _init_completion
     if [[ "$cur" == -* ]]; then
         COMPREPLY=( $( compgen -W "-outfile -multi_line -default -dfile \
             -pattern -directory -items -choices -type \
             -mask -prompt -prefer_gui -newline -h" -- $cur ) )
     fi
-
-    return 0
 }
 complete -o default -F _clearprompt clearprompt clearprompt.exe
 
 _clearviewupdate()
 {
-    local cur
-
-    COMPREPLY=()
-
-    cur=${COMP_WORDS[COMP_CWORD]}
-
+    local cur prev cword words
+    _init_completion
     if [[ "$cur" == -* ]]; then
         COMPREPLY=( $( compgen -W "-ws -pname" -- $cur ) )
     fi
-
-    return 0
 }
 complete -o default -F _clearviewupdate clearviewupdate clearviewupdate.exe
 
 _clearvobadmin()
 {
-    local cur
-
-    COMPREPLY=()
-
-    cur=${COMP_WORDS[COMP_CWORD]}
-
+    local cur prev cword words
+    _init_completion
     if [[ "$cur" == -* ]]; then
         COMPREPLY=( $( compgen -W "-region" -- $cur ) )
     fi
-
-    return 0
 }
 complete -o default -F _clearvobadmin clearvobadmin clearvobadmin.exe
 

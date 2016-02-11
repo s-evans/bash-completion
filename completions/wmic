@@ -1,46 +1,24 @@
 #!/usr/bin/env sh
 
-_windows_wmic_users()
+_wmic_users()
 {
-    local options=$(wmic useraccount get name | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
-
-    # escape bash tokenizer strings and separate with newlines
-    local IFS=$'\n'
-    options=$(printf '%q\n' $options)
-
-    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
-    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
-
-    echo "$options"
-}
-
-_wmic_services()
-{
-    local options=$(wmic service get name | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
-
-    # escape bash tokenizer strings and separate with newlines
-    local IFS=$'\n'
-    options=$(printf '%q\n' $options)
-
-    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
-    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
-
-    echo "$options"
+    local options IFS
+    IFS=$'\n'
+    options=$(wmic useraccount get name | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
 }
 
 _wmic()
 {
-    COMPREPLY=()
-
-    local cur=${COMP_WORDS[$COMP_CWORD]}
-    local prev=${COMP_WORDS[$COMP_CWORD-1]}
-    local options=''
+    local cur prev words cword options IFS command commands subcmd global_switches
+    _init_completion
+    cur=$(printf '%q' "$cur")
 
     if [[ "$prev" == '/\?'* ]]; then
-        return 0
+        return
     fi
 
-    local commands=('alias' 'baseboard' 'bios' 'bootconfig'
+    commands=('alias' 'baseboard' 'bios' 'bootconfig'
         'cdrom' 'computersystem' 'cpu' 'csproduct' 'datafile'
         'dcomapp' 'desktop' 'desktopmonitor'
         'devicememoryaddress' 'diskdrive' 'diskquota'
@@ -62,10 +40,9 @@ _wmic()
         'volumeuserquota' 'wmiset')
 
     declare -i count=0
-    local command=''
 
     # find the command in the command string
-    for word in ${COMP_WORDS[@]::$COMP_CWORD} ; do
+    for word in ${words[@]::$cword} ; do
 
         for option in ${commands[@]} ; do
 
@@ -83,8 +60,8 @@ _wmic()
         count+=1
     done
 
-    local subcmd=${COMP_WORDS[$count+1]}
-    count=$COMP_CWORD-$count
+    subcmd=${words[$count+1]}
+    count=$cword-$count
 
     case "$command" in
 
@@ -106,11 +83,12 @@ _wmic()
                 /role\\:*)
                     ;&
                 /namespace\\:*)
-                    options=''
+                    return
                     ;;
 
                 /user\\:*)
-                    options=$(_windows_wmic_users | sed 's/.*/\/user\\:&/')
+                    IFS=$'\n'
+                    options=$(_wmic_users | sed -e 's/.*/\/user\\:&/')
                     ;;
 
                 /implevel\\:*)
@@ -156,7 +134,7 @@ _wmic()
 
                 *)
                     # remove global options that have been used
-                    local global_switches=( '/namespace\:' '/role\:'
+                    global_switches=( '/namespace\:' '/role\:'
                         '/node\:' '/implevel\:' '/authlevel\:' '/locale\:'
                         '/privileges\:' '/trace\:' '/record\:' '/interactive\:'
                         '/failfast\:' '/user\:' '/password\:' '/output\:'
@@ -165,7 +143,7 @@ _wmic()
                     for option in ${global_switches[@]} ; do
                         declare -i found=0
 
-                        for word in ${COMP_WORDS[@]::$COMP_CWORD} ; do
+                        for word in ${words[@]::$cword} ; do
 
                             if [[ "$word" == "$option"* ]]; then
                                 found=1
@@ -842,12 +820,7 @@ _wmic()
 
     COMPREPLY=( $( compgen -W '$options' -- $(printf '%q' "$cur") ) )
 
-    # check if the recommended completion is an option that takes an immediate value
-    if [[ ${#COMPREPLY[@]} -eq 1 && ${COMPREPLY} == /*: ]]; then
-        compopt -o nospace
-    fi
-
-    return 0
+    [[ $COMPREPLY == /*: ]] && compopt -o nospace
 }
 
 complete -o default -F _wmic wmic wmic.exe

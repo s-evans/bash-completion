@@ -5,24 +5,18 @@
 
 _cygstart()
 {
-    COMPREPLY=()
+    local cur prev words cword options
+    _init_completion
+    cur=$(printf '%q' "$cur")
 
-    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
-
-    local options='--help -? --usage --version --license --reference -v
+    options='--help -? --usage --version --license --reference -v
     --verbose -w -a --action\=open --action\=explore --action\=edit
     --action\=find --action\=print -o --open -x --explore -e --edit -f --find
     -p --print --hide --maximize --minimize --restore --show --shownormal
     --showmaximized --showminimized --showminnoactive --showna --shownoactivate
     --wait -d --directory='
 
-    if [ -n "$options" -a -z "$COMPREPLY" ]; then
-        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
-    fi
-
-    [[ $COMPREPLY == *= ]] && compopt -o nospace
-
-    return 0
+    COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
 }
 
 complete -o default -F _cygstart cygstart cygstart.exe

@@ -5,88 +5,52 @@
 
 _windbg_services()
 {
-    # TODO: there might be a newer version of this that we can use
-    # TODO: this might break on special characters
-    local services=$(wmic service get name | sed -e '1d' -e '$d' -e 's/\r//' -e 's/ \+$//' -e 's/.*/"&"/')
-    services=${services,,}
-    echo "$services"
+    local IFS options
+    IFS=$'\n'
+    options=$(sc query | sed -e '/^SERV/!d' -e 's/^[^ ]\+ //')
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
 }
 
 _windbg_task_images()
 {
-    # get the task list
-    local options=`tasklist /fo list`
-
-    # remote excess characters while not having sed appear in the task list
-    options=`echo "$options" | sed -e '/^Image/ !d' -e 's/^Image Name: \+//'`
-
-    # escape bash tokenizer strings and separate with newlines
-    local IFS=$'\n'
-    options=$(printf '%q\n' $options)
-
-    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
-    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
-
-    # make lowercase for convenience
-    options=${options,,}
-
-    # return as newline separated values
-    echo "$options"
+    local IFS options
+    IFS=$'\n'
+    options=$(tasklist /fo list | sed -e '/^Image/ !d' -e 's/^[^:]\+: \+//')
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
 }
 
 _windbg()
 {
-	COMPREPLY=()
+    local cur prev words cword options IFS found terminal_options first_options options_list
+    _init_completion
+    cur=$(printf '%q' "$cur")
 
-    local cur=$(printf '%q' "${COMP_WORDS[$COMP_CWORD]}")
-
-    local options=''
-
-    local terminal_options=( '-IA ' '-IAS' '-IU' '-I' '-IS' '-?' )
-
-    local first_options=( '-server' '-remote' )
-
+    terminal_options=( '-IA ' '-IAS' '-IU' '-I' '-IS' '-?' )
+    first_options=( '-server' '-remote' )
     first_options+=( ${terminal_options[@]} )
 
     # TODO: lsrcpath should only follow "-remote"
 
-    local options_list=( '-lsrcpath' '-premote' '-ee' '-clines' '-d'
+    options_list=( '-lsrcpath' '-premote' '-ee' '-clines' '-d'
         '-aExtension' '-e' '-failinc' '-g' '-G' '-hd' '-j' '-n' '-noshell' '-o'
         '-Q' '-QY' '-QS' '-QSY' '-robp' '-secure' '-ses' '-sdce' '-sicv'
         '-sins' '-snc' '-snul' '-sup' '-sflags' '-T' '-v' '-log' '-logo'
         '-loga' '-noinh' '-i' '-y' '-srcpath' '-k' '-kl' '-kx' '-c' '-pb' '-pd'
         '-pe' '-pr' '-pt' '-pv' '-W' '-WF' '-WX' '-zp' '-p' '-pn' '-psn' '-z' )
 
-	if [[ $COMP_CWORD -eq 1 ]] ; then
+	if [[ $cword -eq 1 ]] ; then
         COMPREPLY=( $( compgen -W "${options_list[*]} ${first_options[*]}" -- $cur ) )
-        return 0
+        return
     fi
 
     for option in ${terminal_options[@]} ; do
-        if [[ $option == ${COMP_WORDS[1]} ]]; then
-            return 0
+        if [[ $option == ${words[1]} ]]; then
+            return
         fi
     done
 
     # Command-specific arguments
-    case ${COMP_WORDS[$COMP_CWORD-1]} in
-
-        # TODO: implement
-
-        -server)
-            # TODO: anything we can do here?
-            options=''
-            ;;
-
-        -remote)
-            # TODO: anything we can do here?
-            options=''
-            ;;
-
-        -premote)
-            # TODO: anything we can do here?
-            options=''
-            ;;
+    case $prev in
 
         -a)
             # TODO: list dlls 
@@ -101,17 +65,16 @@ _windbg()
 
         -p)
             _pids
+            return
             ;;
 
         -pn)
-            local IFS=$'\n'
-            cur=${cur,,}
+            IFS=$'\n'
             options=$(_windbg_task_images)
             ;;
 
         -psn)
-            local IFS=$'\n'
-            cur=${cur,,}
+            IFS=$'\n'
             options=$(_windbg_services)
             ;;
 
@@ -119,47 +82,15 @@ _windbg()
             options='masm c++'
             ;;
 
-        -e)
-            ;&
-        -clines)
-            ;&
-        -T)
-            ;&
-        -log)
-            ;&
-        -logo)
-            ;&
-        -loga)
-            ;&
-        -i)
-            ;&
-        -y)
-            ;&
-        -srcpath)
-            ;&
-        -k)
-            ;&
-        -kx)
-            ;&
-        -c)
-            ;&
-        -pt)
-            ;&
-        -W)
-            ;&
-        -WF)
-            ;&
-        -zp)
-            ;&
-        -z)
-            options=''
+        -remote|-premote|-server|-k|-e|-clines|-T|-log|-logo|-loga|-i|-y|-srcpath|-kx|-c|-pt|-W|-WF|-zp|-z)
+            return
             ;;
 
         *)
             for option in ${options_list[@]} ; do
-                local found=0
+                found=0
 
-                for word in ${COMP_WORDS[@]::$COMP_CWORD} ; do
+                for word in ${words[@]::$cword} ; do
                     if [[ $word == $option ]]; then
                         found=1 
                         break
@@ -174,11 +105,7 @@ _windbg()
 
     esac
 
-    if [ -n "$options" -a -z "$COMPREPLY" ]; then
-        COMPREPLY=( $(compgen -W '$options' -- $cur ) )
-    fi
-
-    return 0
+    COMPREPLY=( $(compgen -W '$options' -- $cur ) )
 }
 
 complete -o default -F _windbg windbg windbg.exe

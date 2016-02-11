@@ -2,9 +2,11 @@
 
 _link()
 {
-    COMPREPLY=()
-    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
-    local options='/align /align\: /allowbind /allowbind\:no /allowisolation
+    local cur prev words cword options
+    _init_completion
+    cur=$(printf '%q' "$cur")
+
+    options='/align /align\: /allowbind /allowbind\:no /allowisolation
     /allowisolation\:no /appcontainer /appcontainer\:no /assemblydebug
     /assemblydebug\:disable /assemblylinkresource\: /assemblymodule\:
     /assemblyresource\: /base\: /clrimagetype\:ijw /clrimagetype\:pure
@@ -52,15 +54,10 @@ _link()
     /winmddelaysign\:no /winmdfile\: /winmdkeycontainer\: /winmdkeyfile\: /wx
     /wx\:no' 
 
-    if [ -n "$options" -a -z "$COMPREPLY" ]; then
-        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
-    fi
-
+    COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
     [[ $COMPREPLY == *: ]] && compopt -o nospace
     [[ $COMPREPLY == *, ]] && compopt -o nospace
-
-    return 0 
 }
 
 complete -o default -F _link link link.exe

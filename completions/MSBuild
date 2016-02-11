@@ -2,10 +2,7 @@
 
 _msbuild_end()
 {
-    if [ -n "$options" -a -z "$COMPREPLY" ]; then
-        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
-    fi
-
+    COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
     [[ $COMPREPLY == *: ]] && compopt -o nospace
     [[ $COMPREPLY == *= ]] && compopt -o nospace
     [[ $COMPREPLY == *\; ]] && compopt -o nospace
@@ -13,17 +10,17 @@ _msbuild_end()
 
 _msbuild()
 {
-    COMPREPLY=()
-
-    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
-    local options=''
+    local cur prev words cword options existing_options raw_cur
+    _init_completion
+    cur=$(printf '%q' "$cur")
+    raw_cur=${words[cword]}
 
     # TODO: cull used options and remove mutually exclusive options
 
-    case ${COMP_WORDS[COMP_CWORD]} in
+    case $raw_cur in
 
         /consoleloggerparameters\\:*)
-            local existing_options=$(echo "${COMP_WORDS[COMP_CWORD]}" | sed -e 's/[^:;]*$//')
+            existing_options=$(echo "$raw_cur" | sed -e 's/[^:;]*$//')
 
             for new_option in 'performancesummary' 'summary' 'nosummary' \
                 'errorsonly' 'warningsonly' 'noitemandpropertylist' \
@@ -36,11 +33,11 @@ _msbuild()
             done
 
             _msbuild_end
-            return 0
+            return
             ;;
 
         /fileloggerparameters\\:*)
-            local existing_options=$(echo "${COMP_WORDS[COMP_CWORD]}" | sed -e 's/[^:;]*$//')
+            existing_options=$(echo "$raw_cur" | sed -e 's/[^:;]*$//')
 
             # TODO: fix logfile= so that it will stop and suggest files
             for new_option in 'logfile\=' 'append' 'encoding\=utf-8' \
@@ -49,21 +46,21 @@ _msbuild()
             done
 
             _msbuild_end
-            return 0
+            return
             ;;
 
         @*)
             # TODO: list files
             options='@'
             _msbuild_end
-            return 0
+            return
             ;;
 
         /target\\:*)
             # TODO: list avilable targets from the given project file, if available in the command string or in the current directory
             options='/target\:'
             _msbuild_end
-            return 0
+            return
             ;;
 
         *)
@@ -76,12 +73,10 @@ _msbuild()
             /nodereuse\:true /nodereuse\:false /preprocess /preprocess\:
             /detailedsummary @ /noautoresponse /nologo /version /help' 
             _msbuild_end
-            return 0
+            return
             ;;
 
     esac
-
-    return 0
 }
 
 complete -o default -F _msbuild msbuild msbuild.exe MSBuild MSBuild.exe

@@ -5,42 +5,26 @@
 
 _cygdrop_group()
 {
-    local options=$(wmic group get name | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
-
-    # escape bash tokenizer strings and separate with newlines
-    local IFS=$'\n'
-    options=$(printf '%q\n' $options)
-
-    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
-    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
-
-    # make lowercase for convenience
-    options=${options,,}
-
-    echo "$options"
+    local options IFS
+    IFS=$'\n'
+    options=$(wmic group get name | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
 }
 
 _cygdrop()
 {
-    COMPREPLY=()
+    local cur prev words cword options IFS
+    _init_completion
+    cur=$(printf '%q' "$cur")
 
-    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
-    local options=''
+    case $(printf '%q' "$prev") in
 
-    case $(printf '%q' "${COMP_WORDS[COMP_CWORD-1]}") in
-
-        -g)
-            ;&
-        -G)
-            ;&
-        -r)
-            local IFS=$'\n'
+        -g|-G|-r)
+            IFS=$'\n'
             options=$(_cygdrop_group)
             ;;
 
-        -p)
-            ;&
-        -P)
+        -p|-P)
             options='SeAssignPrimaryTokenPrivilege SeAuditPrivilege
             SeBackupPrivilege SeChangeNotifyPrivilege SeCreateGlobalPrivilege
             SeCreatePagefilePrivilege SeCreatePermanentPrivilege
@@ -65,11 +49,7 @@ _cygdrop()
 
     esac
 
-    if [ -n "$options" -a -z "$COMPREPLY" ]; then
-        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
-    fi
-
-    return 0
+    COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
 }
 
 complete -o default -F _cygdrop cygdrop cygdrop.exe

@@ -2,80 +2,60 @@
 
 _msiexec_pkgs()
 {
-    local options=$( ( reg query 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall'; reg query 'HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall' ) | sed -e 's/[^{]*//')
-
-    # escape bash tokenizer strings and separate with newlines
-    local IFS=$'\n'
-    options=$(printf '%q\n' $options)
-
-    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
-    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
-
-    echo "$options"
+    local options IFS
+    IFS=$'\n'
+    options=$( ( reg query 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall'; reg query 'HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall' ) | sed -e 's/[^{]*//')
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
 }
 
 _msiexec_end()
 {
-    if [ -n "$options" -a -z "$COMPREPLY" ]; then
-        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
-    fi
-
+    COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 }
 
 _msiexec()
 {
-    COMPREPLY=()
+    local cur prev words cword options IFS install_options repair_options restart_options display_options log_options
+    _init_completion
 
-    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
-    local options=''
+    cur=$(printf '%q' "$cur")
+    install_options='/package /i /a /j /ju /jm /uninstall /x /update'
+    repair_options='/f /fp /fo /fe /fd /fc /fa /fu /fm /fs /fv' 
+    restart_options='/norestart /promptrestart /forcerestart'
+    display_options='/quiet /passive /q /qn /qb /qr /qf /help'
+    log_options='/l /li /lw /le /la /lr /lu /lc /lm /lo /lp /lv /lx /l\+ /l\! /l\* /log'
 
-    local install_options='/package /i /a /j /ju /jm /uninstall /x /update'
-    local repair_options='/f /fp /fo /fe /fd /fc /fa /fu /fm /fs /fv' 
-    local restart_options='/norestart /promptrestart /forcerestart'
-    local display_options='/quiet /passive /q /qn /qb /qr /qf /help'
-    local log_options='/l /li /lw /le /la /lr /lu /lc /lm /lo /lp /lv /lx /l\+ /l\! /l\* /log'
-
-    if [[ $COMP_CWORD -eq 1 ]]; then
+    if [[ $cword -eq 1 ]]; then
         options="$install_options $repair_options"
         _msiexec_end
-        return 0
+        return
     fi
 
-    case ${COMP_WORDS[COMP_CWORD-1]} in
+    case $prev in
         /l|/li|/lw|/le|/la|/lr|/lu|/lc|/lm|/lo|/lp|/lv|/lx|/l\+|/l\!|/l\*|/log)
-            return 0
+            return
             ;;
     esac
 
-    case ${COMP_WORDS[1]} in
+    case ${words[1]} in
 
-        /a)
-            ;&
-        /uninstall)
-            ;&
-        /x)
-            ;&
-        /update)
-            ;&
-        /i)
-            ;&
-        /package)
-            if [[ $COMP_CWORD -gt 2 ]]; then
+        /a|/uninstall|/x|/update|/i|/package)
+            if [[ $cword -gt 2 ]]; then
                 options="$restart_options $display_options $log_options"
                 _msiexec_end
-                return 0
+                return
             fi
             ;;
 
         /j*)
-            if [[ $COMP_CWORD -eq 2 ]]; then
+            if [[ $cword -eq 2 ]]; then
                 # TODO: suggest msi files?
                 options=''
             else
                 options="/t /g $restart_options $display_options $log_options"
 
-                case ${COMP_WORDS[COMP_CWORD-1]} in
+                case ${words[cword-1]} in
 
                     /t)
                         # TODO: list transforms
@@ -92,15 +72,11 @@ _msiexec()
             fi
 
             _msiexec_end
-            return 0
+            return
             ;;
 
-        /f*)
-            ;&
-        /x)
-            ;&
-        /uninstall)
-            if [[ $COMP_CWORD -eq 2 ]]; then
+        /f*|/x|/uninstall)
+            if [[ $cword -eq 2 ]]; then
                 # TODO: suggest msi files?
                 local IFS=$'\n'
                 options=$(_msiexec_pkgs)
@@ -109,12 +85,10 @@ _msiexec()
             fi
 
             _msiexec_end
-            return 0
+            return
             ;;
 
     esac
-
-    return 0
 }
 
 complete -o default -F _msiexec msiexec msiexec.exe

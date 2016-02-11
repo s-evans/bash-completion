@@ -2,41 +2,32 @@
 
 _cygpath()
 {
-    COMPREPLY=()
-    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
-    local options=''
+    local cur prev words cword options
+    _init_completion
+    cur=$(printf '%q' "$cur")
 
-    case ${COMP_WORDS[COMP_CWORD-1]} in
+    case $prev in
 
-        -t)
-            ;&
-        --type)
+        -f|--file)
+            return
+            ;;
+
+        -t|--type)
             options='dos mixed unix windows'
             ;;
 
-        -C)
-            ;&
-        --codepage)
-            # TODO: list code pages
+        -C|--codepage)
+            # TODO: list all available code pages
             options='ansi oem utf8'
             ;;
 
-        --F)
-            ;&
-        --folder)
+        --F|--folder)
             # TODO: list special folder ids
             options=''
             ;;
 
-        -f)
-            ;&
-        --file)
-            options=''
-            ;;
-
-        -c)
-            ;&
-        --close)
+        -c|--close)
+            # TODO: list handles
             options=''
             ;;
 
@@ -51,11 +42,7 @@ _cygpath()
 
     esac
 
-    if [ -n "$options" -a -z "$COMPREPLY" ]; then
-        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
-    fi
-
-    return 0
+    COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
 }
 
 complete -o default -F _cygpath cygpath cygpath.exe

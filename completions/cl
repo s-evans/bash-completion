@@ -2,106 +2,10 @@
 
 _cl_end()
 {
-    if [ -n "$options" -a -z "$COMPREPLY" ]; then
-        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
-    fi
+    COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
 
     case $COMPREPLY in
-        /analyze\\:log*)
-            ;&
-        /analyze\\:autolog\\:ext*)
-            ;&
-        /analyze\\:max_paths*)
-            ;&
-        /analyze\\:stacksize*)
-            ;&
-        /Wv\\:*)
-            ;&
-        /F*)
-            ;&
-        /W*)
-            ;&
-        /wd*)
-            ;&
-        /we*)
-            ;&
-        /wo*)
-            ;&
-        /MP*)
-            ;&
-        /constexpr\\:depth*)
-            ;&
-        /constexpr\\:backtrace*)
-            ;&
-        /constexpr\\:steps*)
-            ;&
-        /vm*)
-            ;&
-        /Zm*)
-            ;&
-        /Zp*)
-            ;&
-        /I*)
-            ;&
-        /AI*)
-            ;&
-        /U*)
-            ;&
-        /D*)
-            ;&
-        /Fe\\:)
-            ;&
-        /Fo\\:)
-            ;&
-        /FR\\:)
-            ;&
-        /Fd\\:)
-            ;&
-        /Fm\\:)
-            ;&
-        /Fp\\:)
-            ;&
-        /Fi\\:)
-            ;&
-        /Yl*)
-            ;&
-        /Yc*)
-            ;&
-        /Tp*)
-            ;&
-        /Tc*)
-            ;&
-        /FI*)
-            ;&
-        /FU*)
-            ;&
-        /doc*)
-            ;&
-        /Fe*)
-            ;&
-        /Fo*)
-            ;&
-        /Fr*)
-            ;&
-        /Fi*)
-            ;&
-        /Fa*)
-            ;&
-        /Fd*)
-            ;&
-        /Fm*)
-            ;&
-        /Fp*)
-            ;&
-        /FR*)
-            ;&
-        /Gs*)
-            ;&
-        /Ob*)
-            ;&
-        *,)
-            ;&
-        *:)
+        /analyze\\:log*|/analyze\\:autolog\\:ext*|/analyze\\:max_paths*|/analyze\\:stacksize*|/Wv\\:*|/F*|/W*|/wd*|/we*|/wo*|/MP*|/constexpr\\:depth*|/constexpr\\:backtrace*|/constexpr\\:steps*|/vm*|/Zm*|/Zp*|/I*|/AI*|/U*|/D*|/Fe\\:|/Fo\\:|/FR\\:|/Fd\\:|/Fm\\:|/Fp\\:|/Fi\\:|/Yl*|/Yc*|/Tp*|/Tc*|/FI*|/FU*|/doc*|/Fe*|/Fo*|/Fr*|/Fi*|/Fa*|/Fd*|/Fm*|/Fp*|/FR*|/Gs*|/Ob*|*,|*:)
             compopt -o nospace
             ;;
     esac
@@ -109,57 +13,27 @@ _cl_end()
 
 _cl()
 {
-    COMPREPLY=()
+    local cur prev words cword options
+    _init_completion
 
-    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
-    local options=''
+    cur=$(printf '%q' "$cur")
 
-    case $cur in
+    case "$cur" in
 
-        /I*)
-            ;&
-        /AI*)
+        /I*|/AI*)
             # TODO: recommend directory names with $cur as the prefix?
-            return 0
+            return
             ;;
 
-        /Yc*)
-            ;&
-        /Tp*)
-            ;&
-        /Tc*)
-            ;&
-        /FI*)
-            ;&
-        /FU*)
-            ;&
-        /doc*)
-            ;&
-        /Fe*)
-            ;&
-        /Fo*)
-            ;&
-        /Fr*)
-            ;&
-        /Fi*)
-            ;&
-        /Fa*)
-            ;&
-        /Fd*)
-            ;&
-        /Fm*)
-            ;&
-        /Fp*)
-            ;&
-        /FR*)
+        /Yc*|/Tp*|/Tc*|/FI*|/FU*|/doc*|/Fe*|/Fo*|/Fr*|/Fi*|/Fa*|/Fd*|/Fm*|/Fp*|/FR*)
             # TODO: recommend file names with $cur as the prefix?
-            return 0
+            return
             ;;
 
-        /Zc\\:*)
+        /Zc\\\\:*)
             # TODO: remove mutual exclusive and duplicate arguments
 
-            local existing_options=$(echo "${COMP_WORDS[COMP_CWORD]}" | sed -e 's/[^:,]*$//')
+            local existing_options=$(echo "${words[cword]}" | sed -e 's/[^:,]*$//')
 
             for new_option in 'forScope' 'forScope-' 'wchar_t' 'wchar_t-' \
                 'auto' 'auto-' 'trigraphs' 'trigraphs-' 'rvalueCast' \
@@ -172,16 +46,17 @@ _cl()
             done
 
             _cl_end
-            return 0
+            return
             ;;
 
         *)
             # TODO: remove mutual exclusive and duplicate arguments
+            local optimization_options codegen_options output_options preprocessor_options language_options misc_options link_options analysis_options
 
-            local optimization_options='/O1 /Ob /Og /Os /Ox /O2 /Od /Oi /Ot /Oy
+            optimization_options='/O1 /Ob /Og /Os /Ox /O2 /Od /Oi /Ot /Oy
             /favor\:ATOM /favor\:blend'
 
-            local codegen_options='/Gw /Gw- /GF /Gy /Gy- /GR /GR- /guard\:cf
+            codegen_options='/Gw /Gw- /GF /Gy /Gy- /GR /GR- /guard\:cf
             /guard\:cf- /EHs /EHc /EHr /fp\:except /fp\:except- /fp\:fast
             /fp\:precise /fp\:strict /Qfast_transcendentals /Qpar /Qpar-
             /Qpar-report\:1 /Qpar-report\:2 /Qvec-report\:1 /Qvec-report\:2 /GL
@@ -192,23 +67,23 @@ _cl()
             /Qsafe_fp_loads /Gm /Gm- /GS /GS- /GX /GX- /EHa /Ge /Gh /GT /RTCc
             /RTCu /Gr /GZ /QIfist /QIfist-'
 
-            local output_options='/Fa /Fd /Fm /Fp /FR /doc /FA /FAs /FAc /FAu
+            output_options='/Fa /Fd /Fm /Fp /FR /doc /FA /FAs /FAc /FAu
             /Fe /Fo /Fr /Fi'
 
-            local preprocessor_options='/AI /C /E /P /FI /u /X /FU /D /EP /Fx
+            preprocessor_options='/AI /C /E /P /FI /u /X /FU /D /EP /Fx
             /U /I'
 
-            local language_options='/Zi /Zp /Ze /Zs /vm /Zc\: /ZH\:SHA_256 /Zo
+            language_options='/Zi /Zp /Ze /Zs /vm /Zc\: /ZH\:SHA_256 /Zo
             /Zo- /ZW /constexpr\:depth /constexpr\:backtrace /constexpr\:steps
             /ZI /openmp /Z7 /Za /Zl /vd0 /vd1 /vd2'
 
-            local misc_options='/bigobj /errorReport\: /FC /J /MP /nologo /sdl
+            misc_options='/bigobj /errorReport\: /FC /J /MP /nologo /sdl
             /showIncludes /Tp /TP /w /we /w /Wall /WX /Yd /Yu /Zm /await /Wv\:
             /Wp64 /Tc /TC /V /wd /wo /W /WL /Yc /Yl /Y- /FS /? /help'
 
-            local link_options='/LD /LN /link /MT /MTd /LDd /F /MD /MDd'
+            link_options='/LD /LN /link /MT /MTd /LDd /F /MD /MDd'
 
-            local analysis_options='/analyze /analyze- /analyze\:log
+            analysis_options='/analyze /analyze- /analyze\:log
             /analyze\:autolog\:ext /analyze\:WX- /analyze\:max_paths
             /analyze\:quiet /analyze\:quiet- /analyze\:autolog
             /analyze\:autolog- /analyze\:stacksize /analyze\:only'
@@ -218,11 +93,9 @@ _cl()
             $analysis_options"
 
             _cl_end
-            return 0
+            return
             ;;
     esac
-
-    return 0
 }
 
 complete -o default -F _cl cl cl.exe

@@ -1,0 +1,56 @@
+#!/usr/bin/env sh
+
+_nasm()
+{
+    local cur prev words cword split options
+    _init_completion
+
+    case ${words[1]} in
+        -h|-hf|-v)
+            return
+            ;;
+    esac
+
+    case $(printf '%q' "${words[cword-1]}") in
+
+        --postfix|--prefix|-@|-D|-I|-MD|-MF|-MG|-MQ|-MT|-P|-U|-Z|-d|-i|-l|-o|-p|-u) 
+            return
+            ;;
+
+        -F)
+            # TODO: list debug format options for the current format
+            options=''
+            ;;
+
+        -f)
+            local IFS=$'\n'
+            options=$(nasm -hf | sed -e '1,/^valid/d' -e 's/^....//' -e 's/ .*//')
+            ;;
+
+        -O)
+            options='0 1 x'
+            ;;
+
+        -w*)
+            # TODO: list warning options
+            options=''
+            ;;
+
+        -X)
+            options='gnu vc'
+            ;;
+
+        *)
+            # TODO: cull duplicate and mutual exclusive options
+            options='--postfix --prefix -@ -D -E -F -I -M -MD -MF -MG -MP -MQ
+            -MT -O -P -U -X -Z -a -d -e -f -g -h -hf -i -l -o -p -r -s -t -u -v
+            -w'
+            ;;
+
+    esac
+
+    COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+}
+
+complete -o default -F _nasm nasm nasm.exe
+

@@ -1,34 +1,22 @@
 #!/usr/bin/env sh
 
-_windows_driverquery_users()
+_driverquery_users()
 {
+    local options IFS
+    IFS=$'\n'
     local options=$(wmic useraccount get name | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
-
-    # escape bash tokenizer strings and separate with newlines
-    local IFS=$'\n'
-    options=$(printf '%q\n' $options)
-
-    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
-    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
-
-    echo "$options"
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
 }
 
 _driverquery()
 {
-    COMPREPLY=()
-
-    local cur=${COMP_WORDS[$COMP_CWORD]}
-    local prev=${COMP_WORDS[$COMP_CWORD-1]}
-    local options=''
+    local cur prev words cword options IFS option_list found
+    _init_completion
 
     # Command-specific arguments
-    case "$prev" in
+    case $prev in
 
-        /s)
-            ;;
-
-        /p)
+        /s|/p)
             ;;
 
         /fo)
@@ -36,30 +24,28 @@ _driverquery()
             ;;
 
         /u)
-            # local IFS=$'\n'
-            options=$(_windows_driverquery_users)
+            IFS=$'\n'
+            options=$(_driverquery_users)
             ;;
 
         *)
-            local option_list=('/s' '/fo' '/nh' '/si' '/v')
+            option_list=('/s' '/fo' '/nh' '/si' '/v')
 
-            case ${COMP_WORDS[$COMP_CWORD-2]} in
+            case ${words[$cword-2]} in
 
-                # recommned /u if /s is found
                 /s)
                     option_list+=('/u')
                     ;;
 
-                # recommned /p if /u is found
                 /u)
                     option_list+=('/p')
                     ;;
             esac
 
             for option in ${option_list[@]} ; do
-                local found=0
+                found=0
 
-                for word in ${COMP_WORDS[@]::$COMP_CWORD} ; do
+                for word in ${words[@]::$cword} ; do
                     if [[ $word == $option ]]; then
                         found=1 
                         break
@@ -74,11 +60,7 @@ _driverquery()
 
     esac
 
-    if [ -n "$options" -a -z "$COMPREPLY" ]; then
-        COMPREPLY=( $(compgen -W '${options}' -- ${cur} ) )
-    fi
-
-    return 0
+    COMPREPLY=( $(compgen -W '${options}' -- ${cur} ) )
 }
 
 complete -o default -F _driverquery driverquery driverquery.exe

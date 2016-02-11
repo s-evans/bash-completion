@@ -2,11 +2,10 @@
 
 _runas()
 {
-    COMPREPLY=()
-    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
-    local options=''
+    local cur prev words cword
+    _init_completion
 
-    case ${COMP_WORDS[COMP_CWORD-1]} in
+    case $cur in
 
         /user\\:*)
             # TODO: list available users
@@ -26,13 +25,8 @@ _runas()
 
     esac
 
-    if [ -n "$options" -a -z "$COMPREPLY" ]; then
-        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
-    fi
-
+    COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
     [[ $COMPREPLY == *: ]] && compopt -o nospace
-
-    return 0
 }
 
 complete -o default -F _runas runas runas.exe

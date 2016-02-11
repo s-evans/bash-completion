@@ -2,34 +2,23 @@
 
 _w32tm()
 {
-    COMPREPLY=()
+    local cur prev words cword options cmd
+    _init_completion
+    cur=$(printf '%q' "${cur,,}")
 
-    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
-    local options=''
-
-    if [[ $COMP_CWORD -eq 1 ]] ; then
+    if [[ $cword -eq 1 ]] ; then
         local commands='/register /unregister /monitor /ntte /ntpte /resync
         /stripchart /config /tz /dumpreg /query /debug /?'
-        COMPREPLY=( $( compgen -W "$commands" -- "${cur,,}" ) )
-        return 0
+        COMPREPLY=( $( compgen -W "$commands" -- "$cur" ) )
+        return
     fi
 
-    local cmd=$(printf '%q' "${COMP_WORDS[1]}")
+    cmd=$(printf '%q' "${words[1]}")
 
     case $cmd in
 
-        /ntte)
-            ;&
-        /register)
-            ;&
-        /ntpte)
-            ;&
-        /unregister)
-            ;&
-        /tz)
-            ;&
-        /?)
-            options=''
+        /ntte|/register|/ntpte|/unregister|/tz|/?)
+            return
             ;;
 
         /monitor)
@@ -43,7 +32,7 @@ _w32tm()
             ;;
 
         /stripchart)
-            if [[ $COMP_CWORD -eq 2 ]]; then
+            if [[ $cword -eq 2 ]]; then
                 options='/computer\:'
             else
                 # TODO: cull options list
@@ -66,30 +55,30 @@ _w32tm()
             ;;
 
         /query)
-            if [[ $COMP_CWORD -eq 2 ]]; then
+            if [[ $cword -eq 2 ]]; then
                 options='/source /configuration /peers /status /computer\:'
-            elif [[ ${COMP_WORDS[2]} == /computer\\:* ]]; then
-                if [[ $COMP_CWORD -eq 3 ]]; then
+            elif [[ ${words[2]} == /computer\\:* ]]; then
+                if [[ $cword -eq 3 ]]; then
                     options='/source /configuration /peers /status'
-                elif [[ $COMP_CWORD -eq 4 ]]; then
+                elif [[ $cword -eq 4 ]]; then
                     options='/verbose'
                 fi
-            elif [[ $COMP_CWORD -eq 3 ]]; then
+            elif [[ $cword -eq 3 ]]; then
                 options='/verbose'
             fi
             ;;
 
         /debug)
-            if [[ $COMP_CWORD -eq 2 ]]; then
+            if [[ $cword -eq 2 ]]; then
                 options='/disable /enable'
-            elif [[ ${COMP_WORDS[2]} == /enable ]]; then
-                if [[ $COMP_CWORD -eq 3 ]]; then
+            elif [[ ${words[2]} == /enable ]]; then
+                if [[ $cword -eq 3 ]]; then
                     options='/file\:'
-                elif [[ $COMP_CWORD -eq 4 ]]; then
+                elif [[ $cword -eq 4 ]]; then
                     options='/size\:'
-                elif [[ $COMP_CWORD -eq 5 ]]; then
+                elif [[ $cword -eq 5 ]]; then
                     options='/entries\:'
-                elif [[ $COMP_CWORD -eq 6 ]]; then
+                elif [[ $cword -eq 6 ]]; then
                     options='/truncate'
                 fi
             fi
@@ -97,11 +86,8 @@ _w32tm()
 
     esac
 
-    COMPREPLY=( $( compgen -W '$options' -- "${cur,,}" ) )
-
+    COMPREPLY=( $( compgen -W '$options' -- "$cur" ) )
     [[ $COMPREPLY == *: ]] && compopt -o nospace
-
-    return 0
 }
 
 complete -o default -F _w32tm w32tm w32tm.exe

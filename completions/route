@@ -43,23 +43,22 @@ elif [[ $OSTYPE == cygwin ]]; then
 
     _route()
     {
-        local cur=$(printf '%q' "${COMP_WORDS[$COMP_CWORD]}")
-        local commands=('print' 'add' 'change' 'delete')
-        local options=''
+        local cur prev words cword options cmd IFS commands command
+        _init_completion
+        commands=('print' 'add' 'change' 'delete')
 
-        if [[ "${COMP_WORDS[1]}" == -p && $COMP_CWORD -eq 2 ]]; then
+        if [[ "${words[1]}" == -p && $cword -eq 2 ]]; then
             COMPREPLY=( $( compgen -W 'add' -- "$cur" ) )
 
-        elif [[ "${COMP_WORDS[1]}" == -* && $COMP_CWORD -eq 2 ]]; then
+        elif [[ "${words[1]}" == -* && $cword -eq 2 ]]; then
             COMPREPLY=( $( compgen -W '${commands[@]}' -- "$cur" ) )
 
-        elif [[ $COMP_CWORD -eq 1 ]] ; then
+        elif [[ $cword -eq 1 ]] ; then
             COMPREPLY=( $( compgen -W '-f -p -4 -6 ${commands[@]}' -- "$cur" ) )
 
         else
             declare -i count=0
-            local command=''
-            for word in ${COMP_WORDS[@]::$COMP_CWORD} ; do
+            for word in ${words[@]::$cword} ; do
                 for option in ${commands[@]} ; do
                     if [[ "$option" == "$word" ]]; then
                         command=$option
@@ -72,7 +71,7 @@ elif [[ $OSTYPE == cygwin ]]; then
                 count+=1
             done
 
-            count=$COMP_CWORD-$count
+            count=$cword-$count
 
             case "$command" in
                 print)
@@ -91,8 +90,8 @@ elif [[ $OSTYPE == cygwin ]]; then
                             options='if'
                             ;;
                         8)
-                            local IFS=$'\n'
-                            options=`_windows_get_interface_ids`
+                            IFS=$'\n'
+                            options=$(_windows_get_interface_ids)
                             ;;
                     esac
                     ;;
@@ -100,8 +99,8 @@ elif [[ $OSTYPE == cygwin ]]; then
                 change)
                     case $count in
                         1)
-                            local IFS=$'\n'
-                            options=`_windows_get_routes`
+                            IFS=$'\n'
+                            options=$(_windows_get_routes)
                             ;;
                         2)
                             options='mask'
@@ -113,8 +112,8 @@ elif [[ $OSTYPE == cygwin ]]; then
                             options='if'
                             ;;
                         8)
-                            local IFS=$'\n'
-                            options=`_windows_get_interface_ids`
+                            IFS=$'\n'
+                            options=$(_windows_get_interface_ids)
                             ;;
                     esac
                     ;;
@@ -122,8 +121,8 @@ elif [[ $OSTYPE == cygwin ]]; then
                 delete)
                     case $count in
                         1)
-                            local IFS=$'\n'
-                            options=`_windows_get_routes`
+                            IFS=$'\n'
+                            options=$(_windows_get_routes)
                             ;;
                     esac
                     ;;
@@ -131,8 +130,6 @@ elif [[ $OSTYPE == cygwin ]]; then
 
             COMPREPLY=( $( compgen -W '$options' -- "$cur" ) )
         fi
-
-        return 0
     } &&
     complete -F _route route route.exe
 fi

@@ -75,6 +75,7 @@ _cygrunsrv()
 
                     *)
                         # TODO: cull mutually exclusive options
+                        local cmds=( ${words[@]::cword} ) 
                         options=('-P' '--crs-path' '-a' '--args' '-c' '--chdir'
                         '-e' '--env' '-d' '--disp' '-f' '--desc' '-t' '--type'
                         '-u' '--user' '-w' '--passwd' '-s' '--termsig' '-z'
@@ -82,7 +83,7 @@ _cygrunsrv()
                         '-2' '--stderr' '-x' '--pidfile' '-n' '--neverexits'
                         '-O' '--preshutdown' '-o' '--shutdown' '-i'
                         '--interactive' '-j' '--nohide')
-                        options=$(_compliment words[@]::cword options[@])
+                        options=$(_complement cmds[@] options[@])
                         ;;
 
                 esac

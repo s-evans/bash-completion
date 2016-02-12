@@ -2,7 +2,7 @@
 
 _nasm()
 {
-    local cur prev words cword split options
+    local cur prev words cword split options cmds
     _init_completion
 
     case ${words[1]} in
@@ -11,7 +11,7 @@ _nasm()
             ;;
     esac
 
-    case $(printf '%q' "${words[cword-1]}") in
+    case $prev in
 
         --postfix|--prefix|-@|-D|-I|-MD|-MF|-MG|-MQ|-MT|-P|-U|-Z|-d|-i|-l|-o|-p|-u) 
             return
@@ -41,16 +41,17 @@ _nasm()
             ;;
 
         *)
+            cmds=( ${words[@]::cword} ) 
             options=('--postfix' '--prefix' '-@' '-D' '-E' '-F' '-I' '-M' '-MD'
             '-MF' '-MG' '-MP' '-MQ' '-MT' '-O' '-P' '-U' '-X' '-Z' '-a' '-d'
             '-e' '-f' '-g' '-h' '-hf' '-i' '-l' '-o' '-p' '-r' '-s' '-t' '-u'
             '-v' '-w')
-            options=$(_compliment words[@]::cword options[@])
+            options=$(_complement cmds[@] options[@])
             ;;
 
     esac
 
-    COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+    COMPREPLY=( $(compgen -W '$options' -- $cur ) )
 }
 
 complete -o default -F _nasm nasm nasm.exe

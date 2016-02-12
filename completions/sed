@@ -6,31 +6,18 @@
 
 _sed()
 {
-    local cur prev words cword options option_list found
+    local cur prev words cword options cmds
     _init_completion
 
-    cur=$(printf '%q' "$cur")
-    option_list=( '-n' '--quiet' '--silent' '-e' '--expression=' '-f' \
+    cur=$(printf '%q' "${cur,,}")
+    cmds=( ${words[@]::cword} ) 
+    options=( '-n' '--quiet' '--silent' '-e' '--expression=' '-f' \
         '--file=' '--follow-symlinks' '-i' '--in-place' '--in-place=' '-b' \
         '--binary' '-l' '--line-length=' '--posix' '-r' '--regexp-extended' '-s' \
         '--separate' '-u' '--unbuffered' '-z' '--null-data' '--help' '--version' )
+    options=$(_complement cmds[@] options[@])
 
-    for option in ${option_list[@]} ; do
-        found=0
-
-        for word in ${words[@]::${cword}} ; do
-            if [[ $word == $option ]]; then
-                found=1 
-                break
-            fi
-        done
-
-        if [[ $found -eq 0 ]]; then
-            options+="$option "
-        fi
-    done
-
-    COMPREPLY=( $( compgen -f -W "$options" -- $cur ) )
+    COMPREPLY=( $( compgen -f -W '$options' -- $cur ) )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 }
 

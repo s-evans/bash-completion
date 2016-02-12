@@ -18,7 +18,7 @@ _get_schtasks()
 
 _schtasks()
 {
-    local cur prev words cword options IFS
+    local cur prev words cword options IFS cmds
     _init_completion
     cur=$(printf '%q' "$cur")
 
@@ -31,6 +31,8 @@ _schtasks()
     if [[ "$prev" == "/?" ]]; then
         return
     fi
+
+    cmds=( ${words[@]::cword} ) 
 
     # Command-specific arguments
     case ${words[1]} in
@@ -54,7 +56,7 @@ _schtasks()
 
                 *)
                     options=('/s' '/u' '/p' '/i' '/tn' '/hresult')
-                    options=$(_compliment words[@]::cword options[@])
+                    options=$(_complement cmds[@] options[@])
                     ;;
 
             esac
@@ -79,7 +81,7 @@ _schtasks()
 
                 *)
                     options=('/s' '/u' '/p' '/tn' '/hresult')
-                    options=$(_compliment words[@]::cword options[@])
+                    options=$(_complement cmds[@] options[@])
                     ;;
 
             esac
@@ -112,7 +114,7 @@ _schtasks()
                     '/mo' '/d' '/m' '/i' '/ec' '/rp' '/tr' '/st' '/ri'
                     '/et' '/du' '/k' '/sd' '/ed' '/it' '/np' '/xml'
                     '/v1' '/f' '/rl' '/z' '/delay' '/hresult')
-                    options=$(_compliment words[@]::cword options[@])
+                    options=$(_complement cmds[@] options[@])
                     ;;
 
             esac
@@ -138,7 +140,7 @@ _schtasks()
 
                 *)
                     options=('/s' '/u' '/p' '/f' '/tn' '/hresult')
-                    options=$(_compliment words[@]::cword options[@])
+                    options=$(_complement cmds[@] options[@])
                     ;;
 
             esac
@@ -171,7 +173,7 @@ _schtasks()
 
                 *)
                     options=('/s' '/u' '/p' '/fo' '/xml' '/nh' '/v' '/tn' '/hresult')
-                    options=$(_compliment words[@]::cword options[@])
+                    options=$(_complement cmds[@] options[@])
                     ;;
 
             esac
@@ -204,7 +206,7 @@ _schtasks()
                     '/tr' '/st' '/ri' '/et' '/du' '/k' '/sd' '/ed'
                     '/it' '/rl' '/enable' '/disable' '/z' '/delay'
                     '/hresult')
-                    options=$(_compliment words[@]::cword options[@])
+                    options=$(_complement cmds[@] options[@])
                     ;;
 
             esac
@@ -221,7 +223,7 @@ _schtasks()
 
                 *)
                     options=('/tn' '/hresult')
-                    options=$(_compliment words[@]::cword options[@])
+                    options=$(_complement cmds[@] options[@])
                     ;;
 
             esac

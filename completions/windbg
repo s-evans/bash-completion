@@ -88,7 +88,8 @@ _windbg()
             ;;
 
         *)
-            options=$(_compliment words[@]::cword options_list[@])
+            local cmds=( ${words[@]::cword} ) 
+            options=$(_complement cmds[@] options_list[@])
             ;;
 
     esac

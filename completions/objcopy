@@ -6,11 +6,13 @@
 
 _objcopy()
 {
-    COMPREPLY=()
+    local cur prev words cword options cmds
+    _init_completion
 
-    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
-    local options=''
-    local option_list=( '--add-gnu-debuglink=' '--add-section' \
+    cur=$(printf '%q' "${cur,,}")
+    cmds=( ${words[@]::cword} ) 
+
+    options=( '--add-gnu-debuglink=' '--add-section' \
         '--adjust-start=' '--alt-machine-code=' \
         '--binary-architecture=' '--byte=' '--change-addresses=' \
         '--change-leading-char' '--change-section-address' \
@@ -42,29 +44,10 @@ _objcopy()
         '--weaken-symbols=' '--wildcard' '--writable-text' '-B' '-D' \
         '-F' '-G' '-I' '-K' '-L' '-N' '-O' '-R' '-S' '-U' '-V' '-W' \
         '-X' '-b' '-g' '-i' '-j' '-p' '-v' '-w' '-x' )
+    options=$(_complement cmds[@] options[@])
 
-    if [[ $cur == *= ]]; then
-        compopt -o nospace
-    fi
-
-    for option in ${option_list[@]} ; do
-        local found=0
-
-        for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
-            if [[ $word == $option ]]; then
-                found=1 
-                break
-            fi
-        done
-
-        if [[ $found -eq 0 ]]; then
-            options+="$option "
-        fi
-    done
-
-    COMPREPLY=( $( compgen -f -W "$options" -- $cur ) )
-
-    return 0
+    COMPREPLY=( $( compgen -f -W '$options' -- $cur ) )
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
 }
 
 complete -o default -F _objcopy objcopy

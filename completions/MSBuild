@@ -2,7 +2,7 @@
 
 _msbuild_end()
 {
-    COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+    COMPREPLY=( $(compgen -W '$options' -- $cur ) )
     [[ $COMPREPLY == *: ]] && compopt -o nospace
     [[ $COMPREPLY == *= ]] && compopt -o nospace
     [[ $COMPREPLY == *\; ]] && compopt -o nospace
@@ -10,12 +10,12 @@ _msbuild_end()
 
 _msbuild()
 {
-    local cur prev words cword options existing_options raw_cur
+    local cur prev words cword options existing_options raw_cur cmds
     _init_completion
-    cur=$(printf '%q' "$cur")
+    cur=$(printf '%q' "${cur,,}")
     raw_cur=${words[cword]}
 
-    # TODO: cull used options and remove mutually exclusive options
+    # TODO: cull mutually exclusive options
 
     case $raw_cur in
 
@@ -64,6 +64,7 @@ _msbuild()
             ;;
 
         *)
+            cmds=( ${words[@]::cword} ) 
             options=('/target\:' '/property\:' '/maxcpucount\:' '/maxcpucount'
             '/toolsversion\:' '/verbosity\:quiet' '/verbosity\:minimal'
             '/verbosity\:normal' '/verbosity\:detailed'
@@ -74,7 +75,7 @@ _msbuild()
             '/nodereuse\:true' '/nodereuse\:false' '/preprocess'
             '/preprocess\:' '/detailedsummary' '@' '/noautoresponse' '/nologo'
             '/version' '/help')
-            options=$(_compliment words[@]::cword options[@])
+            options=$(_complement cmds[@] options[@])
 
             _msbuild_end
             return

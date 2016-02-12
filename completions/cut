@@ -6,37 +6,17 @@
 
 _cut()
 {
-    COMPREPLY=()
-
-    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
-    local options=''
-    local option_list=( '-b' '--bytes=' '-c' '--characters=' '-d' \
+    local cur prev words cword options cmds
+    _init_completion
+    cur=$(printf '%q' "${cur,,}")
+    cmds=( ${words[@]::cword} ) 
+    options=( '-b' '--bytes=' '-c' '--characters=' '-d' \
         '--delimiter=' '-f' '--fields=' '--complement' '-s' \
         '--only-delimited' '--output-delimiter=' '--help' '--version' )
-
-    if [[ $cur == *= ]]; then
-        compopt -o nospace
-    fi
-
-    for option in ${option_list[@]} ; do
-        local found=0
-
-        for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
-            if [[ $word == $option ]]; then
-                found=1 
-                break
-            fi
-        done
-
-        if [[ $found -eq 0 ]]; then
-            options+="$option "
-        fi
-    done
-
-    COMPREPLY=( $( compgen -f -W "$options" -- $cur ) )
-
-    return 0
+    options=$(_compliment cmds[@] options[@])
+    COMPREPLY=( $( compgen -f -W '$options' -- $cur ) )
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
 }
 
-complete -o default -F _cut cut
+complete -o default -F _cut cut cut.exe
 

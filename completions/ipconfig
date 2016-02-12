@@ -2,70 +2,41 @@
 
 _ipconfig_interfaces()
 {
-    options=`netsh interface show interface name= | sed -e '/^$/ d' -e 's/.\{47\}//' `
-
-    # escape bash tokenizer strings and separate with newlines
-    local IFS=$'\n'
-    options=$(printf '%q\n' $options)
-
-    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
-    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
-
-    # make lowercase for convenience
-    options=${options,,}
-
-    echo "$options"
+    local options IFS
+    IFS=$'\n'
+    options=$(netsh interface show interface name= | sed -e '/^$/ d' -e 's/.\{47\}//' )
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
 }
 
 _ipconfig()
 {
-    COMPREPLY=()
+    local cur prev words cword options IFS
+    _init_completion
 
-    local cur=$(printf '%q' "${COMP_WORDS[$COMP_CWORD]}")
-    local prev=${COMP_WORDS[COMP_CWORD-1]}
-    local command=${COMP_WORDS[1]}
-    local options=''
+    cur=$(printf '%q' "${cur,,}")
 
-    if [[ $COMP_CWORD -eq 1 ]] ; then
-        local commands='/all /renew /release /allcompartments /flushdns \
+    if [[ $cword -eq 1 ]] ; then
+        COMPREPLY=( $( compgen -W '/all /renew /release /allcompartments /flushdns \
             /renew6 /release6 /displaydns /registerdns /showclassid \
-            /setclassid /showclassid6 /setclassid6 /?'
-        COMPREPLY=( $( compgen -W "$commands" -- $cur ) )
-
-    elif [[ $prev == '/?' ]]; then
-        return 0
-
-    else
-        # Command-specific arguments
-        case "$command" in
-
-            /showclassid6)
-                ;&
-            /setclassid6)
-                ;&
-            /showclassid)
-                ;&
-            /setclassid)
-                ;&
-            /renew6)
-                ;&
-            /release6)
-                ;&
-            /renew)
-                ;&
-            /release)
-                local IFS=$'\n' # interfaces are newline separated
-                options=`_ipconfig_interfaces`
-                ;;
-
-        esac
-
-        if [ -n "$options" -a -z "$COMPREPLY" ]; then
-            COMPREPLY=( $(compgen -W '$options' -- ${cur,,} ) )
-        fi
+            /setclassid /showclassid6 /setclassid6 /?' -- $cur ) )
+        return
     fi
 
-    return 0
+    if [[ $prev == '/?' ]]; then
+        return
+    fi
+
+    # Command-specific arguments
+    case ${words[1]} in
+
+        /showclassid6|/setclassid6|/showclassid|/setclassid|/renew6|/release6|/renew|/release)
+            IFS=$'\n' # interfaces are newline separated
+            options=$(_ipconfig_interfaces)
+            ;;
+
+    esac
+
+    COMPREPLY=( $(compgen -W '$options' -- $cur ) )
 }
 
 complete -o default -F _ipconfig ipconfig ipconfig.exe

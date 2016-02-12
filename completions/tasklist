@@ -2,54 +2,52 @@
 
 _windows_tasklist()
 {
-    COMPREPLY=()
+    local cur prev words cword options
+    _init_completion
 
-    local cur=$(printf '%q' "${COMP_WORDS[$COMP_CWORD]}")
-    local prev=${COMP_WORDS[$COMP_CWORD-1]}
-    local options=''
+    cur=$(printf '%q' "${cur,,}")
 
     if [[ $prev == "/?" ]]; then
-        return 0
-
-    else
-        options='/apps /v /fi /nh /fo /svc /m /p /s /u /?'
-
-        # Command-specific arguments
-        case "$prev" in
-
-            /s)
-                options=''
-                ;;
-
-            /u)
-                options=''
-                ;;
-
-            /p)
-                options=''
-                ;;
-
-            /m)
-                options=''
-                ;;
-
-            /fi)
-                # TODO: tons of options here
-                options=''
-                ;;
-
-            /fo)
-                options='table list csv'
-                ;;
-
-        esac
-
-        if [ -n "$options" -a -z "$COMPREPLY" ]; then
-            COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
-        fi
+        return
     fi
 
-    return 0
+    # Command-specific arguments
+    case $prev in
+
+        /s)
+            # TODO: suggest computer names
+            options=''
+            ;;
+
+        /u)
+            # TODO: suggest users
+            options=''
+            ;;
+
+        /p)
+            options=''
+            ;;
+
+        /m)
+            options=''
+            ;;
+
+        /fi)
+            # TODO: tons of options here
+            options=''
+            ;;
+
+        /fo)
+            options='table list csv'
+            ;;
+
+        *)
+            options='/apps /v /fi /nh /fo /svc /m /p /s /u /?'
+            ;;
+
+    esac
+
+    COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
 }
 
 complete -o default -F _windows_tasklist tasklist tasklist.exe

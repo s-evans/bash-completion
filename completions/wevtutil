@@ -1,207 +1,152 @@
 #!/usr/bin/env sh
 
-# TODO: cull options lists when options have been used
-
 _wevtutil_publishers()
 {
-    local options=`wevtutil ep`
-
-    # remove carriage returns
-    options=${options///}
-
-    # escape bash tokenizer strings and separate with newlines
-    local IFS=$'\n'
-    options=$(printf '%q\n' $options)
-
-    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
-    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
-
-    # make lowercase for convenience
-    options=${options,,}
-
-    # return as newline separated values
-    echo "$options"
+    local options IFS
+    IFS=$'\n'
+    options=$(wevtutil ep | sed -e 's/\r//')
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
 }
 
 _wevtutil_logs()
 {
-    local options=`wevtutil el`
-
-    # remove carriage returns
-    options=${options///}
-
-    # escape bash tokenizer strings and separate with newlines
-    local IFS=$'\n'
-    options=$(printf '%q\n' $options)
-
-    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
-    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
-
-    # make lowercase for convenience
-    options=${options,,}
-
-    # return as newline separated values
-    echo "$options"
+    local options IFS
+    IFS=$'\n'
+    options=$(wevtutil el | sed -e 's/\r//')
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
 }
 
 _wevtutil()
 {
-    COMPREPLY=()
+    local cur prev words cword options IFS
+    _init_completion
 
-    local cur=$(printf '%q' "${COMP_WORDS[$COMP_CWORD]}")
-    local prev=${COMP_WORDS[$COMP_CWORD-1]}
-    local options=''
-    local common_options="/remote\: /username\: /password\: \
-        /authentication\:default /authentication\:negotiate \
-        /authentication\:kerberos /authentication\:ntlm /unicode\:true \
-        /unicode\:false"
+    cur=$(printf '%q' "${cur,,}")
 
-    if [[ $cur == *: ]]; then
-        compopt -o nospace
+    if [[ $prev == '/?' ]]; then
+        return
     fi
 
-    if [[ $COMP_CWORD -eq 1 ]]; then
-        local commands='enum-logs get-log set-log enum-publishers \
-            get-publisher install-manifest uninstall-manifest query-events \
-            get-log-info export-log archive-log clear-log el gl sl ep gp im \
-            um qe gli epl al cl /?'
-
-        COMPREPLY=( $( compgen -W "$commands" -- ${cur,,} ) )
-
-    elif [[ $prev == '/?' ]]; then
-        return 0
-
-    else
-        local command=${COMP_WORDS[1]}
-
-        case "$command" in
-
-            al)
-                ;&
-            archive-log)
-                if [[ $COMP_CWORD -eq 2 ]]; then
-                    options=''
-                else
-                    compopt -o nospace
-                    options="/locale\: $common_options"
-                fi
-                ;;
-
-            cl)
-                ;&
-            clear-log)
-                if [[ $COMP_CWORD -eq 2 ]]; then
-                    local IFS=$'\n'
-                    options=$(_wevtutil_logs)
-                else
-                    compopt -o nospace
-                    options="/backup\: $common_options"
-                fi
-                ;;
-
-            um)
-                ;&
-            uninstall-manifest)
-                ;&
-            el)
-                ;&
-            enum-logs)
-                ;&
-            ep)
-                ;&
-            enum-publishers)
-                options="$common_options"
-                ;;
-
-            epl)
-                ;&
-            export-log)
-                if [[ $COMP_CWORD -eq 2 ]]; then
-                    local IFS=$'\n'
-                    options=$(_wevtutil_logs)
-                elif [[ $COMP_CWORD -eq 3 ]]; then
-                    options=''
-                else
-                    options="/logfile\:true /logfile\:false \
-                        /structuredquery\:true /structuredquery\:false /query\: \
-                        /overwrite\:true /overwrite\:false $common_options"
-                fi
-                ;;
-
-            gl)
-                ;&
-            get-log)
-                if [[ $COMP_CWORD -eq 2 ]]; then
-                    local IFS=$'\n'
-                    options=$(_wevtutil_logs)
-                else
-                    options="/format\:xml /format\:text $common_options"
-                fi
-                ;;
-
-            gp)
-                ;&
-            get-publisher)
-                if [[ $COMP_CWORD -eq 2 ]]; then
-                    local IFS=$'\n'
-                    options=$(_wevtutil_publishers)
-                else
-                    options="/getevents\:true /getevents\:false \
-                        /getmessage\:true /getmessage\:false /format\:xml \
-                        /format\:text $common_options"
-                fi
-                ;;
-
-            im)
-                ;&
-            install-manifest)
-                if [[ $COMP_CWORD -eq 2 ]]; then
-                    options=''
-                else
-                    options="/resourceFilePath\: /messageFilePath\: \
-                        /parameterFilePath\: $common_options"
-                fi
-                ;;
-
-            qe)
-                ;&
-            query-events)
-                if [[ $COMP_CWORD -eq 2 ]]; then
-                    local IFS=$'\n'
-                    options=$(_wevtutil_logs)
-                else
-                    options="/logfile\:true /logfile\:false \
-                        /structuredquery\:true /structuredquery\:false /query\: \
-                        /bookmark\: /savebookmark\: /reversedirection\:true \
-                        /reversedirection\:false /format\:xml /format\:text \
-                        /format\:renderedxml /locale\: /count\: /element\: \
-                        $common_options"
-                fi
-                ;;
-
-            sl)
-                ;&
-            set-log)
-                if [[ $COMP_CWORD -eq 2 ]]; then
-                    local IFS=$'\n'
-                    options=$(_wevtutil_logs)
-                else
-                    options="/enabled\:true /enabled\:false /quiet\:true \
-                        /quiet\:false /filemax\: /isolation\:system \
-                        /isolation\:application /isolation\:custom \
-                        /logfilename\: /retention\:true /retention\:false \
-                        /autobackup\:true /autobackup\:false /maxsize\: /level\: \
-                        /keywords\: /config\: $common_options"
-                fi
-                ;;
-
-        esac
-
-        COMPREPLY=( $( compgen -W '$options' -- ${cur,,} ) )
-
+    if [[ $cword -eq 1 ]]; then
+        options='enum-logs get-log set-log enum-publishers
+        get-publisher install-manifest uninstall-manifest query-events
+        get-log-info export-log archive-log clear-log el gl sl ep gp im
+        um qe gli epl al cl /?'
+        COMPREPLY=( $( compgen -W '$options' -- $cur ) )
+        return
     fi
 
-    return 0
+    options=('/remote\:' '/username\:' '/password\:'
+    '/authentication\:default' '/authentication\:negotiate'
+    '/authentication\:kerberos' '/authentication\:ntlm' '/unicode\:true'
+    '/unicode\:false')
+
+    local cmds=( ${words[@]::cword} ) 
+
+    case ${words[1]} in
+
+        al|archive-log)
+            if [[ $cword -eq 2 ]]; then
+                return
+            else
+                options+=( '/locale\:' )
+                options=$(_complement cmds[@] options[@])
+            fi
+            ;;
+
+        cl|clear-log)
+            if [[ $cword -eq 2 ]]; then
+                IFS=$'\n'
+                options=$(_wevtutil_logs)
+            else
+                options+=( '/backup\:' )
+                options=$(_complement cmds[@] options[@])
+            fi
+            ;;
+
+        um|uninstall-manifest|el|enum-logs|ep|enum-publishers)
+            options=$(_complement cmds[@] options[@])
+            ;;
+
+        epl|export-log)
+            if [[ $cword -eq 2 ]]; then
+                IFS=$'\n'
+                options=$(_wevtutil_logs)
+            elif [[ $cword -eq 3 ]]; then
+                return
+            else
+                options=('/logfile\:true' '/logfile\:false'
+                '/structuredquery\:true' '/structuredquery\:false' '/query\:'
+                '/overwrite\:true' '/overwrite\:false')
+                options=$(_complement cmds[@] options[@])
+            fi
+            ;;
+
+        gl|get-log)
+            if [[ $cword -eq 2 ]]; then
+                IFS=$'\n'
+                options=$(_wevtutil_logs)
+            else
+                options=('/format\:xml' '/format\:text')
+                options=$(_complement cmds[@] options[@])
+            fi
+            ;;
+
+        gp|get-publisher)
+            if [[ $cword -eq 2 ]]; then
+                IFS=$'\n'
+                options=$(_wevtutil_publishers)
+            else
+                options=('/getevents\:true' '/getevents\:false'
+                '/getmessage\:true' '/getmessage\:false' '/format\:xml'
+                '/format\:text')
+                options=$(_complement cmds[@] options[@])
+            fi
+            ;;
+
+        im|install-manifest)
+            if [[ $cword -eq 2 ]]; then
+                return
+            else
+                options=('/resourceFilePath\:' '/messageFilePath\:'
+                '/parameterFilePath\:')
+                options=$(_complement cmds[@] options[@])
+            fi
+            ;;
+
+        qe|query-events)
+            if [[ $cword -eq 2 ]]; then
+                IFS=$'\n'
+                options=$(_wevtutil_logs)
+            else
+                options=('/logfile\:true' '/logfile\:false'
+                '/structuredquery\:true' '/structuredquery\:false' '/query\:'
+                '/bookmark\:' '/savebookmark\:' '/reversedirection\:true'
+                '/reversedirection\:false' '/format\:xml' '/format\:text'
+                '/format\:renderedxml' '/locale\:' '/count\:' '/element\:')
+                options=$(_complement cmds[@] options[@])
+            fi
+            ;;
+
+        sl|set-log)
+            if [[ $cword -eq 2 ]]; then
+                IFS=$'\n'
+                options=$(_wevtutil_logs)
+            else
+                options=('/enabled\:true' '/enabled\:false' '/quiet\:true'
+                '/quiet\:false' '/filemax\:' '/isolation\:system'
+                '/isolation\:application' '/isolation\:custom' '/logfilename\:'
+                '/retention\:true' '/retention\:false' '/autobackup\:true'
+                '/autobackup\:false' '/maxsize\:' '/level\:' '/keywords\:'
+                '/config\:')
+                options=$(_complement cmds[@] options[@])
+            fi
+            ;;
+
+    esac
+
+    COMPREPLY=( $( compgen -W '$options' -- $cur ) )
+    [[ $COMPREPLY == *: ]] && compopt -o nospace
 }
 
 complete -o default -F _wevtutil wevtutil wevtutil.exe

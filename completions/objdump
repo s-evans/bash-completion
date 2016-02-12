@@ -7,11 +7,13 @@
 
 _objdump()
 {
-    COMPREPLY=()
+    local cur prev words cword options
+    _init_completion
 
-    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
-    local options=''
-    local option_list=( '--adjust-vma=' '--all-headers' '--architecture=' \
+    cur=$(printf '%q' "${cur,,}")
+    cmds=( ${words[@]::cword} ) 
+
+    options=( '--adjust-vma=' '--all-headers' '--architecture=' \
         '--archive-headers' '--debugging' '--debugging-tags' '--demangle=' \
         '--disassemble' '--disassemble-all' '--disassemble-zeroes' \
         '--disassembler-options=' '--dwarf' '--dwarf=Ranges' '--dwarf=abbrev' \
@@ -30,29 +32,10 @@ _objdump()
         '-V' '-W' '-WF' '-WL' '-WR' '-Wa' '-Wf' '-Wi' '-Wl' '-Wm' '-Wo' '-Wp' '-Wr' \
         '-Ws' '-Wt' '-a' '-b' '-d' '-e' '-f' '-g' '-h' '-i' '-j' '-l' '-m' '-p' \
         '-r' '-s' '-t' '-w' '-x' '-z' )
+    options=$(_complement cmds[@] options[@])
 
-    if [[ $cur == *= ]]; then
-        compopt -o nospace
-    fi
-
-    for option in ${option_list[@]} ; do
-        local found=0
-
-        for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
-            if [[ $word == $option ]]; then
-                found=1 
-                break
-            fi
-        done
-
-        if [[ $found -eq 0 ]]; then
-            options+="$option "
-        fi
-    done
-
-    COMPREPLY=( $( compgen -f -W "$options" -- $cur ) )
-
-    return 0
+    COMPREPLY=( $( compgen -f -W '$options' -- $cur ) )
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
 }
 
 complete -o default -F _objdump objdump

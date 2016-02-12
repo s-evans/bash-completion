@@ -69,6 +69,7 @@ _windows_reg_keys()
 _windows_reg_values()
 {
     local options IFS
+    IFS=$'\n'
 
     # query for values
     options=$(reg query "$1" /f "*" /d 2> /dev/null | sed -e '1,2d' -e '$d' -e 's/^[ ]\+//' -e '/^(Default)/ d' -e 's/    REG_.*$//g' )
@@ -77,7 +78,6 @@ _windows_reg_values()
     # escape bash tokenizer strings and separate with newlines
     # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
     # remove the quoted blank string that occurs if there are no values echo "${options,,}" | sed -e 's/[:=]/\\\&/g'
-    IFS=$'\n'
     printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
 }
 
@@ -87,13 +87,12 @@ _windows_reg_values()
 
 _reg()
 {
-    local cur prev words cword split options cmd key IFS
+    local cur prev words cword split options key IFS cmds
     _init_completion || return
 
     if [[ $cword -eq 1 ]] ; then
-        cmd='query add delete copy save restore load unload compare export
-        import flags /?'
-        COMPREPLY=( $( compgen -W '$cmd' -- "$cur" ) )
+        COMPREPLY=( $( compgen -W 'query add delete copy save restore load
+        unload compare export import flags /?' -- $cur ) )
         return
     fi
 
@@ -101,10 +100,10 @@ _reg()
         return
     fi
 
-    cmd=${words[1]}
+    cmds=( ${words[@]::cword} ) 
     key=$(printf %b ${words[2]})
 
-    case $cmd in
+    case ${words[1]} in
 
         query)
             if [[ $cword -eq 2 ]]; then
@@ -129,7 +128,7 @@ _reg()
 
             options=( '/v' '/ve' '/s' '/f' '/k' '/d' '/c' '/e' '/t' '/z' '/se'
             '/reg\:32' '/reg\:64' )
-            options=$(_compliment words[@]::cword options[@])
+            options=$(_complement cmds[@] options[@])
             ;;
 
         add)
@@ -154,7 +153,7 @@ _reg()
             fi
 
             options=( '/v' '/ve' '/s' '/f' '/d' '/t' '/s' '/reg\:32' '/reg\:64')
-            options=$(_compliment words[@]::cword options[@])
+            options=$(_complement cmds[@] options[@])
             ;;
 
         delete)
@@ -170,7 +169,7 @@ _reg()
 
             # cull the list of switches if they've been used
             options=( '/v' '/ve' '/va' '/f' '/reg\:32' '/reg\:64' )
-            options=$(_compliment words[@]::cword options[@])
+            options=$(_complement cmds[@] options[@])
             ;;
 
         copy)
@@ -181,7 +180,7 @@ _reg()
 
             # cull the list of switches if they've been used
             options=( "/s" "/f" "/reg\:32" "/reg\:64" )
-            options=$(_compliment words[@]::cword options[@])
+            options=$(_complement cmds[@] options[@])
             ;;
 
         export|save)
@@ -196,7 +195,7 @@ _reg()
 
             # cull the list of switches if they've been used
             options=( "/y" "/reg\:32" "/reg\:64" )
-            options=$(_compliment words[@]::cword options[@])
+            options=$(_complement cmds[@] options[@])
             ;;
 
         load|restore)
@@ -211,7 +210,7 @@ _reg()
 
             # cull the list of switches if they've been used
             options=( "/reg\:32" "/reg\:64" )
-            options=$(_compliment words[@]::cword options[@])
+            options=$(_complement cmds[@] options[@])
             ;;
 
         unload)
@@ -235,7 +234,7 @@ _reg()
             # cull the list of switches if they've been used
             options=( '/v' '/ve' '/s' '/oa' '/od' '/os' '/on' '/reg\:32'
             '/reg\:64' )
-            options=$(_compliment words[@]::cword options[@])
+            options=$(_complement cmds[@] options[@])
             ;;
 
         import)
@@ -266,7 +265,7 @@ _reg()
             # cull the list of switches if they've been used
             options=( 'dont_virtualize' 'dont_silent_fail' 'recurse_flag'
             '/reg\:32' '/reg\:64')
-            options=$(_compliment words[@]::cword options[@])
+            options=$(_complement cmds[@] options[@])
             ;;
 
     esac

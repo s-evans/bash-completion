@@ -2,20 +2,19 @@
 
 _w32tm()
 {
-    local cur prev words cword options cmd IFS
+    local cur prev words cword options IFS cmds
     _init_completion
     cur=$(printf '%q' "${cur,,}")
 
     if [[ $cword -eq 1 ]] ; then
-        local commands='/register /unregister /monitor /ntte /ntpte /resync
-        /stripchart /config /tz /dumpreg /query /debug /?'
-        COMPREPLY=( $( compgen -W "$commands" -- "$cur" ) )
+        COMPREPLY=( $( compgen -W '/register /unregister /monitor /ntte /ntpte
+        /resync /stripchart /config /tz /dumpreg /query /debug /?' -- $cur ) )
         return
     fi
 
-    cmd=$(printf '%q' "${words[1]}")
+    cmds=( ${words[@]::cword} ) 
 
-    case $cmd in
+    case ${words[1]} in
 
         /ntte|/register|/ntpte|/unregister|/tz|/?)
             return
@@ -23,12 +22,12 @@ _w32tm()
 
         /monitor)
             options=('/domain\:' '/computers\:' '/threads\:' '/ipprotocol\:4' '/ipprotocol\:6' '/nowarn')
-            options=$(_compliment words[@]::cword options[@])
+            options=$(_complement cmds[@] options[@])
             ;;
 
         /resync)
             options=('/computer\:' '/nowait' '/rediscover' '/soft')
-            options=$(_compliment words[@]::cword options[@])
+            options=$(_complement cmds[@] options[@])
             ;;
 
         /stripchart)
@@ -36,7 +35,7 @@ _w32tm()
                 options='/computer\:'
             else
                 options=('/period\:' '/dataonly' '/samples\:' '/packetinfo' '/ipprotocol\:4' '/ipprotocol\:6')
-                options=$(_compliment words[@]::cword options[@])
+                options=$(_complement cmds[@] options[@])
             fi
             ;;
 
@@ -46,12 +45,12 @@ _w32tm()
             '/syncfromflags\:domhier' '/syncfromflags\:no'
             '/localclockdispersion\:' '/reliable\:yes' '/reliable\:no'
             '/largephaseoffset\:')
-            options=$(_compliment words[@]::cword options[@])
+            options=$(_complement cmds[@] options[@])
             ;;
 
         /dumpreg)
             options=('/subkey\:' '/computer\:')
-            options=$(_compliment words[@]::cword options[@])
+            options=$(_complement cmds[@] options[@])
             ;;
 
         /query)

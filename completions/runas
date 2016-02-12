@@ -2,7 +2,7 @@
 
 _runas()
 {
-    local cur prev words cword
+    local cur prev words cword options cmds
     _init_completion
 
     case $cur in
@@ -18,9 +18,11 @@ _runas()
             ;;
 
         *)
-            # TODO: cull duplicate and mutually exclusive options
-            options='/noprofile /profile /env /savecred /netonly /user\:
-            /showtrustlevels /smartcard /trustlevel\:'
+            # TODO: cull mutually exclusive options
+            cmds=( ${words[@]::cword} ) 
+            options=('/noprofile' '/profile' '/env' '/savecred' '/netonly'
+            '/user\:' '/showtrustlevels' '/smartcard' '/trustlevel\:')
+            options=$(_complement cmds[@] options[@])
             ;;
 
     esac

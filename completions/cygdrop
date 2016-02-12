@@ -43,14 +43,15 @@ _cygdrop()
             ;;
 
         *)
+            local cmds=( ${words[@]::cword} ) 
             options=('-l' '-d' '-g' '-G' '-r' '-m' '--help' '-h' '--usage'
             '--version' '--license' '-v' '-p' '-P')
-            options=$(_compliment words[@]::cword options[@])
+            options=$(_complement cmds[@] options[@])
             ;;
 
     esac
 
-    COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+    COMPREPLY=( $(compgen -W '$options' -- $cur ) )
 }
 
 complete -o default -F _cygdrop cygdrop cygdrop.exe

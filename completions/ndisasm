@@ -2,13 +2,13 @@
 
 _ndisasm()
 {
-    local cur prev words cword options
+    local cur prev words cword options cmds
     _init_completion
     cur=$(printf '%q' "${cur,,}")
 
     if [[ $cword -eq 1 ]]; then
         options='-a -i -v -u -b -h -r -e -k -p -o -s'
-        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+        COMPREPLY=( $(compgen -W '$options' -- $cur ) )
         return
     fi
 
@@ -23,13 +23,14 @@ _ndisasm()
             ;;
 
         *)
+            cmds=( ${words[@]::cword} ) 
             options=('-a' '-i' '-u' '-b' '-e' '-k' '-p' '-o' '-s')
-            options=$(_compliment words[@]::cword options[@])
+            options=$(_complement cmds[@] options[@])
             ;; 
 
     esac
 
-    COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+    COMPREPLY=( $(compgen -W '$options' -- $cur ) )
 }
 
 complete -o default -F _ndisasm ndisasm ndisasm.exe

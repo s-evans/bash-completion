@@ -2,11 +2,12 @@
 
 _regsvr32()
 {
-    local cur prev words cword options
+    local cur prev words cword options cmds
     _init_completion
+    cmds=( ${words[@]::cword} ) 
     options=('/u' '/s' '/n' '/i')
-    options=$(_compliment words[@]::cword options[@])
-    COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+    options=$(_complement cmds[@] options[@])
+    COMPREPLY=( $(compgen -W '$options' -- $cur ) )
 }
 
 complete -o default -F _regsvr32 regsvr32 regsvr32.exe

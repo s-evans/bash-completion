@@ -2,26 +2,33 @@
 
 _mstsc()
 {
-    local cur prev words cword options
+    local cur prev words cword options cmds
     _init_completion
-    cur=$(printf '%q' "$cur")
+    cur=$(printf '%q' "${cur,,}")
+
     case $prev in
         /w\\:*|/h\\:*|/edit)
             return
             ;;
     esac
+
     case $cur in
+
         /v\\:*)
             # TODO: suggest servers/ports
             options='/v\:'
             ;;
+
         *)
+            cmds=( ${words[@]::cword} ) 
             options=('/admin' '/f' '/fullscreen' '/w\:' '/h\:' '/public'
             '/plan' '/multimon' '/migrate' '/edit' '/v\:')
-            options=$(_compliment words[@]::cword options[@])
+            options=$(_complement words[@]::cword options[@])
             ;;
+
     esac
-    COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+
+    COMPREPLY=( $(compgen -W '$options' -- $cur ) )
     [[ $COMPREPLY == *: ]] && compopt -o nospace
 }
 

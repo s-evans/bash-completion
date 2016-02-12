@@ -7,11 +7,12 @@
 
 _readelf()
 {
-    COMPREPLY=()
+    local cur prev words cword options cmds
+    _init_completion
 
-    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
-    local options=''
-    local option_list=( '--all' '--arch-specific' '--archive-index' \
+    cur=$(printf '%q' "$cur")
+
+    options=( '--all' '--arch-specific' '--archive-index' \
         '--debug-dump=' '--debug-dump=Ranges' '--debug-dump=abbrev' \
         '--debug-dump=aranges' '--debug-dump=decodedline' \
         '--debug-dump=frames' '--debug-dump=frames-interp' \
@@ -31,29 +32,12 @@ _readelf()
         '-t' '-u' '-v' '-w' '-wF' '-wL' '-wR' '-wa' '-wf' '-wi' '-wl' \
         '-wm' '-wo' '-wp' '-wr' '-ws' '-wt' '-x' )
 
-    if [[ $cur == *= ]]; then
-        compopt -o nospace
-    fi
+    cmds=( ${words[@]::cword} ) 
+    options=$(_complement cmds[@] options[@])
 
-    for option in ${option_list[@]} ; do
-        local found=0
-
-        for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
-            if [[ $word == $option ]]; then
-                found=1 
-                break
-            fi
-        done
-
-        if [[ $found -eq 0 ]]; then
-            options+="$option "
-        fi
-    done
-
-    COMPREPLY=( $( compgen -f -W "$options" -- $cur ) )
-
-    return 0
+    COMPREPLY=( $( compgen -f -W '$options' -- $cur ) )
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
 }
 
-complete -o default -F _readelf readelf
+complete -o default -F _readelf readelf readelf.exe
 

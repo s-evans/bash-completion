@@ -36,12 +36,12 @@ _windows_net()
 {
     local cur prev words cword options IFS
     _init_completion
-    cur=$(printf '%q' "$cur")
+    cur=$(printf '%q' "${cur,,}")
 
     if [[ $cword -eq 1 ]] ; then
-        COMPREPLY=( $( compgen -W "accounts computer config continue file group
+        COMPREPLY=( $( compgen -W 'accounts computer config continue file group
         helpmsg localgroup pause session share start statistics stop time
-        use user view" -- "$cur" ) )
+        use user view' -- $cur ) )
         return
     fi
 
@@ -168,7 +168,7 @@ _windows_net()
 
     esac
 
-    COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+    COMPREPLY=( $(compgen -W '$options' -- $cur ) )
     [[ $COMPREPLY == *: ]] && compopt -o nospace
 }
 

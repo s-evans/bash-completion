@@ -42,7 +42,8 @@ _driverquery()
                     ;;
             esac
 
-            options=$(_compliment words[@]::cword options[@])
+            local cmds=( ${words[@]::cword} ) 
+            options=$(_complement words[@]::cword options[@])
             ;;
 
     esac

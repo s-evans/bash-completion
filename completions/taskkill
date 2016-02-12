@@ -2,77 +2,60 @@
 
 _taskkill_task_images()
 {
-    # get the task list
-    local options=`tasklist /fo list`
-
-    # remote excess characters while not having sed appear in the task list
-    options=`echo "$options" | sed -e '/^Image/ !d' -e 's/^Image Name: \+//'`
-
-    # escape bash tokenizer strings and separate with newlines
-    local IFS=$'\n'
-    options=$(printf '%q\n' $options)
-
-    # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
-    options=`echo "$options" | sed 's/[:=]/\\\&/g'`
-
-    # make lowercase for convenience
-    options=${options,,}
-
-    # return as newline separated values
-    echo "$options"
+    local options IFS
+    IFS=$'\n'
+    options=$(tasklist /fo list | sed -e '/^Image/ !d' -e 's/^Image Name: \+//')
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
 }
 
 _taskkill()
 {
-    COMPREPLY=()
-
-    local cur=$(printf '%q' "${COMP_WORDS[$COMP_CWORD]}")
-    local prev=${COMP_WORDS[$COMP_CWORD-1]}
+    local cur prev words cword options IFS
+    _init_completion
+    cur=$(printf '%q' "${cur,,}")
 
     if [[ $prev == "/?" ]]; then
-        return 0
+        return
     fi
 
-    # TODO: cull options list 
-
-    local options='/f /t /im /pid /fi /p /s /u /?'
-
     # Command-specific arguments
-    case "$prev" in
+    case $prev in
 
         /s)
-            options=''
+            return
             ;;
 
         /u)
-            options=''
+            return
             ;;
 
         /p)
-            options=''
+            return
             ;;
 
         /fi)
             # TODO: lots of options here...
-            options=''
+            return
             ;;
 
         /pid)
             _pids
+            return
             ;;
 
         /im)
-            local IFS=$'\n'
             options=$(_taskkill_task_images)
+            ;;
+
+        *)
+            local cmds=( ${words[@]::cword} )
+            options=('/f' '/t' '/im' '/pid' '/fi' '/p' '/s' '/u')
+            options=$(_complement cmds[@] options[@])
             ;;
 
     esac
 
-    if [ -n "$options" -a -z "$COMPREPLY" ]; then
-        COMPREPLY=( $(compgen -W '$options' -- "${cur,,}" ) )
-    fi
-
-    return 0
+    COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
 }
 
 complete -o default -F _taskkill taskkill taskkill.exe

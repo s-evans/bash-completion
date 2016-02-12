@@ -2,9 +2,11 @@
 
 _link()
 {
-    local cur prev words cword options
+    local cur prev words cword options cmds
     _init_completion
-    cur=$(printf '%q' "$cur")
+
+    cur=$(printf '%q' "${cur,,}")
+    cmds=( ${words[@]::cword} ) 
 
     options=('/align' '/align\:' '/allowbind' '/allowbind\:no'
     '/allowisolation' '/allowisolation\:no' '/appcontainer' '/appcontainer\:no'
@@ -60,7 +62,7 @@ _link()
     '/winmd\:no' '/winmd\:only' '/winmddelaysign' '/winmddelaysign\:no'
     '/winmdfile\:' '/winmdkeycontainer\:' '/winmdkeyfile\:' '/wx' '/wx\:no')
 
-    options=$(_compliment words[@]::cword options[@])
+    options=$(_complement cmds[@] options[@])
 
     COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
     [[ $COMPREPLY == *= ]] && compopt -o nospace

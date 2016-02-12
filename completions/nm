@@ -6,11 +6,11 @@
 
 _nm()
 {
-    COMPREPLY=()
-
-    local cur=$(printf '%q' "${COMP_WORDS[COMP_CWORD]}")
-    local options=''
-    local option_list=( '--debug-syms' '--defined-only' '--demangle' \
+    local cur prev words cword options cmds
+    _init_completion
+    cur=$(printf '%q' "${cur,,}")
+    cmds=( ${words[@]::cword} ) 
+    options=( '--debug-syms' '--defined-only' '--demangle' \
         '--demangle=' '--dynamic' '--extern-only' '--format=' \
         '--format=' '--help' '--line-numbers' '--no-demangle' \
         '--no-sort' '--numeric-sort' '--plugin' '--portability' \
@@ -19,29 +19,9 @@ _nm()
         '--target=' '--undefined-only' '--version' '-A' '-B' '-C' '-D' \
         '-P' '-S' '-V' '-X' '-a' '-f' '-g' '-h' '-l' '-n' '-o' '-p' \
         '-r' '-s' '-t' '-u' '-v')
-
-    if [[ $cur == *= ]]; then
-        compopt -o nospace
-    fi
-
-    for option in ${option_list[@]} ; do
-        local found=0
-
-        for word in ${COMP_WORDS[@]::${COMP_CWORD}} ; do
-            if [[ $word == $option ]]; then
-                found=1 
-                break
-            fi
-        done
-
-        if [[ $found -eq 0 ]]; then
-            options+="$option "
-        fi
-    done
-
-    COMPREPLY=( $( compgen -f -W "$options" -- $cur ) )
-
-    return 0
+    options=$(_complement cmds[@] options[@])
+    COMPREPLY=( $( compgen -f -W '$options' -- $cur ) )
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
 }
 
 complete -o default -F _nm nm

@@ -2,44 +2,27 @@
 
 _dumpbin()
 {
-    COMPREPLY=()
-
-    local cur=${COMP_WORDS[$COMP_CWORD]}
-    local prev=${COMP_WORDS[$COMP_CWORD-1]}
+    local cur prev words cword options cmds
+    _init_completion
+    cur=$(printf '%q' "${cur,,}")
 
     if [[ $prev == '/?' ]]; then
-        return 0
+        return
     fi
 
-    local options=''
-    local option_list=('/all' '/archivemembers' '/clrheader' '/dependents' 
-        '/directives' '/disasm\:bytes' '/disasm\:nobytes' '/errorreport\:none'
-        '/errorreport\:prompt' '/errorreport\:queue' '/errorreport\:send'
-        '/exports' '/fpo' '/headers' '/imports' '/linenumbers' '/linkermember'
-        '/loadconfig' '/nologo' '/out\:' '/pdata' '/pdbpath' '/range\:'
-        '/rawdata' '/rawdata\:none' '/relocations' '/section\:' '/summary'
-        '/symbols' '/tls' '/unwindinfo' '/?' )
+    options=('/all' '/archivemembers' '/clrheader' '/dependents' 
+    '/directives' '/disasm\:bytes' '/disasm\:nobytes' '/errorreport\:none'
+    '/errorreport\:prompt' '/errorreport\:queue' '/errorreport\:send'
+    '/exports' '/fpo' '/headers' '/imports' '/linenumbers' '/linkermember'
+    '/loadconfig' '/nologo' '/out\:' '/pdata' '/pdbpath' '/range\:'
+    '/rawdata' '/rawdata\:none' '/relocations' '/section\:' '/summary'
+    '/symbols' '/tls' '/unwindinfo' '/?' )
 
-    for option in ${option_list[@]} ; do
-        local found=0
+    cmds=( ${words[@]::cword} ) 
+    options=$(_complement cmds[@] options[@])
 
-        for word in ${COMP_WORDS[@]::$COMP_CWORD} ; do
-            if [[ $word == $option ]]; then
-                found=1 
-                break
-            fi
-        done
-
-        if [[ $found -eq 0 ]]; then
-            options+="$option "
-        fi
-    done
-
-    if [ -n "$options" -a -z "$COMPREPLY" ]; then
-        COMPREPLY=( $(compgen -W '$options' -- $(printf '%q' "$cur") ) )
-    fi
-
-    return 0
+    COMPREPLY=( $(compgen -W '$options' -- $cur ) )
+    [[ $COMPREPLY == *: ]] && compopt -o nospace
 }
 
 complete -o default -F _dumpbin dumpbin dumpbin.exe

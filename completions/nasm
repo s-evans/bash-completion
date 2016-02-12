@@ -41,10 +41,11 @@ _nasm()
             ;;
 
         *)
-            # TODO: cull duplicate and mutual exclusive options
-            options='--postfix --prefix -@ -D -E -F -I -M -MD -MF -MG -MP -MQ
-            -MT -O -P -U -X -Z -a -d -e -f -g -h -hf -i -l -o -p -r -s -t -u -v
-            -w'
+            options=('--postfix' '--prefix' '-@' '-D' '-E' '-F' '-I' '-M' '-MD'
+            '-MF' '-MG' '-MP' '-MQ' '-MT' '-O' '-P' '-U' '-X' '-Z' '-a' '-d'
+            '-e' '-f' '-g' '-h' '-hf' '-i' '-l' '-o' '-p' '-r' '-s' '-t' '-u'
+            '-v' '-w')
+            options=$(_compliment words[@]::cword options[@])
             ;;
 
     esac

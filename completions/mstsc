@@ -1,0 +1,29 @@
+#!/usr/bin/env sh
+
+_mstsc()
+{
+    local cur prev words cword options
+    _init_completion
+    cur=$(printf '%q' "$cur")
+    case $prev in
+        /w\\:*|/h\\:*|/edit)
+            return
+            ;;
+    esac
+    case $cur in
+        /v\\:*)
+            # TODO: suggest servers/ports
+            options='/v\:'
+            ;;
+        *)
+            options=('/admin' '/f' '/fullscreen' '/w\:' '/h\:' '/public'
+            '/plan' '/multimon' '/migrate' '/edit' '/v\:')
+            options=$(_compliment words[@]::cword options[@])
+            ;;
+    esac
+    COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+    [[ $COMPREPLY == *: ]] && compopt -o nospace
+}
+
+complete -o default -F _mstsc mstsc mstsc.exe
+

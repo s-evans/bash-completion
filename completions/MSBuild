@@ -64,14 +64,18 @@ _msbuild()
             ;;
 
         *)
-            options='/target\: /property\: /maxcpucount\: /maxcpucount
-            /toolsversion\: /verbosity\:quiet /verbosity\:minimal
-            /verbosity\:normal /verbosity\:detailed /verbosity\:diagnostic
-            /consoleloggerparameters\: /noconsolelogger /filelogger
-            /fileloggerparameters\: /distributedlogger\: /distributedfilelogger
-            /logger\: /validate /validate\: /ignoreprojectextensions\:
-            /nodereuse\:true /nodereuse\:false /preprocess /preprocess\:
-            /detailedsummary @ /noautoresponse /nologo /version /help' 
+            options=('/target\:' '/property\:' '/maxcpucount\:' '/maxcpucount'
+            '/toolsversion\:' '/verbosity\:quiet' '/verbosity\:minimal'
+            '/verbosity\:normal' '/verbosity\:detailed'
+            '/verbosity\:diagnostic' '/consoleloggerparameters\:'
+            '/noconsolelogger' '/filelogger' '/fileloggerparameters\:'
+            '/distributedlogger\:' '/distributedfilelogger' '/logger\:'
+            '/validate' '/validate\:' '/ignoreprojectextensions\:'
+            '/nodereuse\:true' '/nodereuse\:false' '/preprocess'
+            '/preprocess\:' '/detailedsummary' '@' '/noautoresponse' '/nologo'
+            '/version' '/help')
+            options=$(_compliment words[@]::cword options[@])
+
             _msbuild_end
             return
             ;;

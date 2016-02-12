@@ -32,12 +32,15 @@ _cygpath()
             ;;
 
         *)
-            # TODO: cull duplicate and mutually exclusive options
-            options='-d -m -M -u -w -t -a -l -p -s -C -A -D -H -O -P -S -W -F
-            --dos --mixed --mode --unix --windows --type --absolute --long-name
-            --path --short-name --codepage --allusers --desktop --homeroot
-            --mydocs --smprograms --sysdir --windir --folder --help -f --file
-            -o --option -c --close -i --ignore -h -V --version'
+            # TODO: cull mutually exclusive options
+            options=('-d' '-m' '-M' '-u' '-w' '-t' '-a' '-l' '-p' '-s' '-C'
+            '-A' '-D' '-H' '-O' '-P' '-S' '-W' '-F' '--dos' '--mixed' '--mode'
+            '--unix' '--windows' '--type' '--absolute' '--long-name' '--path'
+            '--short-name' '--codepage' '--allusers' '--desktop' '--homeroot'
+            '--mydocs' '--smprograms' '--sysdir' '--windir' '--folder' '--help'
+            '-f' '--file' '-o' '--option' '-c' '--close' '-i' '--ignore' '-h'
+            '-V' '--version')
+            options=$(_compliment words[@]::cword options[@])
             ;;
 
     esac

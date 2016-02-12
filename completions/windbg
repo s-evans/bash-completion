@@ -32,7 +32,7 @@ _windbg()
     # TODO: lsrcpath should only follow "-remote"
 
     options_list=( '-lsrcpath' '-premote' '-ee' '-clines' '-d'
-        '-aExtension' '-e' '-failinc' '-g' '-G' '-hd' '-j' '-n' '-noshell' '-o'
+        '-a' '-e' '-failinc' '-g' '-G' '-hd' '-j' '-n' '-noshell' '-o'
         '-Q' '-QY' '-QS' '-QSY' '-robp' '-secure' '-ses' '-sdce' '-sicv'
         '-sins' '-snc' '-snul' '-sup' '-sflags' '-T' '-v' '-log' '-logo'
         '-loga' '-noinh' '-i' '-y' '-srcpath' '-k' '-kl' '-kx' '-c' '-pb' '-pd'
@@ -40,6 +40,7 @@ _windbg()
 
 	if [[ $cword -eq 1 ]] ; then
         COMPREPLY=( $( compgen -W "${options_list[*]} ${first_options[*]}" -- $cur ) )
+        [[ $COMPREPLY == -a* ]] && compopt -o nospace
         return
     fi
 
@@ -52,7 +53,7 @@ _windbg()
     # Command-specific arguments
     case $prev in
 
-        -a)
+        -a*)
             # TODO: list dlls 
             # TODO: no space following -a option
             options=''
@@ -87,25 +88,13 @@ _windbg()
             ;;
 
         *)
-            for option in ${options_list[@]} ; do
-                found=0
-
-                for word in ${words[@]::$cword} ; do
-                    if [[ $word == $option ]]; then
-                        found=1 
-                        break
-                    fi
-                done
-
-                if [[ $found -eq 0 ]]; then
-                    options+="$option "
-                fi
-            done
+            options=$(_compliment words[@]::cword options_list[@])
             ;;
 
     esac
 
     COMPREPLY=( $(compgen -W '$options' -- $cur ) )
+    [[ $COMPREPLY == -a* ]] && compopt -o nospace
 }
 
 complete -o default -F _windbg windbg windbg.exe

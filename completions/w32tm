@@ -2,7 +2,7 @@
 
 _w32tm()
 {
-    local cur prev words cword options cmd
+    local cur prev words cword options cmd IFS
     _init_completion
     cur=$(printf '%q' "${cur,,}")
 
@@ -22,36 +22,36 @@ _w32tm()
             ;;
 
         /monitor)
-            # TODO: cull options list
-            options='/domain\: /computers\: /threads\: /ipprotocol\:4 /ipprotocol\:6 /nowarn'
+            options=('/domain\:' '/computers\:' '/threads\:' '/ipprotocol\:4' '/ipprotocol\:6' '/nowarn')
+            options=$(_compliment words[@]::cword options[@])
             ;;
 
         /resync)
-            # TODO: cull options list
-            options='/computer\: /nowait /rediscover /soft'
+            options=('/computer\:' '/nowait' '/rediscover' '/soft')
+            options=$(_compliment words[@]::cword options[@])
             ;;
 
         /stripchart)
             if [[ $cword -eq 2 ]]; then
                 options='/computer\:'
             else
-                # TODO: cull options list
-                options='/period\: /dataonly /samples\: /packetinfo /ipprotocol\:4
-                /ipprotocol\:6'
+                options=('/period\:' '/dataonly' '/samples\:' '/packetinfo' '/ipprotocol\:4' '/ipprotocol\:6')
+                options=$(_compliment words[@]::cword options[@])
             fi
             ;;
 
         /config)
-            # TODO: cull options list
-            options='/computer\: /update /manualpeerlist\: /syncfromflags\:all
-            /syncfromflags\:manual /syncfromflags\:domhier /syncfromflags\:no
-            /localclockdispersion\: /reliable\:yes /reliable\:no
-            /largephaseoffset\:'
+            options=('/computer\:' '/update' '/manualpeerlist\:'
+            '/syncfromflags\:all' '/syncfromflags\:manual'
+            '/syncfromflags\:domhier' '/syncfromflags\:no'
+            '/localclockdispersion\:' '/reliable\:yes' '/reliable\:no'
+            '/largephaseoffset\:')
+            options=$(_compliment words[@]::cword options[@])
             ;;
 
         /dumpreg)
-            # TODO: cull options list
-            options='/subkey\: /computer\:'
+            options=('/subkey\:' '/computer\:')
+            options=$(_compliment words[@]::cword options[@])
             ;;
 
         /query)

@@ -74,13 +74,15 @@ _cygrunsrv()
                         ;;
 
                     *)
-                        # TODO: cull duplicate and mutually exclusive options
-                        options='-P --crs-path -a --args -c --chdir -e --env -d
-                        --disp -f --desc -t --type -u --user -w --passwd -s
-                        --termsig -z --shutsig -y --dep -0 --stdin -1 --stdout
-                        -2 --stderr -x --pidfile -n --neverexits -O
-                        --preshutdown -o --shutdown -i --interactive -j
-                        --nohide'
+                        # TODO: cull mutually exclusive options
+                        options=('-P' '--crs-path' '-a' '--args' '-c' '--chdir'
+                        '-e' '--env' '-d' '--disp' '-f' '--desc' '-t' '--type'
+                        '-u' '--user' '-w' '--passwd' '-s' '--termsig' '-z'
+                        '--shutsig' '-y' '--dep' '-0' '--stdin' '-1' '--stdout'
+                        '-2' '--stderr' '-x' '--pidfile' '-n' '--neverexits'
+                        '-O' '--preshutdown' '-o' '--shutdown' '-i'
+                        '--interactive' '-j' '--nohide')
+                        options=$(_compliment words[@]::cword options[@])
                         ;;
 
                 esac

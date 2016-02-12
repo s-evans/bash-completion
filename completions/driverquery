@@ -10,7 +10,7 @@ _driverquery_users()
 
 _driverquery()
 {
-    local cur prev words cword options IFS option_list found
+    local cur prev words cword options IFS
     _init_completion
 
     # Command-specific arguments
@@ -29,33 +29,20 @@ _driverquery()
             ;;
 
         *)
-            option_list=('/s' '/fo' '/nh' '/si' '/v')
+            options=('/s' '/fo' '/nh' '/si' '/v')
 
             case ${words[$cword-2]} in
 
                 /s)
-                    option_list+=('/u')
+                    options+=('/u')
                     ;;
 
                 /u)
-                    option_list+=('/p')
+                    options+=('/p')
                     ;;
             esac
 
-            for option in ${option_list[@]} ; do
-                found=0
-
-                for word in ${words[@]::$cword} ; do
-                    if [[ $word == $option ]]; then
-                        found=1 
-                        break
-                    fi
-                done
-
-                if [[ $found -eq 0 ]]; then
-                    options+="$option "
-                fi
-            done
+            options=$(_compliment words[@]::cword options[@])
             ;;
 
     esac

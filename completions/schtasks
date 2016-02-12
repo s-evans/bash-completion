@@ -18,13 +18,13 @@ _get_schtasks()
 
 _schtasks()
 {
-    local cur prev words cword options IFS options_list found
+    local cur prev words cword options IFS
     _init_completion
     cur=$(printf '%q' "$cur")
 
     if [[ $cword -eq 1 ]] ; then
         COMPREPLY=( $( compgen -W '/run /end /create /delete /query /change
-        /showsid /?' -- "${cur,,}" ) )
+        /showsid' -- "${cur,,}" ) )
         return
     fi
 
@@ -53,22 +53,8 @@ _schtasks()
                     ;;
 
                 *)
-                    option_list=('/s' '/u' '/p' '/i' '/tn' '/hresult' '/?')
-
-                    for option in ${option_list[@]} ; do
-                        found=0
-
-                        for word in ${words[@]::$cword} ; do
-                            if [[ $word == $option ]]; then
-                                found=1 
-                                break
-                            fi
-                        done
-
-                        if [[ $found -eq 0 ]]; then
-                            options+="$option "
-                        fi
-                    done
+                    options=('/s' '/u' '/p' '/i' '/tn' '/hresult')
+                    options=$(_compliment words[@]::cword options[@])
                     ;;
 
             esac
@@ -92,22 +78,8 @@ _schtasks()
                     ;;
 
                 *)
-                    option_list=('/s' '/u' '/p' '/tn' '/hresult' '/?')
-
-                    for option in ${option_list[@]} ; do
-                        found=0
-
-                        for word in ${words[@]::$cword} ; do
-                            if [[ $word == $option ]]; then
-                                found=1 
-                                break
-                            fi
-                        done
-
-                        if [[ $found -eq 0 ]]; then
-                            options+="$option "
-                        fi
-                    done
+                    options=('/s' '/u' '/p' '/tn' '/hresult')
+                    options=$(_compliment words[@]::cword options[@])
                     ;;
 
             esac
@@ -136,25 +108,11 @@ _schtasks()
                     ;;
 
                 *)
-                    option_list=('/s' '/u' '/p' '/tn' '/ru' '/sc'
+                    options=('/s' '/u' '/p' '/tn' '/ru' '/sc'
                     '/mo' '/d' '/m' '/i' '/ec' '/rp' '/tr' '/st' '/ri'
                     '/et' '/du' '/k' '/sd' '/ed' '/it' '/np' '/xml'
-                    '/v1' '/f' '/rl' '/z' '/delay' '/hresult' '/?')
-
-                    for option in ${option_list[@]} ; do
-                        found=0
-
-                        for word in ${words[@]::$cword} ; do
-                            if [[ $word == $option ]]; then
-                                found=1 
-                                break
-                            fi
-                        done
-
-                        if [[ $found -eq 0 ]]; then
-                            options+="$option "
-                        fi
-                    done
+                    '/v1' '/f' '/rl' '/z' '/delay' '/hresult')
+                    options=$(_compliment words[@]::cword options[@])
                     ;;
 
             esac
@@ -179,22 +137,8 @@ _schtasks()
                     ;;
 
                 *)
-                    option_list=('/s' '/u' '/p' '/f' '/tn' '/hresult' '/?')
-
-                    for option in ${option_list[@]} ; do
-                        found=0
-
-                        for word in ${words[@]::$cword} ; do
-                            if [[ $word == $option ]]; then
-                                found=1 
-                                break
-                            fi
-                        done
-
-                        if [[ $found -eq 0 ]]; then
-                            options+="$option "
-                        fi
-                    done
+                    options=('/s' '/u' '/p' '/f' '/tn' '/hresult')
+                    options=$(_compliment words[@]::cword options[@])
                     ;;
 
             esac
@@ -226,22 +170,8 @@ _schtasks()
                     ;;
 
                 *)
-                    option_list=('/s' '/u' '/p' '/fo' '/xml' '/nh' '/v' '/tn' '/hresult' '/?')
-
-                    for option in ${option_list[@]} ; do
-                        found=0
-
-                        for word in ${words[@]::$cword} ; do
-                            if [[ $word == $option ]]; then
-                                found=1 
-                                break
-                            fi
-                        done
-
-                        if [[ $found -eq 0 ]]; then
-                            options+="$option "
-                        fi
-                    done
+                    options=('/s' '/u' '/p' '/fo' '/xml' '/nh' '/v' '/tn' '/hresult')
+                    options=$(_compliment words[@]::cword options[@])
                     ;;
 
             esac
@@ -270,25 +200,11 @@ _schtasks()
                     ;;
 
                 *)
-                    option_list=('/s' '/u' '/p' '/tn' '/ru' '/rp'
+                    options=('/s' '/u' '/p' '/tn' '/ru' '/rp'
                     '/tr' '/st' '/ri' '/et' '/du' '/k' '/sd' '/ed'
                     '/it' '/rl' '/enable' '/disable' '/z' '/delay'
-                    '/hresult' '/?')
-
-                    for option in ${option_list[@]} ; do
-                        found=0
-
-                        for word in ${words[@]::$cword} ; do
-                            if [[ $word == $option ]]; then
-                                found=1 
-                                break
-                            fi
-                        done
-
-                        if [[ $found -eq 0 ]]; then
-                            options+="$option "
-                        fi
-                    done
+                    '/hresult')
+                    options=$(_compliment words[@]::cword options[@])
                     ;;
 
             esac
@@ -304,22 +220,8 @@ _schtasks()
                     ;;
 
                 *)
-                    option_list=('/tn' '/hresult' '/?')
-
-                    for option in ${option_list[@]} ; do
-                        found=0
-
-                        for word in ${words[@]::$cword} ; do
-                            if [[ $word == $option ]]; then
-                                found=1 
-                                break
-                            fi
-                        done
-
-                        if [[ $found -eq 0 ]]; then
-                            options+="$option "
-                        fi
-                    done
+                    options=('/tn' '/hresult')
+                    options=$(_compliment words[@]::cword options[@])
                     ;;
 
             esac

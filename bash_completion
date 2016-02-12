@@ -1438,6 +1438,14 @@ _known_hosts()
     _known_hosts_real $options -- "$cur"
 } # _known_hosts()
 
+# helper function for removing elements from a completion candidate array
+# @param $1 array of words (typically words[@]::cword) to be removed from the candidate array
+# @param $2 array of completion candidates
+_compliment()
+{
+    command grep -vxF -f <(printf '%s\n' "${!1}") <(printf '%s\n' "${!2}")
+}
+
 # Helper function for completing _known_hosts.
 # This function performs host completion based on ssh's config and known_hosts
 # files, as well as hostnames reported by avahi-browse if

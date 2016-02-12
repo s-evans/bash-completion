@@ -85,7 +85,7 @@ _windows_reg_values()
 # TODO: dependent options (ie. /k /d /c /e are dependent upon /f)
 # TODO: fix option culling loops for escaped characters
 
-_windows_reg()
+_reg()
 {
     local cur prev words cword split options cmd key IFS
     _init_completion || return
@@ -127,24 +127,9 @@ _windows_reg()
                 return
             fi
 
-            # cull the list of switches if they've been used
-            local option_list=( '/v' '/ve' '/s' '/f' '/k' '/d' '/c'
-            '/e' '/t' '/z' '/se' '/reg\:32' '/reg\:64' )
-
-            for option in ${option_list[@]} ; do
-                local found=0
-
-                for word in ${words[@]::$cword} ; do
-                    if [[ $word == $option ]]; then
-                        found=1 
-                        break
-                    fi
-                done
-
-                if [[ $found -eq 0 ]]; then
-                    options+="$option "
-                fi
-            done
+            options=( '/v' '/ve' '/s' '/f' '/k' '/d' '/c' '/e' '/t' '/z' '/se'
+            '/reg\:32' '/reg\:64' )
+            options=$(_compliment words[@]::cword options[@])
             ;;
 
         add)
@@ -168,24 +153,8 @@ _windows_reg()
                 return
             fi
 
-            # cull the list of switches if they've been used
-            local option_list=( '/v' '/ve' '/s' '/f' '/d' '/t' '/s'
-            '/reg\:32' '/reg\:64' )
-
-            for option in ${option_list[@]} ; do
-                local found=0
-
-                for word in ${words[@]::${cword}} ; do
-                    if [[ $word == $option ]]; then
-                        found=1 
-                        break
-                    fi
-                done
-
-                if [[ $found -eq 0 ]]; then
-                    options+="$option "
-                fi
-            done
+            options=( '/v' '/ve' '/s' '/f' '/d' '/t' '/s' '/reg\:32' '/reg\:64')
+            options=$(_compliment words[@]::cword options[@])
             ;;
 
         delete)
@@ -200,23 +169,8 @@ _windows_reg()
             fi
 
             # cull the list of switches if they've been used
-            local option_list=( '/v' '/ve' '/va' '/f' '/reg\:32'
-            '/reg\:64' )
-
-            for option in ${option_list[@]} ; do
-                local found=0
-
-                for word in ${words[@]::${cword}} ; do
-                    if [[ $word == $option ]]; then
-                        found=1 
-                        break
-                    fi
-                done
-
-                if [[ $found -eq 0 ]]; then
-                    options+="$option "
-                fi
-            done
+            options=( '/v' '/ve' '/va' '/f' '/reg\:32' '/reg\:64' )
+            options=$(_compliment words[@]::cword options[@])
             ;;
 
         copy)
@@ -226,28 +180,11 @@ _windows_reg()
             fi
 
             # cull the list of switches if they've been used
-            local option_list=( "/s" "/f" "/reg\:32" "/reg\:64" )
-
-            for option in ${option_list[@]} ; do
-                local found=0
-
-                for word in ${words[@]::${cword}} ; do
-                    if [[ $word == $option ]]; then
-                        found=1 
-                        break
-                    fi
-                done
-
-                if [[ $found -eq 0 ]]; then
-                    options+="$option "
-                fi
-            done
+            options=( "/s" "/f" "/reg\:32" "/reg\:64" )
+            options=$(_compliment words[@]::cword options[@])
             ;;
 
-        export)
-            ;&
-
-        save)
+        export|save)
             if [[ $cword -eq 2 ]]; then
                 _reg_keys
                 return
@@ -258,28 +195,11 @@ _windows_reg()
             fi
 
             # cull the list of switches if they've been used
-            local option_list=( "/y" "/reg\:32" "/reg\:64" )
-
-            for option in ${option_list[@]} ; do
-                local found=0
-
-                for word in ${words[@]::${cword}} ; do
-                    if [[ $word == $option ]]; then
-                        found=1 
-                        break
-                    fi
-                done
-
-                if [[ $found -eq 0 ]]; then
-                    options+="$option "
-                fi
-            done
+            options=( "/y" "/reg\:32" "/reg\:64" )
+            options=$(_compliment words[@]::cword options[@])
             ;;
 
-        load)
-            ;&
-
-        restore)
+        load|restore)
             if [[ $cword -eq 2 ]]; then
                 _reg_keys
                 return
@@ -290,22 +210,8 @@ _windows_reg()
             fi
 
             # cull the list of switches if they've been used
-            local option_list=( "/reg\:32" "/reg\:64" )
-
-            for option in ${option_list[@]} ; do
-                local found=0
-
-                for word in ${words[@]::${cword}} ; do
-                    if [[ $word == $option ]]; then
-                        found=1 
-                        break
-                    fi
-                done
-
-                if [[ $found -eq 0 ]]; then
-                    options+="$option "
-                fi
-            done
+            options=( "/reg\:32" "/reg\:64" )
+            options=$(_compliment words[@]::cword options[@])
             ;;
 
         unload)
@@ -327,24 +233,9 @@ _windows_reg()
             fi
 
             # cull the list of switches if they've been used
-            local option_list=( '/v' '/ve' '/s' '/oa' '/od' '/os'
-            '/on' '/reg\:32' '/reg\:64' )
-
-            for option in ${option_list[@]} ; do
-                local found=0
-
-                for word in ${words[@]::${cword}} ; do
-                    if [[ $word == $option ]]; then
-                        found=1 
-                        break
-                    fi
-                done
-
-                if [[ $found -eq 0 ]]; then
-                    options+="$option "
-                fi
-            done
-
+            options=( '/v' '/ve' '/s' '/oa' '/od' '/os' '/on' '/reg\:32'
+            '/reg\:64' )
+            options=$(_compliment words[@]::cword options[@])
             ;;
 
         import)
@@ -373,34 +264,16 @@ _windows_reg()
             fi
 
             # cull the list of switches if they've been used
-            local option_list=( 'dont_virtualize'
-            'dont_silent_fail' 'recurse_flag' '/reg\:32' '/reg\:64')
-
-            for option in ${option_list[@]} ; do
-                local found=0
-
-                for word in ${words[@]::$cword} ; do
-                    if [[ $word == $option ]]; then
-                        found=1 
-                        break
-                    fi
-                done
-
-                if [[ $found -eq 0 ]]; then
-                    options+="$option "
-                fi
-            done
-
+            options=( 'dont_virtualize' 'dont_silent_fail' 'recurse_flag'
+            '/reg\:32' '/reg\:64')
+            options=$(_compliment words[@]::cword options[@])
             ;;
 
     esac
 
     COMPREPLY=( $(compgen -W '$options' -- $cur ) )
-
     [[ $COMPREPLY == *\\ ]] && compopt -o nospace
-
-    return
 }
 
-complete -o default -F _windows_reg reg reg.exe
+complete -o default -F _reg reg reg.exe
 

@@ -54,10 +54,11 @@ _netsh_ipv4_subinterfaces()
 
 _netsh()
 {
-    local cur prev words cword options IFS
+    local cur prev words cword options IFS cmds
     _init_completion
 
     cur=$(printf '%q' "$cur")
+    cmds=( ${words[@]::cword} ) 
 
     if [[ $cword -eq 1 ]]; then
         COMPREPLY=( $(compgen -W 'add advfirewall bridge delete dhcpclient dnsclient dump
@@ -664,26 +665,25 @@ _netsh()
                     fi
 
                     case ${words[3]} in
-                        add)
+
+                        a*) # add
                             if [[ $cword -eq 4 ]]; then
                                 options='interface'
 
                             else
-                                options="type\=client type\=server \
-                                    state\=enabled state\=disabled \
-                                    state\=default authmode\=none \
-                                    authmode\=certificate url\="
+                                options=('type\=client' 'type\=server'
+                                'state\=enabled' 'state\=disabled'
+                                'state\=default' 'authmode\=none'
+                                'authmode\=certificate' 'url\=')
+                                options=$(_complement cmds[@] options[@])
 
                             fi
                             ;;
 
-                        delete)
+                        de*) # delete
                             if [[ $cword -eq 4 ]]; then
                                 options='interface'
                             fi
-                            ;;
-
-                        reset)
                             ;;
 
                         set)
@@ -691,14 +691,15 @@ _netsh()
                                 options='interface'
 
                             else
-                                options="state\=enabled state\=disabled \
-                                    state\=default authmode\=none \
-                                    authmode\=certificate url\="
+                                options=('state\=enabled' 'state\=disabled'
+                                'state\=default' 'authmode\=none'
+                                'authmode\=certificate' 'url\=')
+                                options=$(_complement cmds[@] options[@])
 
                             fi
                             ;;
 
-                        show)
+                        sh*) # show
                             if [[ $cword -eq 4 ]]; then
                                 options='interfaces statistics'
 
@@ -874,7 +875,6 @@ _netsh()
                         de*) # delete
                             if [[ $cword -eq 4 ]]; then
                                 options="address arpcache destinationcache \
-
                                     dnsservers excludedportrange neighbors \
                                     route winsservers"
                                 COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
@@ -1112,30 +1112,33 @@ _netsh()
                                     ;;
 
                                 gl*) # global
-                                    options='defaultcurhoplimit\=
-                                    neighborcachelimit\= routecachelimit\=
-                                    icmpredirects\=enabled
-                                    icmpredirects\=disabled
-                                    sourceroutingbehavior\=drop
-                                    sourceroutingbehavior\=forward
-                                    sourceroutingbehavior\=dontforward
-                                    taskoffload\=enabled taskoffload\=disabled
-                                    dhcpmediasense\=enabled
-                                    dhcpmediasense\=disabled
-                                    mediasenseeventlog\=disabled
-                                    mediasenseeventlog\=enabled mldlevel\=all
-                                    mldlevel\=sendonly mldlevel\=none
-                                    mldversion\=version1 mldversion\=version2
-                                    mldversion\=version3
-                                    multicastforwarding\=disabled
-                                    multicastforwarding\=enabled
-                                    groupforwardedfragments\=disabled
-                                    groupforwardedfragments\=enabled
-                                    randomizeidentifiers\=disabled
-                                    randomizeidentifiers\=enabled store\=active
-                                    store\=persistent
-                                    addressmaskreply\=disabled
-                                    addressmaskreply\=enabled minmtu\=' 
+                                    options=('defaultcurhoplimit\='
+                                    'neighborcachelimit\=' 'routecachelimit\='
+                                    'icmpredirects\=enabled'
+                                    'icmpredirects\=disabled'
+                                    'sourceroutingbehavior\=drop'
+                                    'sourceroutingbehavior\=forward'
+                                    'sourceroutingbehavior\=dontforward'
+                                    'taskoffload\=enabled'
+                                    'taskoffload\=disabled'
+                                    'dhcpmediasense\=enabled'
+                                    'dhcpmediasense\=disabled'
+                                    'mediasenseeventlog\=disabled'
+                                    'mediasenseeventlog\=enabled'
+                                    'mldlevel\=all' 'mldlevel\=sendonly'
+                                    'mldlevel\=none' 'mldversion\=version1'
+                                    'mldversion\=version2'
+                                    'mldversion\=version3'
+                                    'multicastforwarding\=disabled'
+                                    'multicastforwarding\=enabled'
+                                    'groupforwardedfragments\=disabled'
+                                    'groupforwardedfragments\=enabled'
+                                    'randomizeidentifiers\=disabled'
+                                    'randomizeidentifiers\=enabled'
+                                    'store\=active' 'store\=persistent'
+                                    'addressmaskreply\=disabled'
+                                    'addressmaskreply\=enabled' 'minmtu\=')
+                                    options=$(_complement cmds[@] options[@])
                                     ;;
 
                                 i*) # interface
@@ -1144,40 +1147,44 @@ _netsh()
                                         options=$(_netsh_interfaces)
 
                                     else
-                                        options='forwarding\=disabled
-                                        forwarding\=enabled advertise\=disabled
-                                        advertise\=enabled mtu\= siteid\=
-                                        metric\= metric\=automatic
-                                        firewall\=disabled firewall\=enabled
-                                        siteprefixlength\= nud\=disabled
-                                        nud\=enabled basereachabletime\=
-                                        retransmittime\= dadtransmits\=
-                                        routerdiscovery\=dhcp
-                                        routerdiscovery\=disabled
-                                        routerdiscovery\=enabled
-                                        managedaddress\=enabled
-                                        managedaddress\=disabled
-                                        otherstateful\=disabled
-                                        otherstateful\=enabled
-                                        weakhostsend\=enabled
-                                        weakhostsend\=disabled
-                                        weakhostreceive\=enabled
-                                        weakhostreceive\=disabled
-                                        ignoredefaultroutes\=disabled
-                                        ignoredefaultroutes\=enabled
-                                        advertisedrouterlifetime\=
-                                        currenthoplimit\=
-                                        advertisedefaultroute\=disabled
-                                        advertisedefaultroute\=enabled
-                                        currenthoplimit\= store\=active
-                                        store\=persistent
-                                        forcearpndwolpattern\=enabled
-                                        forcearpndwolpattern\=disabled
-                                        enabledirectedmacwolpattern\=disabled
-                                        enabledirectedmacwolpattern\=enabled
-                                        ecncapability\=ecndisabled
-                                        ecncapability\=ect1 ecncapability\=ect0
-                                        ecncapability\=application' 
+                                        options=('forwarding\=disabled'
+                                        'forwarding\=enabled'
+                                        'advertise\=disabled'
+                                        'advertise\=enabled' 'mtu\=' 'siteid\='
+                                        'metric\=' 'metric\=automatic'
+                                        'firewall\=disabled'
+                                        'firewall\=enabled'
+                                        'siteprefixlength\=' 'nud\=disabled'
+                                        'nud\=enabled' 'basereachabletime\='
+                                        'retransmittime\=' 'dadtransmits\='
+                                        'routerdiscovery\=dhcp'
+                                        'routerdiscovery\=disabled'
+                                        'routerdiscovery\=enabled'
+                                        'managedaddress\=enabled'
+                                        'managedaddress\=disabled'
+                                        'otherstateful\=disabled'
+                                        'otherstateful\=enabled'
+                                        'weakhostsend\=enabled'
+                                        'weakhostsend\=disabled'
+                                        'weakhostreceive\=enabled'
+                                        'weakhostreceive\=disabled'
+                                        'ignoredefaultroutes\=disabled'
+                                        'ignoredefaultroutes\=enabled'
+                                        'advertisedrouterlifetime\='
+                                        'currenthoplimit\='
+                                        'advertisedefaultroute\=disabled'
+                                        'advertisedefaultroute\=enabled'
+                                        'currenthoplimit\=' 'store\=active'
+                                        'store\=persistent'
+                                        'forcearpndwolpattern\=enabled'
+                                        'forcearpndwolpattern\=disabled'
+                                        'enabledirectedmacwolpattern\=disabled'
+                                        'enabledirectedmacwolpattern\=enabled'
+                                        'ecncapability\=ecndisabled'
+                                        'ecncapability\=ect1'
+                                        'ecncapability\=ect0'
+                                        'ecncapability\=application')
+                                        options=$(_complement cmds[@] options[@])
                                     fi
                                     ;;
 
@@ -1606,7 +1613,7 @@ _netsh()
                             # TODO: implement
                             ;;
 
-                        isatap)
+                        i*) # isatap
                             # TODO: implement
                             ;;
 
@@ -1635,7 +1642,7 @@ _netsh()
 
                     case ${words[3]} in
 
-                        show)
+                        sh*) # show
                             if [[ $cword -eq 4 ]]; then
                                 options='router state'
                             fi
@@ -1732,11 +1739,10 @@ _netsh()
                             fi
                             ;;
 
-
                     esac
                     ;;
 
-                teredo)
+                te*) # teredo
                     # TODO: more detail
                     if [[ $cword -eq 3 ]]; then
                         options='dump set show'
@@ -1801,16 +1807,15 @@ _netsh()
 
                 case ${words[2]} in
 
-                    delete)
+                    del*) # delete
                         # TODO: implement
                         ;;
 
-                    filter)
+                    f*) # filter
                         # TODO: implement
                         ;;
 
                 esac
-
             fi
             ;;
 
@@ -1872,11 +1877,11 @@ _netsh()
                         else
                             case ${words[4]} in
 
-                                proxy)
+                                p*) # proxy
                                     # TODO: implement
                                     ;;
 
-                                tracing)
+                                t*) # tracing
                                     # TODO: implement
                                     ;;
 
@@ -2167,38 +2172,44 @@ _netsh()
                                     options=$(_netsh_wlan_interfaces)
 
                                 else
-                                    # TODO: cull the options list
                                     # TODO: list options for ssidname
+                                    options=('ssidname\=' 'connectiontype\=ess'
+                                    'connectiontype\=ibss' 'autoswitch\=yes'
+                                    'autoswitch\=no' 'connectionmode\=auto'
+                                    'connectionmode\=manual'
+                                    'nonbroadcast\=yes' 'nonbroadcast\=no'
+                                    'randomization\=yes' 'randomization\=no'
+                                    'randomization\=daily'
+                                    'authentication\=open'
+                                    'authentication\=shared'
+                                    'authentication\=wpa'
+                                    'authentication\=wpa2'
+                                    'authentication\=wpapsk'
+                                    'authentication\=wpa2psk'
+                                    'encryption\=none' 'encryption\=wep'
+                                    'encryption\=tkip' 'encryption\=aes'
+                                    'keytype\=networkkey' 'keytype\=passphrase'
+                                    'keyindex\=' 'keymaterial\='
+                                    'pmkcachemode\=yes' 'pmkcachemode\=no'
+                                    'pmkcachesize\=' 'pmkcachettl\='
+                                    'preauthmode\=yes' 'preauthmode\=no'
+                                    'preauththrottle\=' 'fips\=yes' 'fips\=no'
+                                    'useonex\=yes' 'useonex\=no'
+                                    'authmode\=machineoruser'
+                                    'authmode\=machineonly'
+                                    'authmode\=useronly' 'authmode\=guest'
+                                    'ssomode\=prelogon' 'ssomode\=postlogon'
+                                    'ssomode\=none' 'maxdelay\='
+                                    'allowdialog\=yes' 'allowdialog\=no'
+                                    'uservlan\=yes' 'uservlan\=no'
+                                    'heldperiod\=' 'authperiod\='
+                                    'startperiod\=' 'maxstart\='
+                                    'maxauthfailures\=' 'cacheuserdata\=yes'
+                                    'cacheuserdata\=no' 'cost\=default'
+                                    'cost\=unrestricted' 'cost\=fixed'
+                                    'cost\=variable')
+                                    options=$(_complement cmds[@] options[@])
 
-                                    options='ssidname\= connectiontype\=ess
-                                    connectiontype\=ibss autoswitch\=yes
-                                    autoswitch\=no connectionmode\=auto
-                                    connectionmode\=manual nonbroadcast\=yes
-                                    nonbroadcast\=no randomization\=yes
-                                    randomization\=no randomization\=daily
-                                    authentication\=open authentication\=shared
-                                    authentication\=wpa authentication\=wpa2
-                                    authentication\=wpapsk
-                                    authentication\=wpa2psk encryption\=none
-                                    encryption\=wep encryption\=tkip
-                                    encryption\=aes keytype\=networkkey
-                                    keytype\=passphrase keyindex\=
-                                    keymaterial\= pmkcachemode\=yes
-                                    pmkcachemode\=no pmkcachesize\=
-                                    pmkcachettl\= preauthmode\=yes
-                                    preauthmode\=no preauththrottle\= fips\=yes
-                                    fips\=no useonex\=yes useonex\=no
-                                    authmode\=machineoruser
-                                    authmode\=machineonly authmode\=useronly
-                                    authmode\=guest ssomode\=prelogon
-                                    ssomode\=postlogon ssomode\=none maxdelay\=
-                                    allowdialog\=yes allowdialog\=no
-                                    uservlan\=yes uservlan\=no heldperiod\=
-                                    authperiod\= startperiod\= maxstart\=
-                                    maxauthfailures\= cacheuserdata\=yes
-                                    cacheuserdata\=no cost\=default
-                                    cost\=unrestricted cost\=fixed
-                                    cost\=variable'
                                 fi
                                 ;;
 
@@ -2238,19 +2249,19 @@ _netsh()
 
                         case ${words[3]} in
 
-                            filters)
+                            f*) # filters
                                 if [[ $cword -eq 4 ]]; then
                                     options='allow block'
                                 fi
                                 ;;
 
-                            hostednetwork)
+                            h*) # hostednetwork
                                 if [[ $cword -eq 4 ]]; then
                                     options='security'
                                 fi
                                 ;;
 
-                            networks)
+                            n*) # networks
                                 if [[ $cword -eq 4 ]]; then
                                     IFS=$'\n'
                                     options=$(_netsh_wlan_interfaces)
@@ -2261,7 +2272,7 @@ _netsh()
                                 fi
                                 ;;
 
-                            profiles)
+                            p*) # profiles
                                 if [[ $cword -eq 4 ]]; then
                                     IFS=$'\n'
                                     options=$(_netsh_wlan_profiles)
@@ -2280,13 +2291,13 @@ _netsh()
                     fi
                     ;;
 
-                start)
+                sta*) # start
                     if [[ $cword -eq 3 ]]; then
                         options='hostednetwork'
                     fi
                     ;;
 
-                stop)
+                sto*) # stop
                     if [[ $cword -eq 3 ]]; then
                         options='hostednetwork'
                     fi

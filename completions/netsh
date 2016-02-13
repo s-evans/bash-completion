@@ -78,9 +78,9 @@ _netsh()
     cmds=( ${words[@]::cword} ) 
 
     if [[ $cword -eq 1 ]]; then
-        COMPREPLY=( $(compgen -W 'add advfirewall bridge delete dhcpclient dnsclient dump
-        exec firewall help http interface ipsec lan namespace nap netio p2p
-        ras rpc set show wfp winhttp winsock wlan' -- "$cur" ) )
+        COMPREPLY=( $(compgen -W 'add advfirewall bridge delete dhcpclient
+        dnsclient dump exec firewall help http interface ipsec lan namespace
+        nap netio p2p ras rpc set show wfp winhttp winsock wlan' -- "$cur" ) )
         return
     fi
 
@@ -540,8 +540,10 @@ _netsh()
                         options=$(_netsh_interfaces)
 
                     elif [[ $cword -eq 5 ]]; then
-                        # TODO: recent ip addresses
-                        options="address\= all"
+                        # TODO: test with multiple servers
+                        IFS=$'\n'
+                        options=$(netsh int ip show dnsservers ${words[4]//\\/} | sed -e 's/^[^0-9]\+//' -e '/^$/d')
+                        options+=$'\n''all'
 
                     elif [[ $cword -eq 6 ]]; then
                         options="validate\=yes validate\=no"
@@ -726,6 +728,7 @@ _netsh()
                             fi
 
                             case ${words[4]} in
+
 								a*) # address
                                     if [[ $cword -eq 5 ]]; then
                                         IFS=$'\n'
@@ -906,8 +909,8 @@ _netsh()
                                         options=$(_netsh_interfaces)
 
                                     elif [[ $cword -eq 6 ]]; then
-                                        # TODO: list neighbor ip addresses
-                                        options='address\='
+                                        IFS=$'\n'
+                                        options=$(netsh int ip show ne ${words[5]//\\/} | sed -e 's/ .*//' -e '/^[0-9]/!d')
 
                                     elif [[ $cword -eq 7 ]]; then
                                         IFS=$'\n'
@@ -925,8 +928,8 @@ _netsh()
                                         options=$(_netsh_interfaces)
 
                                     elif [[ $cword -eq 6 ]]; then
-                                        # TODO: list destination ip addresses
-                                        options='address\='
+                                        IFS=$'\n'
+                                        options=$(netsh int ip show destinationcache ${words[5]//\\/} | sed -e '/[A-Z-]/d' -e 's/^[^ ]\+ //' -e '/^$/d' -e 's/ .*//')
 
                                     fi
                                     ;;
@@ -937,8 +940,9 @@ _netsh()
                                         options=$(_netsh_interfaces)
 
                                     elif [[ $cword -eq 6 ]]; then
-                                        # TODO: list dns server IP address for the interface
-                                        options='address\=all address\='
+                                        IFS=$'\n'
+                                        options=$(netsh int ip show dnsservers ${words[5]//\\/} | sed -e 's/^[^0-9]\+//' -e '/^$/d')
+                                        options+=$'\n''all'
 
                                     elif [[ $cword -eq 7 ]]; then
                                         options='validate\=yes validate\=no'
@@ -968,8 +972,8 @@ _netsh()
                                         options=$(_netsh_interfaces)
 
                                     elif [[ $cword -eq 6 ]]; then
-                                        # TODO: list neighbor IP addresses
-                                        options='address\='
+                                        IFS=$'\n'
+                                        options=$(netsh int ip show ne ${words[5]//\\/} | sed -e 's/ .*//' -e '/^[0-9]/!d')
 
                                     elif [[ $cword -eq 7 ]]; then
                                         IFS=$'\n'
@@ -983,8 +987,9 @@ _netsh()
 
                                 r*) # route
                                     if [[ $cword -eq 5 ]]; then
-                                        # TODO: suggest existing route prefixes
-                                        options='prefix\='
+                                        IFS=$'\n'
+                                        options=$(netsh int ip show route | sed -e 's/^\([^ ]\+[ ]\+\)\{3\}//' -e 's/[ ]\+/ /g' -e '/^[0-9]/!d' -e 's/[A-z].*//')
+                                        options=$(printf '%s\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d")
 
                                     elif [[ $cword -eq 6 ]]; then
                                         IFS=$'\n'
@@ -1006,8 +1011,9 @@ _netsh()
                                         options=$(_netsh_interfaces)
 
                                     elif [[ $cword -eq 6 ]]; then
-                                        # TODO: suggest existing winsservers
-                                        options='address\=all address\='
+                                        IFS=$'\n'
+                                        options=$(netsh int ip show winsservers ${words[5]//\\/} | sed -e 's/^[^0-9]\+//' -e '/^$/d')
+                                        options+=$'\n''all'
 
                                     fi
                                     ;;

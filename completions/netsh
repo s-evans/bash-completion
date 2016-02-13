@@ -54,100 +54,72 @@ _netsh_ipv4_subinterfaces()
 
 _netsh()
 {
-    local cur prev words cword options IFS commands command
+    local cur prev words cword options IFS
     _init_completion
 
     cur=$(printf '%q' "$cur")
-    commands=('add' 'advfirewall' 'bridge' 'delete' 'dhcpclient' \
-        'dnsclient' 'dump' 'exec' 'firewall' 'help' 'http' 'interface' \
-        'ipsec' 'lan' 'namespace' 'nap' 'netio' 'p2p' 'ras' 'rpc' 'set' \
-        'show' 'wfp' 'winhttp' 'winsock' 'wlan' )
-    declare -i count=0
 
-    # skip over non-command arguments to find the command
-    for word in ${words[@]::$cword} ; do
-
-        for option in ${commands[@]} ; do
-            if [[ "$option" == "$word" ]]; then
-                command=$option
-                break
-            fi
-        done
-
-        if [[ -n $command ]]; then
-            break
-        fi
-
-        count+=1
-    done
-
-    local subcmd=${COMP_WORDS[count+1]}
-    local subsubcmd=${COMP_WORDS[count+2]}
-    local subsubsubcmd=${COMP_WORDS[count+3]}
-    local subsubsubsubcmd=${COMP_WORDS[count+4]}
-
-    count=$cword-$count
+    if [[ $cword -eq 1 ]]; then
+        COMPREPLY=( $(compgen -W 'add advfirewall bridge delete dhcpclient dnsclient dump
+        exec firewall help http interface ipsec lan namespace nap netio p2p
+        ras rpc set show wfp winhttp winsock wlan' -- "$cur" ) )
+        return
+    fi
 
     # Command-specific arguments
-    case $command in
+    case ${words[1]} in
 
         add)
-            if [[ $count -eq 1 ]]; then
+            if [[ $cword -eq 2 ]]; then
                 options='helper'
-                COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
-                return
+
+            elif [[ $cword -eq 3 ]]; then
+                options=$(command ls *.dll 2> /dev/null)
+
             fi
-
-            case $subcmd in
-                helper)
-                    if [[ $count -eq 2 ]]; then
-                        options=$(command ls *.dll 2> /dev/null)
-                    fi
-                    ;;
-            esac
-
             ;;
 
-        advfirewall)
+        adv*) # advfirewall
 
-            if [[ $count -eq 1 ]]; then
+            if [[ $cword -eq 2 ]]; then
                 options="consec dump export firewall import mainmode monitor \
                     reset set show"
                 COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
                 return
             fi
 
-            case $subcmd in
-                consec)
-                    if [[ $count -eq 2 ]]; then
+            case ${words[2]} in
+
+                c*) # consec
+                    if [[ $cword -eq 3 ]]; then
                         options='add delete dump set show'
                         COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
                         return
                     fi
 
                     # TODO: more detail
-                    case $subsubcmd in
+                    case ${words[3]} in
 
-                        add)
-                            if [[ $count -eq 3 ]]; then
+                        a*) # add
+                            if [[ $cword -eq 4 ]]; then
                                 options='rule'
                             fi
                             ;;
 
-                        delete)
-                            if [[ $count -eq 3 ]]; then
+                        del*) # delete
+                            if [[ $cword -eq 4 ]]; then
                                 options='rule'
                             fi
                             ;;
 
-                        set)
-                            if [[ $count -eq 3 ]]; then
+                        se*) # set
+                            if [[ $cword -eq 4 ]]; then
                                 options='rule'
                             fi
                             ;;
 
-                        show)
-                            if [[ $count -eq 3 ]]; then
+                        sh*) # show
+                            if [[ $cword -eq 4 ]]; then
                                 options='rule'
                             fi
                             ;;
@@ -155,39 +127,36 @@ _netsh()
                     esac
                     ;;
 
-                export)
-                    ;;
-
-                firewall)
-                    if [[ $count -eq 2 ]]; then
+                f*) # firewall
+                    if [[ $cword -eq 3 ]]; then
                         options='add delete dump set show'
                         COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
                         return
                     fi
 
                     # TODO: more detail
-                    case $subsubcmd in
+                    case ${words[3]} in
 
                         add)
-                            if [[ $count -eq 3 ]]; then
+                            if [[ $cword -eq 4 ]]; then
                                 options='rule'
                             fi
                             ;;
 
                         delete)
-                            if [[ $count -eq 3 ]]; then
+                            if [[ $cword -eq 4 ]]; then
                                 options='rule'
                             fi
                             ;;
 
                         set)
-                            if [[ $count -eq 3 ]]; then
+                            if [[ $cword -eq 4 ]]; then
                                 options='rule'
                             fi
                             ;;
 
                         show)
-                            if [[ $count -eq 3 ]]; then
+                            if [[ $cword -eq 4 ]]; then
                                 options='rule'
                             fi
                             ;;
@@ -195,39 +164,36 @@ _netsh()
                     esac
                     ;;
 
-                import)
-                    ;;
-
-                mainmode)
-                    if [[ $count -eq 2 ]]; then
+                main*) # mainmode
+                    if [[ $cword -eq 3 ]]; then
                         options='add delete dump set show'
                         COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
                         return
                     fi
 
                     # TODO: more detail
-                    case $subsubcmd in
+                    case ${words[3]} in
 
-                        add)
-                            if [[ $count -eq 3 ]]; then
+                        a*) # add
+                            if [[ $cword -eq 4 ]]; then
                                 options='rule'
                             fi
                             ;;
 
-                        delete)
-                            if [[ $count -eq 3 ]]; then
+                        del*) # delete
+                            if [[ $cword -eq 4 ]]; then
                                 options='rule'
                             fi
                             ;;
 
-                        set)
-                            if [[ $count -eq 3 ]]; then
+                        se*) # set
+                            if [[ $cword -eq 4 ]]; then
                                 options='rule'
                             fi
                             ;;
 
-                        show)
-                            if [[ $count -eq 3 ]]; then
+                        sh*) # show
+                            if [[ $cword -eq 4 ]]; then
                                 options='rule'
                             fi
                             ;;
@@ -235,75 +201,74 @@ _netsh()
                     esac
                     ;;
 
-                monitor)
-                    if [[ $count -eq 2 ]]; then
+                mon*) # monitor
+                    if [[ $cword -eq 3 ]]; then
                         options='delete dump show'
                         COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
                         return
                     fi
 
-                    case $subsubcmd in
-                        delete)
-                            if [[ $count -eq 3 ]]; then
+                    case ${words[3]} in
+
+                        del*) # delete
+                            if [[ $cword -eq 4 ]]; then
                                 options='mmsa qmsa'
-                            elif [[ $count -eq 4 ]]; then
+
+                            elif [[ $cword -eq 5 ]]; then
                                 # TODO: list possible sources
                                 options='all'
-                            elif [[ $count -eq 5 ]]; then
+
+                            elif [[ $cword -eq 6 ]]; then
                                 # TODO: list possible destinations
                                 options=''
+
                             fi
                             ;;
 
-                        show)
-                            if [[ $count -eq 3 ]]; then
+                        sh*) # show
+                            if [[ $cword -eq 4 ]]; then
                                 options="consec currentprofile firewall \
                                     mainmode mmsa qmsa"
-                            elif [[ $count -eq 4 ]]; then
+
+                            elif [[ $cword -eq 5 ]]; then
                                 # TODO: more detail
                                 options=''
+
                             fi
                             ;;
+
                     esac
                     ;;
 
-                reset)
-                    ;;
-
                 set)
-                    if [[ $count -eq 2 ]]; then
+                    if [[ $cword -eq 3 ]]; then
                         options="allprofiles currentprofile domainprofile \
                             global privateprofile publicprofile"
                         COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
                         return
                     fi
 
-                    case $subsubcmd in
-                        privateprofile)
-                            ;&
-                        publicprofile)
-                            ;&
-                        domainprofile)
-                            ;&
-                        currentprofiles)
-                            ;&
-                        allprofiles)
-                            if [[ $count -eq 3 ]]; then
+                    case ${words[3]} in
+
+                        # privateprofile publicprofile domainprofile currentprofile allprofiles
+                        pr*|pu*|d*|c*|a*)
+
+                            if [[ $cword -eq 4 ]]; then
                                 options='state firewallpolicy settings logging'
                                 COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
                                 return
                             fi
 
-                            case $subsubsubcmd in
+                            case ${words[4]} in
 
-                                state)
-                                    if [[ $count -eq 4 ]]; then
+                                st*) # state
+                                    if [[ $cword -eq 5 ]]; then
                                         options='on off notconfigured'
                                     fi
                                     ;;
 
-                                firewallpolicy)
-                                    if [[ $count -eq 4 ]]; then
+                                f*) # firewallpolicy
+                                    if [[ $cword -eq 5 ]]; then
                                         options="blockinbound blockinboundalways \
                                             allowinbound notconfigured \
                                             allowoutbound blockoutbound \
@@ -311,11 +276,11 @@ _netsh()
                                     fi
                                     ;;
 
-                                settings)
+                                set*) # settings
                                     # TODO: more
                                     # Usage: settings (parameter) enable|disable|notconfigured
 
-                                    if [[ $count -eq 4 ]]; then
+                                    if [[ $cword -eq 5 ]]; then
                                         options="localfirewallrules \
                                             localconsecrules \
                                             inboundusernotification \
@@ -324,7 +289,7 @@ _netsh()
                                     fi
                                     ;;
 
-                                logging)
+                                log*) # logging
 
                                     # TODO: more
                                     # allowedconnections  - Log allowed connections.
@@ -336,16 +301,16 @@ _netsh()
                                     # maxfilesize         - Maximum log file size in kilobytes.
                                     # Values: 1 - 32767|notconfigured
 
-                                    if [[ $count -eq 4 ]]; then
+                                    if [[ $cword -eq 5 ]]; then
                                         options='allowedconnections droppedconnections filename
                                         maxfilesize'
                                     fi
                                     ;;
-                            esac
 
+                            esac
                             ;;
 
-                        global)
+                        glob*) # global
 
                             # TODO: statefulftp statefulpptp -> 'enable disable notconfigured'
 
@@ -397,7 +362,7 @@ _netsh()
                             #                         - Usage:
                             #                           yes|no (default=no)
 
-                            if [[ $count -eq 3 ]]; then
+                            if [[ $cword -eq 4 ]]; then
                                 options='statefulftp statefulpptp ipsec mainmode'
                             fi
                             ;;
@@ -405,8 +370,8 @@ _netsh()
                     esac
                     ;;
 
-                show)
-                    if [[ $count -eq 2 ]]; then
+                sh*) # show
+                    if [[ $cword -eq 3 ]]; then
                         options="allprofiles currentprofile domainprofile global \
                             privateprofile publicprofile store"
                         COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
@@ -415,179 +380,202 @@ _netsh()
 
                     # TODO: more detail
 
-                    case $subsubcmd in
-                        allprofiles)
-                            if [[ $count -eq 3 ]]; then
+                    case ${words[3]} in
+
+                        a*) # allprofiles
+                            if [[ $cword -eq 4 ]]; then
                                 options='state firewallpolicy settings logging'
                             fi
                             ;;
 
-                        currentprofile)
-                            if [[ $count -eq 3 ]]; then
+                        c*) # currentprofile
+                            if [[ $cword -eq 4 ]]; then
                                 options='state firewallpolicy settings logging'
                             fi
                             ;;
 
-                        domainprofile)
-                            if [[ $count -eq 3 ]]; then
+                        d*) # domainprofile
+                            if [[ $cword -eq 4 ]]; then
                                 options='state firewallpolicy settings logging'
                             fi
                             ;;
 
-                        global)
-                            if [[ $count -eq 3 ]]; then
+                        g*) # global
+                            if [[ $cword -eq 4 ]]; then
                                 options="ipsec statefulftp statefulpptp \
                                     mainmode categories"
                             fi
                             ;;
 
-                        privateprofile)
-                            if [[ $count -eq 3 ]]; then
+                        pr*) # privateprofile
+                            if [[ $cword -eq 4 ]]; then
                                 options='state firewallpolicy settings logging'
                             fi
                             ;;
 
-                        publicprofile)
-                            if [[ $count -eq 3 ]]; then
+                        pu*) # publicprofile
+                            if [[ $cword -eq 4 ]]; then
                                 options='state firewallpolicy settings logging'
                             fi
                             ;;
 
-                        store)
+                        st*) # store
                             ;;
 
                     esac
-
                     ;;
 
             esac
             ;;
 
-        bridge)
-            if [[ $count -eq 1 ]]; then
+        bri*) # bridge
+            if [[ $cword -eq 2 ]]; then
                 options='dump install set show uninstall'
                 COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
                 return
             fi
 
-            case $subcmd in
+            case ${words[2]} in
+
                 set)
-                    if [[ $count -eq 2 ]]; then
+                    if [[ $cword -eq 3 ]]; then
                         options='adapter'
                         COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
                         return
                     fi
 
-                    case $subsubcmd in
-                        adapter)
-                            if [[ $count -eq 3 ]]; then
-                                local IFS=$'\n'
+                    case ${words[3]} in
+
+                        a*) # adapter
+                            if [[ $cword -eq 4 ]]; then
+                                IFS=$'\n'
                                 options=$(_netsh_bridges)
-                            elif [[ $count -eq 4 ]]; then
+
+                            elif [[ $cword -eq 5 ]]; then
                                 options="forcecompatmode\=enable \
                                     forcecompatmode\=disable"
+
                             fi
                             ;;
-                    esac
 
+                    esac
                     ;;
 
-                show)
-                    if [[ $count -eq 2 ]]; then
+                sh*) # show
+                    if [[ $cword -eq 3 ]]; then
                         options='adapter'
                         COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
                         return
                     fi
 
-                    case $subsubcmd in
-                        adapter)
-                            if [[ $count -eq 3 ]]; then
-                                local IFS=$'\n'
+                    case ${words[3]} in
+
+                        a*) # adapter
+                            if [[ $cword -eq 4 ]]; then
+                                IFS=$'\n'
                                 options=$(_netsh_bridges)
                             fi
                             ;;
+
                     esac
-
                     ;;
+
             esac
-
             ;;
 
-        delete)
-            if [[ $count -eq 1 ]]; then
+        del*) # delete
+            if [[ $cword -eq 2 ]]; then
                 options='helper'
-            elif [[ $count -eq 2 ]]; then
+
+            elif [[ $cword -eq 3 ]]; then
                 options=$(command ls *.dll 2> /dev/null)
+
             fi
             ;;
 
-        dhcpclient)
-            if [[ $count -eq 1 ]]; then
+        dh*) # dhcpclient
+            if [[ $cword -eq 2 ]]; then
                 options='list trace'
-            elif [[ $count -eq 2 ]]; then
+
+            elif [[ $cword -eq 3 ]]; then
                 options='enable disable dump'
+
             fi
             ;;
 
-        dnsclient)
-            if [[ $count -eq 1 ]]; then
+        dns*) # dnsclient
+            if [[ $cword -eq 2 ]]; then
                 options='add delete dump set show'
                 COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
                 return
             fi
 
-            case $subcmd in
+            case ${words[2]} in
 
-                add)
-                    if [[ $count -eq 2 ]]; then
+                a*) # add
+                    if [[ $cword -eq 3 ]]; then
                         options='dnsservers'
-                    elif [[ $count -eq 3 ]]; then
-                        local IFS=$'\n'
+
+                    elif [[ $cword -eq 4 ]]; then
+                        IFS=$'\n'
                         options=$(_netsh_interfaces)
-                    elif [[ $count -eq 4 ]]; then
+
+                    elif [[ $cword -eq 5 ]]; then
                         # TODO: recent ip addresses
                         options="address\="
-                    elif [[ $count -eq 5 ]]; then
+
+                    elif [[ $cword -eq 6 ]]; then
                         options="index\="
-                    elif [[ $count -eq 6 ]]; then
+
+                    elif [[ $cword -eq 7 ]]; then
                         options="validate\=yes validate\=no"
+
                     fi
                     ;;
 
-                delete)
-                    if [[ $count -eq 2 ]]; then
+                del*) # delete
+                    if [[ $cword -eq 3 ]]; then
                         options='dnsservers'
-                    elif [[ $count -eq 3 ]]; then
-                        local IFS=$'\n'
+
+                    elif [[ $cword -eq 4 ]]; then
+                        IFS=$'\n'
                         options=$(_netsh_interfaces)
-                    elif [[ $count -eq 4 ]]; then
+
+                    elif [[ $cword -eq 5 ]]; then
                         # TODO: recent ip addresses
                         options="address\= all"
-                    elif [[ $count -eq 5 ]]; then
+
+                    elif [[ $cword -eq 6 ]]; then
                         options="validate\=yes validate\=no"
+
                     fi
                     ;;
-
 
                 set)
-                    if [[ $count -eq 2 ]]; then
+                    if [[ $cword -eq 3 ]]; then
                         options='dnsservers'
-                    elif [[ $count -eq 3 ]]; then
-                        local IFS=$'\n'
+
+                    elif [[ $cword -eq 4 ]]; then
+                        IFS=$'\n'
                         options=$(_netsh_interfaces)
-                    elif [[ $count -eq 4 ]]; then
+
+                    elif [[ $cword -eq 5 ]]; then
                         options='dhcp static'
-                    elif [[ $count -eq 5 ]]; then
+
+                    elif [[ $cword -eq 6 ]]; then
                         options='address\= none'
-                    elif [[ $count -eq 6 ]]; then
+
+                    elif [[ $cword -eq 7 ]]; then
                         options='register\=none register\=primary register\=both'
-                    elif [[ $count -eq 7 ]]; then
+
+                    elif [[ $cword -eq 8 ]]; then
                         options="validate\=yes validate\=no"
+
                     fi
                     ;;
 
-                show)
-                    if [[ $count -eq 2 ]]; then
+                sh*) # show
+                    if [[ $cword -eq 3 ]]; then
                         options='state'
                     fi
                     ;;
@@ -595,21 +583,21 @@ _netsh()
             esac
             ;;
 
-        exec)
-            if [[ $count -eq 1 ]]; then
+        e*) # exec
+            if [[ $cword -eq 2 ]]; then
                 options=$(command ls 2> /dev/null)
             fi
             ;;
 
-        firewall)
-            if [[ $count -eq 1 ]]; then
+        f*) # firewall
+            if [[ $cword -eq 2 ]]; then
                 options='add delete dump set show'
             fi
             # NOTE: no further commands available on win7
             ;;
 
-        http)
-            if [[ $count -eq 1 ]]; then
+        ht*) # http
+            if [[ $cword -eq 2 ]]; then
                 options='add delete dump flush show'
                 COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
                 return
@@ -617,77 +605,80 @@ _netsh()
 
             # TODO: more detail
 
-            case $subcmd in
-                add)
-                    if [[ $count -eq 2 ]]; then
+            case ${words[2]} in
+
+                a*) # add
+                    if [[ $cword -eq 3 ]]; then
                         options='cacheparam iplisten sslcert timeout urlacl'
                     fi
                     ;;
 
-                delete)
-                    if [[ $count -eq 2 ]]; then
+                del*) # delete
+                    if [[ $cword -eq 3 ]]; then
                         options='cache iplisten sslcert timeout urlacl'
                     fi
                     ;;
 
-                flush)
-                    if [[ $count -eq 2 ]]; then
+                f*) # flush
+                    if [[ $cword -eq 3 ]]; then
                         options='logbuffer'
                     fi
                     ;;
 
-                show)
-                    if [[ $count -eq 2 ]]; then
+                s*) # show
+                    if [[ $cword -eq 3 ]]; then
                         options="cacheparam cachestate iplisten servicestate sslcert \
                             timeout urlacl"
                     fi
                     ;;
-            esac
 
+            esac
             ;;
 
-        interface)
+        int*) # interface
 
-            if [[ $count -eq 1 ]]; then
+            if [[ $cword -eq 2 ]]; then
                 options="6to4 dump httpstunnel ipv4 ipv6 isatap portproxy set \
                     show tcp teredo"
                 COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
                 return
             fi
 
-            case $subcmd in
+            case ${words[2]} in
+
                 6to4)
-                    if [[ $count -eq 2 ]]; then
+                    if [[ $cword -eq 3 ]]; then
                         options='dump set show'
                         COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
                         return
                     fi
-
                     # TODO: more
                     ;;
 
-                httpstunnel)
+                h*) # httpstunnel
 
-                    if [[ $count -eq 2 ]]; then
+                    if [[ $cword -eq 3 ]]; then
                         options='add delete dump reset set show'
                         COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
                         return
                     fi
 
-                    case $subsubcmd in
+                    case ${words[3]} in
                         add)
-                            if [[ $count -eq 3 ]]; then
+                            if [[ $cword -eq 4 ]]; then
                                 options='interface'
+
                             else
                                 options="type\=client type\=server \
                                     state\=enabled state\=disabled \
                                     state\=default authmode\=none \
                                     authmode\=certificate url\="
+
                             fi
                             ;;
 
                         delete)
-                            if [[ $count -eq 3 ]]; then
+                            if [[ $cword -eq 4 ]]; then
                                 options='interface'
                             fi
                             ;;
@@ -696,272 +687,339 @@ _netsh()
                             ;;
 
                         set)
-                            if [[ $count -eq 3 ]]; then
+                            if [[ $cword -eq 4 ]]; then
                                 options='interface'
+
                             else
                                 options="state\=enabled state\=disabled \
                                     state\=default authmode\=none \
                                     authmode\=certificate url\="
+
                             fi
                             ;;
 
                         show)
-                            if [[ $count -eq 3 ]]; then
+                            if [[ $cword -eq 4 ]]; then
                                 options='interfaces statistics'
-                            elif [[ $count -eq 4 ]]; then
+
+                            elif [[ $cword -eq 5 ]]; then
                                 options='store\=active store\=persistent'
+
                             fi
                             ;;
 
                     esac
                     ;;
 
-                ipv4)
-                    if [[ $count -eq 2 ]]; then
+                ip*) # ipv4
+                    if [[ $cword -eq 3 ]]; then
                         options='add delete dump install reset set show uninstall'
                     fi
 
-                    case $subsubcmd in
+                    case ${words[3]} in
 
                         add)
 
-                            if [[ $count -eq 3 ]]; then
+                            if [[ $cword -eq 4 ]]; then
 								options="address dnsservers excludedportrange \
 									neighbors route winsservers"
                                 COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
                                 return
                             fi
 
-                            case $subsubsubcmd in
-								address)
-                                    if [[ $count -eq 4 ]]; then
-                                        local IFS=$'\n'
+                            case ${words[4]} in
+								a*) # address
+                                    if [[ $cword -eq 5 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_interfaces)
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         options='address\='
-                                    elif [[ $count -eq 6 ]]; then
+
+                                    elif [[ $cword -eq 7 ]]; then
                                         options='mask\='
-                                    elif [[ $count -eq 7 ]]; then
+
+                                    elif [[ $cword -eq 8 ]]; then
                                         options='unicast anycast'
-                                    elif [[ $count -eq 8 ]]; then
+
+                                    elif [[ $cword -eq 9 ]]; then
                                         # TODO: suggest a decent gateway using the address and mask
                                         options='gateway\='
-                                    elif [[ $count -eq 9 ]]; then
+
+                                    elif [[ $cword -eq 10 ]]; then
                                         options='gwmetric\='
-                                    elif [[ $count -eq 10 ]]; then
+
+                                    elif [[ $cword -eq 11 ]]; then
                                         options='validlifetime\='
-                                    elif [[ $count -eq 11 ]]; then
+
+                                    elif [[ $cword -eq 12 ]]; then
                                         options='preferredlifetime\='
-                                    elif [[ $count -eq 12 ]]; then
-                                        local IFS=$'\n'
+
+                                    elif [[ $cword -eq 13 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_ipv4_subinterfaces)
-                                    elif [[ $count -eq 13 ]]; then
+
+                                    elif [[ $cword -eq 14 ]]; then
                                         options='active persistent'
-                                    elif [[ $count -eq 14 ]]; then
+
+                                    elif [[ $cword -eq 15 ]]; then
                                         options='skipassource\=true skipassource\=false'
+
                                     fi
 									;;
 
-								dnsservers)
-                                    if [[ $count -eq 4 ]]; then
-                                        local IFS=$'\n'
+								d*) # dnsservers
+                                    if [[ $cword -eq 5 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_interfaces)
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         options='address\='
-                                    elif [[ $count -eq 6 ]]; then
+
+                                    elif [[ $cword -eq 7 ]]; then
                                         options='index\='
-                                    elif [[ $count -eq 7 ]]; then
+
+                                    elif [[ $cword -eq 8 ]]; then
                                         options='validate\=yes validate\=no'
+
                                     fi
 									;;
 
-								excludedportrange)
-                                    if [[ $count -eq 4 ]]; then
+								e*) # excludedportrange
+                                    if [[ $cword -eq 5 ]]; then
                                         options='udp tcp'
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         options='startport\='
-                                    elif [[ $count -eq 6 ]]; then
+
+                                    elif [[ $cword -eq 7 ]]; then
                                         options='numberofports\='
-                                    elif [[ $count -eq 7 ]]; then
+
+                                    elif [[ $cword -eq 8 ]]; then
                                         options='active persistent'
+
                                     fi
 									;;
 
-								neighbors)
-                                    if [[ $count -eq 4 ]]; then
-                                        local IFS=$'\n'
+								n*) # neighbors
+                                    if [[ $cword -eq 5 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_interfaces)
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         options='address\='
-                                    elif [[ $count -eq 6 ]]; then
+
+                                    elif [[ $cword -eq 7 ]]; then
                                         options='neighbor\='
-                                    elif [[ $count -eq 7 ]]; then
-                                        local IFS=$'\n'
+
+                                    elif [[ $cword -eq 8 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_ipv4_subinterfaces)
-                                    elif [[ $count -eq 8 ]]; then
+
+                                    elif [[ $cword -eq 9 ]]; then
                                         options='active persistent'
+
                                     fi
 									;;
 
-								route)
-                                    if [[ $count -eq 4 ]]; then
+								r*) # route
+                                    if [[ $cword -eq 5 ]]; then
                                         options='prefix\='
-                                    elif [[ $count -eq 5 ]]; then
-                                        local IFS=$'\n'
+
+                                    elif [[ $cword -eq 6 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_interfaces)
-                                    elif [[ $count -eq 6 ]]; then
+
+                                    elif [[ $cword -eq 7 ]]; then
                                         options='nexthop\='
-                                    elif [[ $count -eq 7 ]]; then
+
+                                    elif [[ $cword -eq 8 ]]; then
                                         options='siteprefixlength\='
-                                    elif [[ $count -eq 8 ]]; then
+
+                                    elif [[ $cword -eq 9 ]]; then
                                         options='metric\='
-                                    elif [[ $count -eq 9 ]]; then
+
+                                    elif [[ $cword -eq 10 ]]; then
                                         options='publish\=no publish\=age publish\=yes'
-                                    elif [[ $count -eq 10 ]]; then
+
+                                    elif [[ $cword -eq 11 ]]; then
                                         options='validlifetime\='
-                                    elif [[ $count -eq 11 ]]; then
+
+                                    elif [[ $cword -eq 12 ]]; then
                                         options='preferredlifetime\='
-                                    elif [[ $count -eq 12 ]]; then
+
+                                    elif [[ $cword -eq 13 ]]; then
                                         options='store\=active store\=persistent'
+
                                     fi
 									;;
 
-								winsservers)
-                                    if [[ $count -eq 4 ]]; then
-                                        local IFS=$'\n'
+								w*) # winsservers
+                                    if [[ $cword -eq 5 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_interfaces)
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         options='address\='
-                                    elif [[ $count -eq 6 ]]; then
+
+                                    elif [[ $cword -eq 7 ]]; then
                                         options='index\='
+
                                     fi
 									;;
 
                             esac
-
                             ;;
 
-                        delete)
-                            if [[ $count -eq 3 ]]; then
+                        de*) # delete
+                            if [[ $cword -eq 4 ]]; then
                                 options="address arpcache destinationcache \
+
                                     dnsservers excludedportrange neighbors \
                                     route winsservers"
                                 COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
                                 return
                             fi
 
-                            case $subsubsubcmd in
-                                address)
-                                    if [[ $count -eq 4 ]]; then
-                                        local IFS=$'\n'
+                            case ${words[4]} in
+
+                                ad*) # address
+                                    if [[ $cword -eq 5 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_interfaces)
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         # TODO: list IP address for the interface
                                         options='address\='
-                                    elif [[ $count -eq 6 ]]; then
+
+                                    elif [[ $cword -eq 7 ]]; then
                                         # TODO: list gateway IP address for the interface
                                         options='gateway\= gateway\=all'
-                                    elif [[ $count -eq 7 ]]; then
+
+                                    elif [[ $cword -eq 8 ]]; then
                                         options='store\=active store\=persistent'
+
                                     fi
                                     ;;
 
-                                arpcache)
-                                    if [[ $count -eq 4 ]]; then
-                                        local IFS=$'\n'
+                                ar*) # arpcache
+                                    if [[ $cword -eq 5 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_interfaces)
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         # TODO: list IP address for the interface
                                         options='address\='
-                                    elif [[ $count -eq 6 ]]; then
-                                        local IFS=$'\n'
+
+                                    elif [[ $cword -eq 7 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_ipv4_subinterfaces)
-                                    elif [[ $count -eq 7 ]]; then
+
+                                    elif [[ $cword -eq 8 ]]; then
                                         options='store\=active store\=persistent'
+
                                     fi
                                     ;;
 
-                                destinationcache)
-                                    if [[ $count -eq 4 ]]; then
-                                        local IFS=$'\n'
+                                de*) # destinationcache
+                                    if [[ $cword -eq 5 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_interfaces)
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         # TODO: list IP address for the interface
                                         options='address\='
+
                                     fi
                                     ;;
 
-                                dnsservers)
-                                    if [[ $count -eq 4 ]]; then
-                                        local IFS=$'\n'
+                                dn*) # dnsservers
+                                    if [[ $cword -eq 5 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_interfaces)
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         # TODO: list IP address for the interface
                                         options='address\=all address\='
-                                    elif [[ $count -eq 6 ]]; then
+
+                                    elif [[ $cword -eq 7 ]]; then
                                         options='validate\=yes validate\=no'
+
                                     fi
                                     ;;
 
-                                excludedportrange)
-                                    if [[ $count -eq 4 ]]; then
+                                e*) # excludedportrange
+                                    if [[ $cword -eq 5 ]]; then
                                         options='tcp udp'
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         options='startport\='
-                                    elif [[ $count -eq 6 ]]; then
+
+                                    elif [[ $cword -eq 7 ]]; then
                                         options='numberofports\='
-                                    elif [[ $count -eq 7 ]]; then
+
+                                    elif [[ $cword -eq 8 ]]; then
                                         options='store\=active store\=persistent'
+
                                     fi
                                     ;;
 
-                                neighbors)
-                                    if [[ $count -eq 4 ]]; then
-                                        local IFS=$'\n'
+                                n*) # neighbors
+                                    if [[ $cword -eq 5 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_interfaces)
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         # TODO: list neighbor IP addresses
                                         options='address\='
-                                    elif [[ $count -eq 6 ]]; then
-                                        local IFS=$'\n'
+
+                                    elif [[ $cword -eq 7 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_ipv4_subinterfaces)
-                                    elif [[ $count -eq 7 ]]; then
+
+                                    elif [[ $cword -eq 8 ]]; then
                                         options='store\=active store\=persistent'
+
                                     fi
                                     ;;
 
-                                route)
-                                    if [[ $count -eq 4 ]]; then
+                                r*) # route
+                                    if [[ $cword -eq 5 ]]; then
                                         # TODO: suggest existing route prefixes
                                         options='prefix\='
-                                    elif [[ $count -eq 5 ]]; then
-                                        local IFS=$'\n'
+
+                                    elif [[ $cword -eq 6 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_interfaces)
-                                    elif [[ $count -eq 6 ]]; then
+
+                                    elif [[ $cword -eq 7 ]]; then
                                         # TODO: suggest existing next hop addresses
                                         options='nexthop\='
-                                    elif [[ $count -eq 7 ]]; then
+
+                                    elif [[ $cword -eq 8 ]]; then
                                         options='store\=active store\=persistent'
+
                                     fi
                                     ;;
 
-                                winsservers)
-                                    if [[ $count -eq 4 ]]; then
-                                        local IFS=$'\n'
+                                w*) # winsservers
+                                    if [[ $cword -eq 5 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_interfaces)
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         # TODO: suggest existing winsservers
                                         options='address\=all address\='
+
                                     fi
                                     ;;
 
                             esac
-
                             ;;
 
                         set)
 
-                            if [[ $count -eq 3 ]]; then
+                            if [[ $cword -eq 4 ]]; then
                                 options="address compartment dnsservers \
                                     dynamicportrange global interface  \
                                     neighbors route subinterface winsservers"
@@ -969,69 +1027,91 @@ _netsh()
                                 return
                             fi
 
-                            case $subsubsubcmd in
-                                address)
-                                    if [[ $count -eq 4 ]]; then
-                                        local IFS=$'\n'
+                            case ${words[4]} in
+
+                                a*) # address
+                                    if [[ $cword -eq 5 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_interfaces)
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         options='dhcp static'
-                                    elif [[ $count -eq 6 ]]; then
+
+                                    elif [[ $cword -eq 7 ]]; then
                                         options='address\='
-                                    elif [[ $count -eq 7 ]]; then
+
+                                    elif [[ $cword -eq 8 ]]; then
                                         options='mask\='
-                                    elif [[ $count -eq 8 ]]; then
+
+                                    elif [[ $cword -eq 9 ]]; then
                                         options='gateway\=none gateway\='
-                                    elif [[ $count -eq 9 ]]; then
+
+                                    elif [[ $cword -eq 10 ]]; then
                                         options='gwmetric\='
-                                    elif [[ $count -eq 10 ]]; then
+
+                                    elif [[ $cword -eq 11 ]]; then
                                         options='unicast anycast'
-                                    elif [[ $count -eq 11 ]]; then
-                                        local IFS=$'\n'
+
+                                    elif [[ $cword -eq 12 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_ipv4_subinterfaces)
-                                    elif [[ $count -eq 12 ]]; then
+
+                                    elif [[ $cword -eq 13 ]]; then
                                         options='active persistent'
+
                                     fi
                                     ;;
 
-                                compartment)
-                                    if [[ $count -eq 4 ]]; then
+                                c*) # compartment
+                                    if [[ $cword -eq 5 ]]; then
                                         options='compartment\='
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         options='defaultcurhoplimit\='
-                                    elif [[ $count -eq 6 ]]; then
+
+                                    elif [[ $cword -eq 7 ]]; then
                                         options='active persistent'
+
                                     fi
                                     ;;
 
-                                dnsservers)
-                                    if [[ $count -eq 4 ]]; then
-                                        local IFS=$'\n'
+                                dn*) # dnsservers
+                                    if [[ $cword -eq 5 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_interfaces)
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         options='dhcp static'
-                                    elif [[ $count -eq 6 ]]; then
+
+                                    elif [[ $cword -eq 7 ]]; then
                                         options='address\= address\=none'
-                                    elif [[ $count -eq 7 ]]; then
+
+                                    elif [[ $cword -eq 8 ]]; then
                                         options='register\=none register\=primary register\=both'
-                                    elif [[ $count -eq 8 ]]; then
+
+                                    elif [[ $cword -eq 9 ]]; then
                                         options='validate\=yes validate\=no'
+
                                     fi
                                     ;;
 
-                                dynamicportrange)
-                                    if [[ $count -eq 4 ]]; then
+                                dy*) # dynamicportrange
+                                    if [[ $cword -eq 5 ]]; then
                                         options='tcp udp'
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         options='startport\='
-                                    elif [[ $count -eq 6 ]]; then
+
+                                    elif [[ $cword -eq 7 ]]; then
                                         options='numberofports\='
-                                    elif [[ $count -eq 7 ]]; then
+
+                                    elif [[ $cword -eq 8 ]]; then
                                         options='store\=active store\=persistent'
+
                                     fi
                                     ;;
 
-                                global)
+                                gl*) # global
                                     options='defaultcurhoplimit\=
                                     neighborcachelimit\= routecachelimit\=
                                     icmpredirects\=enabled
@@ -1058,10 +1138,11 @@ _netsh()
                                     addressmaskreply\=enabled minmtu\=' 
                                     ;;
 
-                                interface)
-                                    if [[ $count -eq 4 ]]; then
-                                        local IFS=$'\n'
+                                i*) # interface
+                                    if [[ $cword -eq 5 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_interfaces)
+
                                     else
                                         options='forwarding\=disabled
                                         forwarding\=enabled advertise\=disabled
@@ -1102,217 +1183,245 @@ _netsh()
 
                                 # TODO: more
 
-                                neighbors)
+                                n*) # neighbors
                                     ;;
 
-                                route)
+                                r*) # route
                                     ;;
 
-                                subinterface)
-                                    if [[ $count -eq 4 ]]; then
-                                        local IFS=$'\n'
+                                s*) # subinterface
+                                    if [[ $cword -eq 5 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_interfaces)
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         options='mtu\='
-                                    elif [[ $count -eq 6 ]]; then
-                                        local IFS=$'\n'
+
+                                    elif [[ $cword -eq 7 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_ipv4_subinterfaces)
-                                    elif [[ $count -eq 7 ]]; then
+
+                                    elif [[ $cword -eq 8 ]]; then
                                         options='store\=active store\=persistent'
+
                                     fi
                                     ;;
 
-                                winsservers)
-                                    if [[ $count -eq 4 ]]; then
-                                        local IFS=$'\n'
+                                w*) # winsservers
+                                    if [[ $cword -eq 5 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_interfaces)
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         options='dhcp static'
-                                    elif [[ $count -eq 6 ]]; then
+
+                                    elif [[ $cword -eq 7 ]]; then
                                         options='address\=none address\='
+
                                     fi
                                     ;;
 
                             esac
                             ;;
 
-                        show)
+                        sh*) # show
 
-                            if [[ $count -eq 3 ]]; then
+                            if [[ $cword -eq 4 ]]; then
                                 options="addresses compartments config \
                                     destinationcache dnsservers dynamicportrange \
                                     excludedportrange global icmpstats interfaces \
                                     ipaddresses ipnettomedia ipstats joins neighbors \
                                     offload route subinterfaces tcpconnections \
-                                    tcpstats udpconnections udpstats  winsservers"
+                                    tcpstats udpconnections udpstats winsservers"
                                 COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
                                 return
                             fi
 
-                            case $subsubsubcmd in
+                            case ${words[4]} in
 
-                                winsservers)
-                                    ;&
-                                offload)
-                                    ;&
-                                addresses)
-                                    ;&
-                                config)
-                                    ;&
-                                dnsservers)
-                                    if [[ $count -eq 4 ]]; then
-                                        local IFS=$'\n'
+                                # winsservers offload addresses config dnsservers
+                                w*|o*|a*|con*|dn*)
+                                    if [[ $cword -eq 5 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_interfaces)
                                     fi
                                     ;;
 
-                                compartments)
-                                    if [[ $count -eq 4 ]]; then
+                                com*) # compartments
+                                    if [[ $cword -eq 5 ]]; then
                                         options='compartment\='
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         options='normal verbose'
-                                    elif [[ $count -eq 6 ]]; then
+
+                                    elif [[ $cword -eq 7 ]]; then
                                         options='active persistent'
+
                                     fi
                                     ;;
 
-                                destinationcache)
-                                    if [[ $count -eq 4 ]]; then
-                                        local IFS=$'\n'
+                                de*) # destinationcache
+                                    if [[ $cword -eq 5 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_interfaces)
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         options='address\='
-                                    elif [[ $count -eq 6 ]]; then
+
+                                    elif [[ $cword -eq 7 ]]; then
                                         options='normal verbose'
+
                                     fi
                                     ;;
 
-                                excludedportrange)
-                                    ;&
-                                dynamicportrange)
-                                    if [[ $count -eq 4 ]]; then
+                                # excludedportrange dynamicportrange
+                                ex*|dy*)
+                                    if [[ $cword -eq 5 ]]; then
                                         options='tcp udp'
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
+                                        options='active persistent'
+
+                                    fi
+                                    ;;
+
+                                g*) # global
+                                    if [[ $cword -eq 5 ]]; then
                                         options='active persistent'
                                     fi
                                     ;;
 
-                                global)
-                                    if [[ $count -eq 4 ]]; then
-                                        options='active persistent'
-                                    fi
-                                    ;;
-
-                                udpstats)
-                                    ;&
-                                tcpstats)
-                                    ;&
-                                ipnettomedia)
-                                    ;&
-                                ipstats)
-                                    ;&
-                                icmpstats)
-                                    if [[ $count -eq 4 ]]; then
+                                # udpstats tcpstats ipnettomedia ipstats icmpstats
+                                udps*|tcps*|ipn*|ips*|ic*)
+                                    if [[ $cword -eq 5 ]]; then
                                         options='rr\='
                                     fi
                                     ;;
 
-                                interfaces)
-                                    if [[ $count -eq 4 ]]; then
-                                        local IFS=$'\n'
+                                in*) # interfaces
+                                    if [[ $cword -eq 5 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_interfaces)
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         options='rr\='
-                                    elif [[ $count -eq 6 ]]; then
+
+                                    elif [[ $cword -eq 7 ]]; then
                                         options='normal verbose'
-                                    elif [[ $count -eq 7 ]]; then
+
+                                    elif [[ $cword -eq 8 ]]; then
                                         options='active persistent'
+
                                     fi
                                     ;;
 
-                                ipaddresses)
-                                    if [[ $count -eq 4 ]]; then
-                                        local IFS=$'\n'
+                                ipa*) # ipaddresses
+                                    if [[ $cword -eq 5 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_interfaces)
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         options='normal verbose'
-                                    elif [[ $count -eq 6 ]]; then
+
+                                    elif [[ $cword -eq 7 ]]; then
                                         options='active persistent'
+
                                     fi
                                     ;;
 
-                                joins)
-                                    if [[ $count -eq 4 ]]; then
-                                        local IFS=$'\n'
+                                j*) # joins
+                                    if [[ $cword -eq 5 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_interfaces)
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         options='normal verbose'
+
                                     fi
                                     ;;
 
-                                neighbors)
-                                    if [[ $count -eq 4 ]]; then
-                                        local IFS=$'\n'
+                                ne*) # neighbors
+                                    if [[ $cword -eq 5 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_interfaces)
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         # TODO: list neighbor addresses
                                         options='address\='
-                                    elif [[ $count -eq 6 ]]; then
-                                        local IFS=$'\n'
+
+                                    elif [[ $cword -eq 7 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_ipv4_subinterfaces)
-                                    elif [[ $count -eq 7 ]]; then
+
+                                    elif [[ $cword -eq 8 ]]; then
                                         options='normal verbose'
-                                    elif [[ $count -eq 8 ]]; then
+
+                                    elif [[ $cword -eq 9 ]]; then
                                         options='active persistent'
+
                                     fi
                                     ;;
 
-                                route)
-                                    if [[ $count -eq 4 ]]; then
+                                r*) # route
+                                    if [[ $cword -eq 5 ]]; then
                                         options='normal verbose'
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         options='active persistent'
+
                                     fi
                                     ;;
 
-                                subinterfaces)
-                                    if [[ $count -eq 4 ]]; then
-                                        local IFS=$'\n'
+                                s*) # subinterfaces
+                                    if [[ $cword -eq 5 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_interfaces)
-                                    elif [[ $count -eq 5 ]]; then
-                                        local IFS=$'\n'
+
+                                    elif [[ $cword -eq 6 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_ipv4_subinterfaces)
-                                    elif [[ $count -eq 6 ]]; then
+
+                                    elif [[ $cword -eq 7 ]]; then
                                         options='normal verbose'
-                                    elif [[ $count -eq 7 ]]; then
+
+                                    elif [[ $cword -eq 8 ]]; then
                                         options='active persistent'
+
                                     fi
                                     ;;
 
-                                tcpconnections)
-                                    if [[ $count -eq 4 ]]; then
+                                tcpc*) # tcpconnections
+                                    if [[ $cword -eq 5 ]]; then
                                         # TODO: list local ip addresses
                                         options="localaddresses\="
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         options="localport\="
-                                    elif [[ $count -eq 6 ]]; then
+
+                                    elif [[ $cword -eq 7 ]]; then
                                         # TODO: list remote addresses
                                         options='remoteaddress\='
-                                    elif [[ $count -eq 7 ]]; then
+
+                                    elif [[ $cword -eq 8 ]]; then
                                         options='remoteport\='
-                                    elif [[ $count -eq 8 ]]; then
+
+                                    elif [[ $cword -eq 9 ]]; then
                                         options='rr\='
+
                                     fi
                                     ;;
 
-                                udpconnections)
-                                    if [[ $count -eq 4 ]]; then
+                                udpc*) # udpconnections
+                                    if [[ $cword -eq 5 ]]; then
                                         # TODO: list local ip addresses
                                         options="localaddresses\="
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         options="localport\="
-                                    elif [[ $count -eq 6 ]]; then
+
+                                    elif [[ $cword -eq 7 ]]; then
                                         options='rr\='
+
                                     fi
                                     ;;
 
@@ -1323,69 +1432,78 @@ _netsh()
                     ;;
 
                 ipv6)
-                    if [[ $count -eq 2 ]]; then
+                    if [[ $cword -eq 3 ]]; then
                         options='6to4 add delete dump isatap reset set show'
                         COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
                         return
                     fi
 
-                    case $subsubcmd in
+                    case ${words[3]} in
 
                         6to4)
-                            if [[ $count -eq 3 ]]; then
+                            if [[ $cword -eq 4 ]]; then
                                 options='dump set show'
                             fi
 
-                            case $subsubsubcmd in
+                            case ${words[4]} in
 
                                 set)
-                                    if [[ $count -eq 4 ]]; then
+                                    if [[ $cword -eq 5 ]]; then
                                         options='interface relay routing state'
                                     fi
 
-                                    case $subsubsubsubcmd in
+                                    case ${words[5]} in
 
                                         # TODO: may want to prepend the property name onto some of the options below to be more usable and readable
 
-                                        interface)
-                                            if [[ $count -eq 5 ]]; then
+                                        i*) # interface
+                                            if [[ $cword -eq 6 ]]; then
                                                 options='name\='
-                                            elif [[ $count -eq 6 ]]; then
+
+                                            elif [[ $cword -eq 7 ]]; then
                                                 options='enabled disabled default'
+
                                             fi
                                             ;;
 
-                                        relay)
-                                            if [[ $count -eq 5 ]]; then
+                                        re*) # relay
+                                            if [[ $cword -eq 6 ]]; then
                                                 options='default name\='
-                                            elif [[ $count -eq 6 ]]; then
+
+                                            elif [[ $cword -eq 7 ]]; then
                                                 options='enabled disabled automatic default'
-                                            elif [[ $count -eq 7 ]]; then
+
+                                            elif [[ $cword -eq 8 ]]; then
                                                 options='interval\='
+
                                             fi
                                             ;;
 
-                                        routing)
-                                            if [[ $count -eq 5 ]]; then
+                                        ro*) # routing
+                                            if [[ $cword -eq 6 ]]; then
                                                 options='enabled disabled automatic default'
-                                            elif [[ $count -eq 6 ]]; then
+
+                                            elif [[ $cword -eq 7 ]]; then
                                                 options='enabled disabled default'
+
                                             fi
                                             ;;
 
-                                        state)
-                                            if [[ $count -eq 5 ]]; then
+                                        s*) # state
+                                            if [[ $cword -eq 6 ]]; then
                                                 options='enabled disabled default'
-                                            elif [[ $count -eq 6 ]]; then
+
+                                            elif [[ $cword -eq 7 ]]; then
                                                 options='enabled disabled default'
+
                                             fi
                                             ;;
 
                                     esac
                                     ;;
 
-                                show)
-                                    if [[ $count -eq 4 ]]; then
+                                sh*) # show
+                                    if [[ $cword -eq 5 ]]; then
                                         options='interface relay routing state'
                                     fi
                                     ;;
@@ -1394,78 +1512,85 @@ _netsh()
                             ;; 
 
                         add)
-                            if [[ $count -eq 3 ]]; then
+                            if [[ $cword -eq 4 ]]; then
                                 options='address dnsservers excludedportrange
                                 neighbors potentialrouter prefixpolicy route
                                 v6v4tunnel'
                             fi
 
-                            case $subsubsubcmd in
+                            case ${words[4]} in
 
-                                address)
-                                    if [[ $count -eq 4 ]]; then
-                                        local IFS=$'\n'
+                                a*) # address
+                                    if [[ $cword -eq 5 ]]; then
+                                        IFS=$'\n'
                                         options=$(_netsh_ipv6_subinterfaces)
-                                    elif [[ $count -eq 5 ]]; then
+
+                                    elif [[ $cword -eq 6 ]]; then
                                         options='address\='
-                                    elif [[ $count -eq 6 ]]; then
+
+                                    elif [[ $cword -eq 7 ]]; then
                                         options='unicast anycast'
-                                    elif [[ $count -eq 7 ]]; then
+
+                                    elif [[ $cword -eq 8 ]]; then
                                         options='validlifetime\= validlifetime\=infinite'
-                                    elif [[ $count -eq 8 ]]; then
+
+                                    elif [[ $cword -eq 9 ]]; then
                                         options='preferredlifetime\= preferredlifetime\=infinite'
-                                    elif [[ $count -eq 9 ]]; then
+
+                                    elif [[ $cword -eq 10 ]]; then
                                         options='store\=active store\=persistent'
-                                    elif [[ $count -eq 10 ]]; then
+
+                                    elif [[ $cword -eq 11 ]]; then
                                         options='skipassource\=true skipassource\=false'
+
                                     fi
                                     ;;
 
-                                dnsservers)
+                                d*) # dnsservers
                                     # TODO: implement
-                                    if [[ $count -eq 4 ]]; then
+                                    if [[ $cword -eq 5 ]]; then
                                         options=''
                                     fi
                                     ;;
 
-                                excludedportrange)
+                                e*) # excludedportrange
                                     # TODO: implement
-                                    if [[ $count -eq 4 ]]; then
+                                    if [[ $cword -eq 5 ]]; then
                                         options=''
                                     fi
                                     ;;
 
-                                neighbors)
+                                n*) # neighbors
                                     # TODO: implement
-                                    if [[ $count -eq 4 ]]; then
+                                    if [[ $cword -eq 5 ]]; then
                                         options=''
                                     fi
                                     ;;
 
-                                potentialrouter)
+                                po*) # potentialrouter
                                     # TODO: implement
-                                    if [[ $count -eq 4 ]]; then
+                                    if [[ $cword -eq 5 ]]; then
                                         options=''
                                     fi
                                     ;;
 
-                                prefixpolicy)
+                                pr*) # prefixpolicy
                                     # TODO: implement
-                                    if [[ $count -eq 4 ]]; then
+                                    if [[ $cword -eq 5 ]]; then
                                         options=''
                                     fi
                                     ;;
 
-                                route)
+                                r*) # route
                                     # TODO: implement
-                                    if [[ $count -eq 4 ]]; then
+                                    if [[ $cword -eq 5 ]]; then
                                         options=''
                                     fi
                                     ;;
 
-                                v6v4tunnel)
+                                v*) # v6v4tunnel
                                     # TODO: implement
-                                    if [[ $count -eq 4 ]]; then
+                                    if [[ $cword -eq 5 ]]; then
                                         options=''
                                     fi
                                     ;;
@@ -1473,11 +1598,11 @@ _netsh()
                             esac
                             ;;
 
-                        delete)
+                        del*) # delete
                             # TODO: implement
                             ;;
 
-                        dump)
+                        du*) # dump
                             # TODO: implement
                             ;;
 
@@ -1485,7 +1610,7 @@ _netsh()
                             # TODO: implement
                             ;;
 
-                        reset)
+                        re*) # reset
                             # TODO: implement
                             ;;
 
@@ -1493,105 +1618,112 @@ _netsh()
                             # TODO: implement
                             ;;
 
-                        show)
+                        sh*) # show
                             # TODO: implement
                             ;;
 
                     esac
                     ;;
 
-                isatap)
+                is*) # isatap
 
-                    if [[ $count -eq 2 ]]; then
+                    if [[ $cword -eq 3 ]]; then
                         options='dump set show'
                         COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
                         return
                     fi
 
-                    case $subsubcmd in
+                    case ${words[3]} in
+
                         show)
-                            if [[ $count -eq 3 ]]; then
+                            if [[ $cword -eq 4 ]]; then
                                 options='router state'
                             fi
                             ;;
 
                         set)
-                            if [[ $count -eq 3 ]]; then
+                            if [[ $cword -eq 4 ]]; then
                                 # TODO: set router name= state=enabled|disabled|default interval=
                                 # TODO: set state enabled|disabled|default
                                 options='router state'
                             fi
                             ;;
                     esac
-
                     ;;
 
-                portproxy)
+                p*) # portproxy
                     # TODO: more detail
-                    if [[ $count -eq 2 ]]; then
+                    if [[ $cword -eq 3 ]]; then
                         options='add delete dump reset set show'
                     fi
                     ;;
 
                 set)
-                    if [[ $count -eq 2 ]]; then
+                    if [[ $cword -eq 3 ]]; then
                         options='interface'
-                    elif [[ $count -eq 3 ]]; then
-                        local IFS=$'\n'
+
+                    elif [[ $cword -eq 4 ]]; then
+                        IFS=$'\n'
                         options=$(_netsh_interfaces)
-                    elif [[ $count -eq 4 ]]; then
+
+                    elif [[ $cword -eq 5 ]]; then
                         options='enabled disabled'
-                    elif [[ $count -eq 5 ]]; then
+
+                    elif [[ $cword -eq 6 ]]; then
                         options='connected disconnected'
-                    elif [[ $count -eq 6 ]]; then
+
+                    elif [[ $cword -eq 7 ]]; then
                         options='newname\='
+
                     fi
                     ;;
 
-                show)
-                    if [[ $count -eq 2 ]]; then
+                sh*) # show
+                    if [[ $cword -eq 3 ]]; then
                         options='interface'
-                    elif [[ $count -eq 3 ]]; then
-                        local IFS=$'\n'
+
+                    elif [[ $cword -eq 4 ]]; then
+                        IFS=$'\n'
                         options=$(_netsh_interfaces)
+
                     fi
                     ;;
 
                 tcp)
                     # TODO: more detail
-                    if [[ $count -eq 2 ]]; then
+                    if [[ $cword -eq 3 ]]; then
                         options='add delete dump reset set show'
                         COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
                         return
                     fi
 
-                    case $subsubcmd in
-                        add)
-                            if [[ $count -eq 3 ]]; then
+                    case ${words[3]} in
+                        a*) # add
+                            if [[ $cword -eq 4 ]]; then
                                 options="chimneyapplication chimneyport \
                                     supplementalport supplementalsubnet" 
                             fi
                             ;;
 
-                        delete)
-                            if [[ $count -eq 3 ]]; then
+                        de*) # delete
+                            if [[ $cword -eq 4 ]]; then
                                 options="chimneyapplication chimneyport \
                                     supplementalport supplementalsubnet" 
                             fi
                             ;;
 
-                        reset)
+                        r*) # reset
                             ;;
 
                         set)
-                            if [[ $count -eq 3 ]]; then
+                            if [[ $cword -eq 4 ]]; then
                                 options="global heuristics security \
                                     supplimental"
                             fi
                             ;;
 
-                        show)
-                            if [[ $count -eq 3 ]]; then
+                        sh*) # show
+                            if [[ $cword -eq 4 ]]; then
                                 options="chimneyapplications chimneyports \
                                     chimneystats global heuristics \
                                     netdmastats rscstats security \
@@ -1606,69 +1738,68 @@ _netsh()
 
                 teredo)
                     # TODO: more detail
-                    if [[ $count -eq 2 ]]; then
+                    if [[ $cword -eq 3 ]]; then
                         options='dump set show'
                     fi
                     ;;
 
-
             esac
             ;;
 
-        ipsec)
-            if [[ $count -eq 1 ]]; then
+        ips*) # ipsec
+            if [[ $cword -eq 2 ]]; then
                 options='dump dynamic static'
             fi
             # TODO: more detail
             ;;
 
-        lan)
-            if [[ $count -eq 1 ]]; then
+        l*) # lan
+            if [[ $cword -eq 2 ]]; then
                 options='add delete dump export reconnect set show'
             fi
             # TODO: more detail
             ;;
 
-        namespace)
-            if [[ $count -eq 1 ]]; then
+        nam*) # namespace
+            if [[ $cword -eq 2 ]]; then
                 options='dump show'
             fi
             ;;
 
         nap)
-            if [[ $count -eq 1 ]]; then
+            if [[ $cword -eq 2 ]]; then
                 options='client dump hra reset show'
             fi
             # TODO: more detail
             ;;
 
-        netio)
-            if [[ $count -eq 1 ]]; then
+        ne*) # netio
+            if [[ $cword -eq 2 ]]; then
                 options='add delete dump show'
             fi
             # TODO: more detail
             ;;
 
-        p2p)
-            if [[ $count -eq 1 ]]; then
+        p*) # p2p
+            if [[ $cword -eq 2 ]]; then
                 options='dump group idmgr pnrp'
             fi
             # TODO: more detail
             ;;
 
-        ras)
-            if [[ $count -eq 1 ]]; then
+        ra*) # ras
+            if [[ $cword -eq 2 ]]; then
                 options='aaaa add delete diagnostics dump ip ipv6 set show'
             fi
             # TODO: more detail
             ;;
 
-        rpc)
-            if [[ $count -eq 1 ]]; then
+        rp*) # rpc
+            if [[ $cword -eq 2 ]]; then
                 options='add delete dump filter reset show'
             else
 
-                case $subcmd in
+                case ${words[2]} in
 
                     delete)
                         # TODO: implement
@@ -1683,56 +1814,63 @@ _netsh()
             fi
             ;;
 
-        set)
-            if [[ $count -eq 1 ]]; then
+        se*) # set
+            if [[ $cword -eq 2 ]]; then
                 options='machine'
-            elif [[ $count -eq 2 ]]; then
+
+            elif [[ $cword -eq 3 ]]; then
                 options='name\='
-            elif [[ $count -eq 3 ]]; then
+
+            elif [[ $cword -eq 4 ]]; then
                 options='user=\'
-            elif [[ $count -eq 4 ]]; then
+
+            elif [[ $cword -eq 5 ]]; then
                 options='pwd=\'
+
             fi
             ;;
 
-        show)
-            if [[ $count -eq 1 ]]; then
+        sh*) # show
+            if [[ $cword -eq 2 ]]; then
                 options='alias helper'
             fi
             ;;
 
-        wfp)
-            if [[ $count -eq 1 ]]; then
+        wf*) # wfp
+            if [[ $cword -eq 2 ]]; then
                 options='capture dump set show'
             fi
             # TODO: more detail
             ;;
 
-        winhttp)
-            if [[ $count -eq 1 ]]; then
+        winh*) # winhttp
+            if [[ $cword -eq 2 ]]; then
                 options='dump import reset set show'
             else
-                case $subsubcmd in
+                case ${words[3]} in
 
-                    import)
-                        if [[ $count -eq 2 ]]; then
+                    i*) # import
+                        if [[ $cword -eq 3 ]]; then
                             options='proxy'
-                        elif [[ $count -eq 3 ]]; then
+
+                        elif [[ $cword -eq 4 ]]; then
                             options='ie'
+
                         fi
                         ;;
 
-                    reset)
-                        if [[ $count -eq 2 ]]; then
+                    r*) # reset
+                        if [[ $cword -eq 3 ]]; then
                             options='proxy tracing'
                         fi
                         ;;
 
                     set)
-                        if [[ $count -eq 2 ]]; then
+                        if [[ $cword -eq 3 ]]; then
                             options='proxy tracing'
+
                         else
-                            case $subsubsubcmd in
+                            case ${words[4]} in
 
                                 proxy)
                                     # TODO: implement
@@ -1746,8 +1884,8 @@ _netsh()
                         fi
                         ;;
 
-                    show)
-                        if [[ $count -eq 2 ]]; then
+                    sh*) # show
+                        if [[ $cword -eq 3 ]]; then
                             options='proxy tracing'
                         fi
                         ;;
@@ -1756,261 +1894,278 @@ _netsh()
             fi
             ;;
 
-        winsock)
-            if [[ $count -eq 1 ]]; then
+        wins*) # winsock
+            if [[ $cword -eq 2 ]]; then
                 options='audit dump remove reset set show'
                 COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
                 return
             fi
 
-            case $subcmd in
-                audit)
-                    if [[ $count -eq 2 ]]; then
+            case ${words[2]} in
+
+                a*) # audit
+                    if [[ $cword -eq 3 ]]; then
                         options='trail'
                     fi
                     ;;
 
-                remove)
-                    if [[ $count -eq 2 ]]; then
+                rem*) # remove
+                    if [[ $cword -eq 3 ]]; then
                         options='provider'
                     fi
                     ;;
 
-                reset)
-                    ;;
-
                 set)
-                    if [[ $count -eq 2 ]]; then
+                    if [[ $cword -eq 3 ]]; then
                         options='autotuning'
+
+                    elif [[ $cword -eq 4 ]]; then
+                        options='on off'
+
                     fi
-
-                    case $subsubcmd in
-                        autotuning)
-                            if [[ $count -eq 3 ]]; then
-                                options='on off'
-                            fi
-                            ;;
-                    esac
-
                     ;;
 
-                show)
-                    if [[ $count -eq 2 ]]; then
+                sh*) # show
+                    if [[ $cword -eq 3 ]]; then
                         options='autotuning catalog'
                     fi
                     ;;
 
             esac
-
             ;;
 
-        wlan)
+        wl*) # wlan
 
-            if [[ $count -eq 1 ]]; then
+            if [[ $cword -eq 2 ]]; then
                 options="add connect delete disconnect dump export refresh \
                     reportissues set show start stop"
                 COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
                 return
             fi
 
-            case $subcmd in
-                add)
-                    if [[ $count -eq 2 ]]; then
+            case ${words[2]} in
+
+                a*) # add
+                    if [[ $cword -eq 3 ]]; then
                         options='filter profile'
                         COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
                         return
                     fi
 
-                    case $subsubcmd in
+                    case ${words[3]} in
 
-                        filter)
-                            if [[ $count -eq 3 ]]; then
+                        f*) # filter
+                            if [[ $cword -eq 4 ]]; then
                                 options='allow block denyall'
-                            elif [[ $count -eq 4 ]]; then
-                                local IFS=$'\n'
+
+                            elif [[ $cword -eq 5 ]]; then
+                                IFS=$'\n'
                                 options=$(_netsh_wlan_profiles)
-                            elif [[ $count -eq 5 ]]; then
+
+                            elif [[ $cword -eq 6 ]]; then
                                 options='infrastructure adhoc'
+
                             fi
                             ;;
 
-                        profile)
-                            if [[ $count -eq 3 ]]; then
+                        p*) # profile
+                            if [[ $cword -eq 4 ]]; then
                                 options='filename\='
-                            elif [[ $count -eq 4 ]]; then
-                                local IFS=$'\n'
+
+                            elif [[ $cword -eq 5 ]]; then
+                                IFS=$'\n'
                                 options=$(_netsh_wlan_interfaces)
-                            elif [[ $count -eq 5 ]]; then
+
+                            elif [[ $cword -eq 6 ]]; then
                                 options='all current'
+
                             fi
                             ;;
 
                     esac
-
                     ;;
 
-                connect)
-                    if [[ $count -eq 2 ]]; then
-                        local IFS=$'\n'
+                c*) # connect
+                    if [[ $cword -eq 3 ]]; then
+                        IFS=$'\n'
                         options=$(_netsh_wlan_profiles)
-                    elif [[ $count -eq 3 ]]; then
-                        local IFS=$'\n'
+
+                    elif [[ $cword -eq 4 ]]; then
+                        IFS=$'\n'
                         options=$(_netsh_wlan_profiles)
-                    elif [[ $count -eq 4 ]]; then
-                        local IFS=$'\n'
+
+                    elif [[ $cword -eq 5 ]]; then
+                        IFS=$'\n'
                         options=$(_netsh_wlan_interfaces)
+
                     fi
                     ;;
 
-                delete)
-                    if [[ $count -eq 2 ]]; then
+                de*) # delete
+                    if [[ $cword -eq 3 ]]; then
                         options='filter profile'
+
                     else
 
-                        case $subsubcmd in
+                        case ${words[3]} in
 
-                            filter)
-                                if [[ $count -eq 3 ]]; then
+                            f*) # filter
+                                if [[ $cword -eq 4 ]]; then
                                     options='allow block denyall'
-                                elif [[ $count -eq 4 ]]; then
-                                    local IFS=$'\n'
+
+                                elif [[ $cword -eq 5 ]]; then
+                                    IFS=$'\n'
                                     options=$(_netsh_wlan_profiles)
-                                elif [[ $count -eq 5 ]]; then
+
+                                elif [[ $cword -eq 6 ]]; then
                                     options='infrastructure adhoc'
+
                                 fi
                                 ;;
 
-                            profile)
-                                if [[ $count -eq 3 ]]; then
-                                    local IFS=$'\n'
+                            p*) # profile
+                                if [[ $cword -eq 4 ]]; then
+                                    IFS=$'\n'
                                     options=$(_netsh_wlan_profiles)
-                                elif [[ $count -eq 4 ]]; then
-                                    local IFS=$'\n'
+
+                                elif [[ $cword -eq 5 ]]; then
+                                    IFS=$'\n'
                                     options=$(_netsh_wlan_interfaces)
+
                                 fi
                                 ;;
 
                         esac
-
                     fi
                     ;;
 
-                disconnect)
-                    if [[ $count -eq 2 ]]; then
-                        local IFS=$'\n'
+                di*) # disconnect
+                    if [[ $cword -eq 3 ]]; then
+                        IFS=$'\n'
                         options=$(_netsh_wlan_interfaces)
                     fi
                     ;;
 
-                export)
-                    if [[ $count -eq 2 ]]; then
+                e*) # export
+                    if [[ $cword -eq 3 ]]; then
                         options='hostednetworkprofile profile'
                     else
 
-                        case $subsubcmd in
+                        case ${words[3]} in
 
-                            profile)
-                                if [[ $count -eq 3 ]]; then
-                                    local IFS=$'\n'
+                            p*) # profile
+                                if [[ $cword -eq 4 ]]; then
+                                    IFS=$'\n'
                                     options=$(_netsh_wlan_profiles)
-                                elif [[ $count -eq 4 ]]; then
+
+                                elif [[ $cword -eq 5 ]]; then
                                     options='folder\='
-                                elif [[ $count -eq 5 ]]; then
-                                    local IFS=$'\n'
+
+                                elif [[ $cword -eq 6 ]]; then
+                                    IFS=$'\n'
                                     options=$(_netsh_wlan_interfaces)
-                                elif [[ $count -eq 6 ]]; then
+
+                                elif [[ $cword -eq 7 ]]; then
                                     options='key\=clear'
+
                                 fi
                                 ;;
 
                         esac
-
                     fi
                     ;;
 
-                refresh)
-                    if [[ $count -eq 2 ]]; then
+                ref*) # refresh
+                    if [[ $cword -eq 3 ]]; then
                         options='hostednetwork'
                     fi
                     ;;
 
-                reportissues)
-                    ;;
-
                 set)
-                    if [[ $count -eq 2 ]]; then
+                    if [[ $cword -eq 3 ]]; then
                         options="allowexplicitcreds autoconfig blockednetworks \
                             blockperiod createalluserprofile hostednetwork \
                             profileorder profileparameter profiletype tracing"
                     else
 
-                        case $subsubcmd in
+                        case ${words[3]} in
 
-                            allowexplicitcreds)
-                                if [[ $count -eq 3 ]]; then
+                            al*) # allowexplicitcreds
+                                if [[ $cword -eq 4 ]]; then
                                     options='yes no'
                                 fi
                                 ;;
 
-                            autoconfig)
-                                if [[ $count -eq 3 ]]; then
+                            au*) # autoconfig
+                                if [[ $cword -eq 4 ]]; then
                                     options='yes no'
-                                elif [[ $count -eq 4 ]]; then
-                                    local IFS=$'\n'
+
+                                elif [[ $cword -eq 5 ]]; then
+                                    IFS=$'\n'
                                     options=$(_netsh_wlan_interfaces)
+
                                 fi
                                 ;;
 
-                            blockednetworks)
-                                if [[ $count -eq 3 ]]; then
+                            blocke*) # blockednetworks
+                                if [[ $cword -eq 4 ]]; then
                                     options='show hide'
                                 fi
                                 ;;
 
-                            blockperiod)
-                                if [[ $count -eq 3 ]]; then
+                            blockp*) # blockperiod
+                                if [[ $cword -eq 4 ]]; then
                                     options='value\='
                                 fi
                                 ;;
 
-                            createalluserprofile)
-                                if [[ $count -eq 3 ]]; then
+                            c*) # createalluserprofile
+                                if [[ $cword -eq 4 ]]; then
                                     options='yes no'
                                 fi
                                 ;;
 
-                            hostednetwork)
-                                if [[ $count -eq 3 ]]; then
+                            h*) # hostednetwork
+                                if [[ $cword -eq 4 ]]; then
                                     options='allow disallow'
-                                elif [[ $count -eq 4 ]]; then
-                                    local IFS=$'\n'
+
+                                elif [[ $cword -eq 5 ]]; then
+                                    IFS=$'\n'
                                     options=$(_netsh_wlan_profiles)
-                                elif [[ $count -eq 5 ]]; then
+
+                                elif [[ $cword -eq 6 ]]; then
                                     options='key\='
-                                elif [[ $count -eq 6 ]]; then
+
+                                elif [[ $cword -eq 7 ]]; then
                                     options='persistent temporary'
+
                                 fi
                                 ;;
 
-                            profileorder)
-                                if [[ $count -eq 3 ]]; then
-                                    local IFS=$'\n'
+                            profileo*) # profileorder
+                                if [[ $cword -eq 4 ]]; then
+                                    IFS=$'\n'
                                     options=$(_netsh_wlan_profiles)
-                                elif [[ $count -eq 4 ]]; then
-                                    local IFS=$'\n'
+
+                                elif [[ $cword -eq 5 ]]; then
+                                    IFS=$'\n'
                                     options=$(_netsh_wlan_interfaces)
-                                elif [[ $count -eq 5 ]]; then
+
+                                elif [[ $cword -eq 6 ]]; then
                                     options='priority\='
+
                                 fi
                                 ;;
 
-                            profileparameter) 
-                                if [[ $count -eq 3 ]]; then
-                                    local IFS=$'\n'
+                            profilep*) # profileparameter
+                                if [[ $cword -eq 4 ]]; then
+                                    IFS=$'\n'
                                     options=$(_netsh_wlan_profiles)
-                                elif [[ $count -eq 4 ]]; then
-                                    local IFS=$'\n'
+
+                                elif [[ $cword -eq 5 ]]; then
+                                    IFS=$'\n'
                                     options=$(_netsh_wlan_interfaces)
+
                                 else
                                     # TODO: cull the options list
                                     # TODO: list options for ssidname
@@ -2047,31 +2202,33 @@ _netsh()
                                 fi
                                 ;;
 
-                            profiletype)
-                                if [[ $count -eq 3 ]]; then
-                                    local IFS=$'\n'
+                            profilet*) # profiletype
+                                if [[ $cword -eq 4 ]]; then
+                                    IFS=$'\n'
                                     options=$(_netsh_wlan_profiles)
-                                elif [[ $count -eq 4 ]]; then
+
+                                elif [[ $cword -eq 5 ]]; then
                                     options='all current'
-                                elif [[ $count -eq 5 ]]; then
-                                    local IFS=$'\n'
+
+                                elif [[ $cword -eq 6 ]]; then
+                                    IFS=$'\n'
                                     options=$(_netsh_wlan_interfaces)
+
                                 fi
                                 ;;
 
-                            tracing)
-                                if [[ $count -eq 3 ]]; then
+                            t*) # tracing
+                                if [[ $cword -eq 4 ]]; then
                                     options='yes no persistent'
                                 fi
                                 ;;
 
                         esac
-
                     fi
                     ;;
 
-                show)
-                    if [[ $count -eq 2 ]]; then
+                sh*) # show
+                    if [[ $cword -eq 3 ]]; then
                         options="all allowexplicitcreds autoconfig \
                             blockednetworks createalluserprofile drivers filters \
                             hostednetwork interfaces networks  \
@@ -2079,62 +2236,63 @@ _netsh()
                             tracing"
                     else
 
-                        case $subsubcmd in
+                        case ${words[3]} in
+
                             filters)
-                                if [[ $count -eq 3 ]]; then
+                                if [[ $cword -eq 4 ]]; then
                                     options='allow block'
                                 fi
                                 ;;
 
                             hostednetwork)
-                                if [[ $count -eq 3 ]]; then
+                                if [[ $cword -eq 4 ]]; then
                                     options='security'
                                 fi
                                 ;;
 
                             networks)
-                                if [[ $count -eq 3 ]]; then
-                                    local IFS=$'\n'
+                                if [[ $cword -eq 4 ]]; then
+                                    IFS=$'\n'
                                     options=$(_netsh_wlan_interfaces)
-                                elif [[ $count -eq 4 ]]; then
+
+                                elif [[ $cword -eq 5 ]]; then
                                     options='ssid bssid'
+
                                 fi
                                 ;;
 
                             profiles)
-                                if [[ $count -eq 3 ]]; then
-                                    local IFS=$'\n'
+                                if [[ $cword -eq 4 ]]; then
+                                    IFS=$'\n'
                                     options=$(_netsh_wlan_profiles)
-                                elif [[ $count -eq 4 ]]; then
-                                    local IFS=$'\n'
+
+                                elif [[ $cword -eq 5 ]]; then
+                                    IFS=$'\n'
                                     options=$(_netsh_wlan_interfaces)
-                                elif [[ $count -eq 5 ]]; then
+
+                                elif [[ $cword -eq 6 ]]; then
                                     options='key\=clear'
+
                                 fi
                                 ;;
+
                         esac
                     fi
                     ;;
 
                 start)
-                    if [[ $count -eq 2 ]]; then
+                    if [[ $cword -eq 3 ]]; then
                         options='hostednetwork'
                     fi
                     ;;
 
                 stop)
-                    if [[ $count -eq 2 ]]; then
+                    if [[ $cword -eq 3 ]]; then
                         options='hostednetwork'
                     fi
                     ;;
 
             esac
-
-            ;;
-
-        *)
-            # TODO: cull the options list
-            options="-a -c -r -u -p -f ${commands[@]}" 
             ;;
 
     esac

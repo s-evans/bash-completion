@@ -8,10 +8,14 @@ _head()
 {
     local cur prev words cword options cmds
     _init_completion
+
+    cmds=( ${words[@]::cword} ) 
     cur=$(printf '%q' "${cur,,}")
+
     options=( '-c' '--bytes=' '-n' '--lines=' '-q' '--quiet' '--silent' '-v'
     '--verbose' '--help ' '--version')
     options=$(_complement cmds[@] options[@])
+
     COMPREPLY=( $( compgen -f -W '$options' -- $cur ) )
     [[ $COMPREPLY == *= ]] && compopt -o nospace
 }

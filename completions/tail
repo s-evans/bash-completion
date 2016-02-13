@@ -11,6 +11,7 @@ _tail()
 
     cur=$(printf '%q' "${cur,,}")
     cmds=( ${words[@]::cword} ) 
+
     options=( '--bytes=' '--follow' '--follow=' '--help' '--lines=' \
         '--max-unchanged-stats=' '--pid=' '--quiet' '--retry' '--silent' \
         '--sleep-interval=' '--verbose' '-F' '-c' '-f' '-n' '-q' '-s' '-v' )

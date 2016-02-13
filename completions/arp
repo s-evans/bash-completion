@@ -1,0 +1,79 @@
+
+# TODO: linux support
+
+if [[ $OSTYPE == cygwin ]]; then
+
+    _arp_if()
+    {
+        printf '%q ' $(arp -a | sed -e '/^I/!d' -e 's/[^ ]\+ //' -e 's/ .*//')
+    }
+
+    _arp_eth()
+    {
+        printf '%q ' $(arp -a | sed -e '1d' -e '/^ /!d' -e 's/^[ ]\+//' -e '/^I/d' -e 's/^[^ ]\+[ ]\+//' -e 's/ .*//')
+    }
+
+    _arp_inet()
+    {
+        printf '%q ' $(arp -a | sed -e '1d' -e '/^ /!d' -e 's/^[ ]\+//' -e 's/ .*//' -e '/^I/d')
+    }
+
+    _arp()
+    {
+        local cur prev words cword options cmds
+        _init_completion
+
+        if [[ $cword -eq 1 ]]; then
+            COMPREPLY=( $( compgen -W '-s -d -a' -- $cur ) )
+            return
+        fi
+
+        case ${words[1]} in
+
+            -s)
+                if [[ $cword -eq 2 ]]; then
+                    options=$(_arp_inet)
+
+                elif [[ $cword -eq 3 ]]; then
+                    options=$(_arp_eth)
+
+                elif [[ $cword -eq 4 ]]; then
+                    options=$(_arp_if)
+
+                fi
+                ;;
+
+            -d)
+                if [[ $cword -eq 2 ]]; then
+                    options=$(_arp_inet)
+
+                elif [[ $cword -eq 3 ]]; then
+                    options=$(_arp_if)
+
+                fi
+                ;;
+
+            -a)
+                if [[ $prev == -N ]]; then
+                    options=$(_arp_if)
+
+                elif [[ $cword -eq 2 ]]; then
+                    options=' -N -v ' 
+                    options+=$(_arp_inet)
+
+                else
+                    cmds=( ${words[@]::cword} ) 
+                    options=('-N' '-v')
+                    options=$(_complement cmds[@] options[@])
+
+                fi
+                ;;
+
+        esac
+
+        COMPREPLY=( $( compgen -W '$options' -- $cur ) )
+    }
+    complete -o default -F _arp arp arp.exe
+fi
+
+# ex: ts=4 sw=4 et filetype=sh

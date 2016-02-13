@@ -11,6 +11,7 @@ _sed()
 
     cur=$(printf '%q' "${cur,,}")
     cmds=( ${words[@]::cword} ) 
+
     options=( '-n' '--quiet' '--silent' '-e' '--expression=' '-f' \
         '--file=' '--follow-symlinks' '-i' '--in-place' '--in-place=' '-b' \
         '--binary' '-l' '--line-length=' '--posix' '-r' '--regexp-extended' '-s' \

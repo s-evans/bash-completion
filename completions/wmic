@@ -10,7 +10,7 @@ _wmic_users()
 
 _wmic()
 {
-    local cur prev words cword options IFS command commands subcmd global_switches
+    local cur prev words cword options IFS command commands subcmd
     _init_completion
     cur=$(printf '%q' "$cur")
 
@@ -134,30 +134,13 @@ _wmic()
 
                 *)
                     # remove global options that have been used
-                    global_switches=( '/namespace\:' '/role\:'
-                        '/node\:' '/implevel\:' '/authlevel\:' '/locale\:'
-                        '/privileges\:' '/trace\:' '/record\:' '/interactive\:'
-                        '/failfast\:' '/user\:' '/password\:' '/output\:'
-                        '/append\:' '/aggregate\:' '/authority\:' )
-
-                    for option in ${global_switches[@]} ; do
-                        declare -i found=0
-
-                        for word in ${words[@]::$cword} ; do
-
-                            if [[ "$word" == "$option"* ]]; then
-                                found=1
-                                break
-                            fi
-
-                        done
-
-                        if [[ $found -eq 0 ]]; then
-                            options+="$option "
-                        fi
-
-                    done
-
+                    local cmds=( ${words[@]::cword} ) 
+                    options=( '/namespace\:' '/role\:'
+                    '/node\:' '/implevel\:' '/authlevel\:' '/locale\:'
+                    '/privileges\:' '/trace\:' '/record\:' '/interactive\:'
+                    '/failfast\:' '/user\:' '/password\:' '/output\:'
+                    '/append\:' '/aggregate\:' '/authority\:' )
+                    options=$(_complement cmds[@] options[@])
                     ;;
 
             esac
@@ -818,8 +801,7 @@ _wmic()
 
     esac
 
-    COMPREPLY=( $( compgen -W '$options' -- $(printf '%q' "$cur") ) )
-
+    COMPREPLY=( $( compgen -W '$options' -- $cur ) )
     [[ $COMPREPLY == /*: ]] && compopt -o nospace
 }
 

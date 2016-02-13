@@ -26,7 +26,7 @@ _sc_services()
 
 _sc()
 {
-    local cur prev words cword options IFS found cmd option_list
+    local cur prev words cword options IFS found cmd
     _init_completion
 
     if [[ $prev == '/?' ]]; then
@@ -46,6 +46,8 @@ _sc()
     fi
 
     # TODO: fix some of the case statements below
+
+    local cmds=( ${words[@]::cword} ) 
 
     # Command-specific arguments
     case ${words[1]} in
@@ -161,25 +163,9 @@ _sc()
                         ;;
 
                     *)
-                        # cull the list of switches if they've been used
-                        option_list=( 'type\=' 'start\=' 'error\=' 'group\='
+                        options=( 'type\=' 'start\=' 'error\=' 'group\='
                         'tag\=' 'depend\=' 'obj\=' 'displayname\=' 'password\=')
-
-                        for option in ${option_list[@]} ; do
-                            found=0
-
-                            for word in ${words[@]::$cword} ; do
-                                if [[ "$word" == "$option" ]]; then
-                                    found=1 
-                                    break
-                                fi
-                            done
-
-                            if [[ $found -eq 0 ]]; then
-                                options+="$option "
-                            fi
-                        done
-
+                        options=$(_complement cmds[@] options[@])
                         ;;
                 esac
             fi
@@ -213,8 +199,8 @@ _sc()
                         ;;
 
                     *)
-                        # TODO: cull the options list
-                        options="reset\= reboot\= command\= actions\="
+                        options=('reset\=' 'reboot\=' 'command\=' 'actions\=')
+                        options=$(_complement cmds[@] options[@])
                         ;;
                 esac
             fi

@@ -1,5 +1,11 @@
 #!/usr/bin/env sh
 
+_net_computer_names()
+{
+    local options=$(printf '%q ' $(net view /all | sed -e '/^\\\\/!d' -e 's/ .*//'))
+    echo ${options,,}
+}
+
 _net_inactive_services()
 {
     local IFS options
@@ -34,7 +40,7 @@ _net_localgroup()
 
 _windows_net()
 {
-    local cur prev words cword options IFS
+    local cur prev words cword options IFS cmds
     _init_completion
     cur=$(printf '%q' "${cur,,}")
 
@@ -49,21 +55,24 @@ _windows_net()
         return
     fi
 
+    cmds=( ${words[@]::cword} ) 
+
     # Command-specific arguments
     case ${words[1]} in
 
         accounts)
-            # TODO: position and prev
-            options='/forcelogoff\: /minpwlen\: /maxpwage\: /minpwage\:
-            /uniquepw\: /domain ?'
+            options=('/forcelogoff\:no' '/forcelogoff\:' '/minpwlen\:'
+            '/maxpwage\:' '/minpwage\:' '/uniquepw\:' '/domain')
+            options=$(_complement cmds[@] options[@])
             ;;
 
         computer)
-            if [[ $cword -eq 3 ]]; then
-                # TODO: list availble computer names
-                options=''
+            if [[ $cword -eq 2 ]]; then
+                options=$(_net_computer_names)
+
             elif [[ $cword -eq 3 ]]; then
                 options='/add /del'
+
             fi
             ;;
 
@@ -71,11 +80,9 @@ _windows_net()
             if [[ $cword -eq 2 ]]; then
                 options='server workstation'
             elif [[ $prev == server ]]; then
-                # TODO: implement
-                options=''
-            elif [[ $prev == workstation ]]; then
-                # TODO: implement
-                options=''
+                options=('/autodisconnect\:' '/srvcomment\:' '/hidden\:yes'
+                '/hidden\:no')
+                options=$(_complement cmds[@] options[@])
             fi
             ;;
 
@@ -83,8 +90,10 @@ _windows_net()
             if [[ $cword -eq 2 ]]; then
                 # TODO: list available file ids
                 options=''
+
             elif [[ $cword -eq 3 ]]; then
                 options='/close'
+
             fi
             ;;
 
@@ -92,26 +101,69 @@ _windows_net()
             if [[ $cword -eq 2 ]]; then
                 IFS=$'\n'
                 options=$(_net_localgroup)
-            elif [[ $cword -ge 3 ]]; then
-                # TODO: implement
+                options+=$'\n''/domain'
+
+            elif [[ $cword -eq 3 ]]; then
                 IFS=$'\n'
                 options=$(_windows_net_users)
                 options+=$'\n''/comment\:'$'\n''/delete'$'\n''/domain'$'\n''/add'
+
+            elif [[ ${words[3]} == /add ]]; then
+                options='/comment\: /domain'
+
+            elif [[ ${words[3]} == /delete ]]; then
+                options='/domain'
+
+            elif [[ ${words[3]} == /comment\\:* ]]; then
+                options='/domain'
+
+            elif [[ $prev == /domain ]]; then
+                return
+
+            elif [[ $prev == /add ]]; then
+                options='/domain'
+
+            elif [[ $prev == /delete ]]; then
+                options='/domain'
+
+            else
+                IFS=$'\n'
+                options=$(_windows_net_users)
+                options+=$'\n''/delete'$'\n''/domain'$'\n''/add'
+
             fi
             ;;
 
         session)
-            if [[ $cword -gt 2 ]]; then
-                # TODO: list possible computer names
-                options=''
-            elif [[ $cword -gt 2 ]]; then
-                options='/delete /list ?'
+            if [[ $cword -eq 2 ]]; then
+                options=$(_net_computer_names)
+
+            elif [[ $cword -eq 3 ]]; then
+                options='/delete /list'
+
             fi
             ;;
 
         share)
-            # TODO: implement
-            options='?'
+            if [[ $cword -eq 2 ]]; then
+                # TODO: list share and device names
+                options=''
+
+            elif [[ ${words[2]} == *=* ]]; then
+                # TODO: /grant should be username,permission
+                options=('/grant\:full' '/grant\:change' '/grant\:read'
+                '/users\:' '/unlimited' '/remark\:' '/cache\:manual'
+                '/cache\:documents' '/cache\:programs' '/cache\:branchcache'
+                '/cache\:none')
+                options=$(_complement cmds[@] options[@])
+
+            else
+                options=('/users\:' '/unlimited' '/remark\:' '/cache\:manual'
+                '/cache\:documents' '/cache\:programs' '/cache\:branchcache'
+                '/cache\:none' '/delete')
+                options=$(_complement cmds[@] options[@])
+
+            fi
             ;;
 
         continue|start)
@@ -135,15 +187,43 @@ _windows_net()
             ;;
 
         time)
-            # TODO: position and prev
-            options='/set /domain /rtsdomain ?'
+            if [[ $cword -eq 2 ]]; then
+                # TODO: also suggest domains
+                options=$(_net_computer_names)
+                options=' /domain\: /domain /rtsdomain\: /rtsdomain '
+
+            elif [[ $cword -eq 3 ]]; then
+                options='/set'
+
+            fi
             ;;
 
         use)
-            # TODO: position and prev
-            # TODO: list recents
-            options='/persistent\:yes /persistent\:no /delete /savecred
-            /smartcard /user: ?'
+            if [[ $cword -eq 2 ]]; then
+                # TODO: also list device names currently in use
+                options='\* /persistent\:yes /persistent\:no'
+
+            elif [[ ${words[2]} == /persistent\\:* ]]; then
+                return
+
+            elif [[ $cword -eq 3 ]]; then
+                # TODO: do completion for shared resources and folders for each computer
+                options=$(_net_computer_names)
+                options+=' \* '
+
+            elif [[ $cword -eq 4 ]]; then
+                options='/home /user\: /smartcard /savecred /delete
+                /persistent\:yes /persistent\:no'
+
+            elif [[ ${word[4]} == /home ]]; then
+                return
+
+            else
+                options=('/user\:' '/smartcard' '/savecred' '/delete'
+                '/persistent\:yes' '/persistent\:no')
+                options=$(_complement cmds[@] options[@])
+
+            fi
             ;;
 
         user)
@@ -151,19 +231,38 @@ _windows_net()
                 IFS=$'\n'
                 options=$(_windows_net_users)
                 options+=$'\n''?'$'\n''/domain'
-            else
-                # TODO: implement
-                options='/delete /add /domain /active\:yes /active\:no
-                /times\:'
-            fi
 
-            # TODO: better positional argument support
-            # TODO: cull the list based on options that have been used
+            elif [[ $cword -eq 3 ]]; then
+                options='\* /delete /times\: /times\:all'
+
+            elif [[ ${words[3]} == '/delete' ]]; then
+                if [[ $cword -eq 4 ]]; then
+                    options='/domain'
+                fi
+
+            elif [[ ${words[3]} == /times\\:* ]]; then
+                return
+
+            else
+                options=('/comment\:' '/countrycode\:' '/expires\:' '/domain'
+                '/expires\:never' '/fullname\:' '/homedir\:' '/passwordchg\:no'
+                '/passwordchg\:yes' '/passwordreq\:no' '/passwordreq\:yes'
+                '/logonpasswordchg\:yes' '/logonpasswordchg\:no' '/profilepath'
+                '/profilepath\:' '/scriptpath\:' '/times\:' '/times\:all'
+                '/usercomment\:' '/workstations\:')
+                options=$(_complement cmds[@] options[@])
+            fi
             ;;
 
         view)
-            # TODO: implement
-            options=''
+            if [[ $cword -eq 2 ]]; then
+                options=$(_net_computer_names)
+                options+=' /all /domain /domain\: '
+
+            elif [[ $cword -eq 3 && $prev != /all && $prev != /domain* ]]; then
+                options='/cache'
+
+            fi
             ;;
 
     esac

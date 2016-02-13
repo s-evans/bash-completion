@@ -12,6 +12,23 @@ _netsh_bridges()
     printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
 }
 
+_netsh_interface_gateway_ipv4()
+{
+    local options IFS
+    IFS=$'\n'
+    options=$(netsh interface ipv4 show addresses $1 | sed -e '/Default Gateway/!d' -e 's/^[A-z :]*//')
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
+}
+
+# TODO: test with multiple addresses on an interface
+_netsh_interface_addresses_ipv4()
+{
+    local options IFS
+    IFS=$'\n'
+    options=$(netsh interface ipv4 show addresses $1 | sed -e '/IP/!d' -e 's/^[A-z :]*//')
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
+}
+
 _netsh_interfaces()
 {
     local options IFS
@@ -107,7 +124,7 @@ _netsh()
                             fi
                             ;;
 
-                        del*) # delete
+                        de*) # delete
                             if [[ $cword -eq 4 ]]; then
                                 options='rule'
                             fi
@@ -138,13 +155,13 @@ _netsh()
                     # TODO: more detail
                     case ${words[3]} in
 
-                        add)
+                        a*) # add
                             if [[ $cword -eq 4 ]]; then
                                 options='rule'
                             fi
                             ;;
 
-                        delete)
+                        de*) # delete
                             if [[ $cword -eq 4 ]]; then
                                 options='rule'
                             fi
@@ -156,7 +173,7 @@ _netsh()
                             fi
                             ;;
 
-                        show)
+                        sh*) # show
                             if [[ $cword -eq 4 ]]; then
                                 options='rule'
                             fi
@@ -181,7 +198,7 @@ _netsh()
                             fi
                             ;;
 
-                        del*) # delete
+                        de*) # delete
                             if [[ $cword -eq 4 ]]; then
                                 options='rule'
                             fi
@@ -211,7 +228,7 @@ _netsh()
 
                     case ${words[3]} in
 
-                        del*) # delete
+                        de*) # delete
                             if [[ $cword -eq 4 ]]; then
                                 options='mmsa qmsa'
 
@@ -420,9 +437,6 @@ _netsh()
                             fi
                             ;;
 
-                        st*) # store
-                            ;;
-
                     esac
                     ;;
 
@@ -441,50 +455,33 @@ _netsh()
                 set)
                     if [[ $cword -eq 3 ]]; then
                         options='adapter'
-                        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
-                        return
+
+                    elif [[ $cword -eq 4 ]]; then
+                        IFS=$'\n'
+                        options=$(_netsh_bridges)
+
+                    elif [[ $cword -eq 5 ]]; then
+                        options="forcecompatmode\=enable
+                        forcecompatmode\=disable"
+
                     fi
-
-                    case ${words[3]} in
-
-                        a*) # adapter
-                            if [[ $cword -eq 4 ]]; then
-                                IFS=$'\n'
-                                options=$(_netsh_bridges)
-
-                            elif [[ $cword -eq 5 ]]; then
-                                options="forcecompatmode\=enable \
-                                    forcecompatmode\=disable"
-
-                            fi
-                            ;;
-
-                    esac
                     ;;
 
                 sh*) # show
                     if [[ $cword -eq 3 ]]; then
                         options='adapter'
-                        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
-                        return
+
+                    elif [[ $cword -eq 4 ]]; then
+                        IFS=$'\n'
+                        options=$(_netsh_bridges)
+
                     fi
-
-                    case ${words[3]} in
-
-                        a*) # adapter
-                            if [[ $cword -eq 4 ]]; then
-                                IFS=$'\n'
-                                options=$(_netsh_bridges)
-                            fi
-                            ;;
-
-                    esac
                     ;;
 
             esac
             ;;
 
-        del*) # delete
+        de*) # delete
             if [[ $cword -eq 2 ]]; then
                 options='helper'
 
@@ -504,7 +501,7 @@ _netsh()
             fi
             ;;
 
-        dns*) # dnsclient
+        dn*) # dnsclient
             if [[ $cword -eq 2 ]]; then
                 options='add delete dump set show'
                 COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
@@ -534,7 +531,7 @@ _netsh()
                     fi
                     ;;
 
-                del*) # delete
+                de*) # delete
                     if [[ $cword -eq 3 ]]; then
                         options='dnsservers'
 
@@ -614,7 +611,7 @@ _netsh()
                     fi
                     ;;
 
-                del*) # delete
+                de*) # delete
                     if [[ $cword -eq 3 ]]; then
                         options='cache iplisten sslcert timeout urlacl'
                     fi
@@ -636,7 +633,7 @@ _netsh()
             esac
             ;;
 
-        int*) # interface
+        in*) # interface
 
             if [[ $cword -eq 2 ]]; then
                 options="6to4 dump httpstunnel ipv4 ipv6 isatap portproxy set \
@@ -647,7 +644,7 @@ _netsh()
 
             case ${words[2]} in
 
-                6to4)
+                6*) # 6to4
                     if [[ $cword -eq 3 ]]; then
                         options='dump set show'
                         COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
@@ -889,12 +886,13 @@ _netsh()
                                         options=$(_netsh_interfaces)
 
                                     elif [[ $cword -eq 6 ]]; then
-                                        # TODO: list IP address for the interface
-                                        options='address\='
+                                        IFS=$'\n'
+                                        options=$(_netsh_interface_addresses_ipv4 ${words[5]//\\/})
 
                                     elif [[ $cword -eq 7 ]]; then
-                                        # TODO: list gateway IP address for the interface
-                                        options='gateway\= gateway\=all'
+                                        IFS=$'\n'
+                                        options=$(_netsh_interface_gateway_ipv4 ${words[5]//\\/})
+                                        options+=$'\n''gateway\=all'
 
                                     elif [[ $cword -eq 8 ]]; then
                                         options='store\=active store\=persistent'
@@ -908,7 +906,7 @@ _netsh()
                                         options=$(_netsh_interfaces)
 
                                     elif [[ $cword -eq 6 ]]; then
-                                        # TODO: list IP address for the interface
+                                        # TODO: list neighbor ip addresses
                                         options='address\='
 
                                     elif [[ $cword -eq 7 ]]; then
@@ -927,7 +925,7 @@ _netsh()
                                         options=$(_netsh_interfaces)
 
                                     elif [[ $cword -eq 6 ]]; then
-                                        # TODO: list IP address for the interface
+                                        # TODO: list destination ip addresses
                                         options='address\='
 
                                     fi
@@ -939,7 +937,7 @@ _netsh()
                                         options=$(_netsh_interfaces)
 
                                     elif [[ $cword -eq 6 ]]; then
-                                        # TODO: list IP address for the interface
+                                        # TODO: list dns server IP address for the interface
                                         options='address\=all address\='
 
                                     elif [[ $cword -eq 7 ]]; then
@@ -1447,7 +1445,7 @@ _netsh()
 
                     case ${words[3]} in
 
-                        6to4)
+                        6*) # 6to4
                             if [[ $cword -eq 4 ]]; then
                                 options='dump set show'
                             fi
@@ -1518,7 +1516,7 @@ _netsh()
                             esac
                             ;; 
 
-                        add)
+                        a*) # add
                             if [[ $cword -eq 4 ]]; then
                                 options='address dnsservers excludedportrange
                                 neighbors potentialrouter prefixpolicy route
@@ -1605,7 +1603,7 @@ _netsh()
                             esac
                             ;;
 
-                        del*) # delete
+                        de*) # delete
                             # TODO: implement
                             ;;
 
@@ -1752,7 +1750,7 @@ _netsh()
             esac
             ;;
 
-        ips*) # ipsec
+        ip*) # ipsec
             if [[ $cword -eq 2 ]]; then
                 options='dump dynamic static'
             fi
@@ -1807,7 +1805,7 @@ _netsh()
 
                 case ${words[2]} in
 
-                    del*) # delete
+                    de*) # delete
                         # TODO: implement
                         ;;
 

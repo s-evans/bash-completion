@@ -20,12 +20,27 @@ _netsh_interface_gateway_ipv4()
     printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
 }
 
-# TODO: test with multiple addresses on an interface
 _netsh_interface_addresses_ipv4()
 {
     local options IFS
     IFS=$'\n'
     options=$(netsh interface ipv4 show addresses $1 | sed -e '/IP/!d' -e 's/^[A-z :]*//')
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
+}
+
+_netsh_ipv4_neighbors()
+{
+    local options IFS
+    IFS=$'\n'
+    options=$(netsh int ip show ne ${1//\\/} | sed -e 's/ .*//' -e '/^[0-9]/!d')
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
+}
+
+_netsh_ipv4_routes()
+{
+    local options IFS
+    IFS=$'\n'
+    options=$(netsh int ip show route | sed -e 's/^\([^ ]\+[ ]\+\)\{3\}//' -e 's/[ ]\+/ /g' -e '/^[0-9]/!d' -e 's/[A-z].*//')
     printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
 }
 
@@ -520,13 +535,13 @@ _netsh()
 
                     elif [[ $cword -eq 5 ]]; then
                         # TODO: recent ip addresses
-                        options="address\="
+                        options='address\='
 
                     elif [[ $cword -eq 6 ]]; then
-                        options="index\="
+                        options='index\='
 
                     elif [[ $cword -eq 7 ]]; then
-                        options="validate\=yes validate\=no"
+                        options='validate\=yes validate\=no'
 
                     fi
                     ;;
@@ -546,7 +561,7 @@ _netsh()
                         options+=$'\n''all'
 
                     elif [[ $cword -eq 6 ]]; then
-                        options="validate\=yes validate\=no"
+                        options='validate\=yes validate\=no'
 
                     fi
                     ;;
@@ -569,7 +584,7 @@ _netsh()
                         options='register\=none register\=primary register\=both'
 
                     elif [[ $cword -eq 8 ]]; then
-                        options="validate\=yes validate\=no"
+                        options='validate\=yes validate\=no'
 
                     fi
                     ;;
@@ -669,12 +684,17 @@ _netsh()
                             if [[ $cword -eq 4 ]]; then
                                 options='interface'
 
-                            else
-                                options=('type\=client' 'type\=server'
-                                'state\=enabled' 'state\=disabled'
-                                'state\=default' 'authmode\=none'
-                                'authmode\=certificate' 'url\=')
-                                options=$(_complement cmds[@] options[@])
+                            elif [[ $cword -eq 5 ]]; then
+                                options='client server'
+
+                            elif [[ $cword -eq 6 ]]; then
+                                options='url\='
+
+                            elif [[ $cword -eq 7 ]]; then
+                                options='enabled disabled default'
+
+                            elif [[ $cword -eq 8 ]]; then
+                                options='none certificates'
 
                             fi
                             ;;
@@ -714,6 +734,8 @@ _netsh()
                 ip*) # ipv4
                     if [[ $cword -eq 3 ]]; then
                         options='add delete dump install reset set show uninstall'
+                        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                        return
                     fi
 
                     case ${words[3]} in
@@ -910,7 +932,7 @@ _netsh()
 
                                     elif [[ $cword -eq 6 ]]; then
                                         IFS=$'\n'
-                                        options=$(netsh int ip show ne ${words[5]//\\/} | sed -e 's/ .*//' -e '/^[0-9]/!d')
+                                        options=$(_netsh_ipv4_neighbors ${words[5]})
 
                                     elif [[ $cword -eq 7 ]]; then
                                         IFS=$'\n'
@@ -973,7 +995,7 @@ _netsh()
 
                                     elif [[ $cword -eq 6 ]]; then
                                         IFS=$'\n'
-                                        options=$(netsh int ip show ne ${words[5]//\\/} | sed -e 's/ .*//' -e '/^[0-9]/!d')
+                                        options=$(_netsh_ipv4_neighbors ${words[5]})
 
                                     elif [[ $cword -eq 7 ]]; then
                                         IFS=$'\n'
@@ -1192,12 +1214,52 @@ _netsh()
                                     fi
                                     ;;
 
-                                # TODO: more
-
                                 n*) # neighbors
+                                    if [[ $cword -eq 5 ]]; then
+                                        IFS=$'\n'
+                                        options=$(_netsh_interfaces)
+
+                                    elif [[ $cword -eq 6 ]]; then
+                                        IFS=$'\n'
+                                        options=$(_netsh_ipv4_neighbors ${words[5]})
+
+                                    elif [[ $cword -eq 7 ]]; then
+                                        options='store\=active store\=persistent '
+
+                                    fi
                                     ;;
 
                                 r*) # route
+                                    if [[ $cword -eq 5 ]]; then
+                                        IFS=$'\n'
+                                        options=$(_netsh_ipv4_routes)
+
+                                    elif [[ $cword -eq 6 ]]; then
+                                        IFS=$'\n'
+                                        options=$(_netsh_interfaces)
+
+                                    elif [[ $cword -eq 7 ]]; then
+                                        options='nexthop\='
+
+                                    elif [[ $cword -eq 8 ]]; then
+                                        options='siteprefixlength\='
+
+                                    elif [[ $cword -eq 9 ]]; then
+                                        options='metric\='
+
+                                    elif [[ $cword -eq 10 ]]; then
+                                        options='publish\=no publish\=age publish\=yes'
+
+                                    elif [[ $cword -eq 11 ]]; then
+                                        options='validlifetime\= infinite'
+
+                                    elif [[ $cword -eq 12 ]]; then
+                                        options='preferredlifetime\= infinite'
+
+                                    elif [[ $cword -eq 13 ]]; then
+                                        options='store\=persistent store\=active'
+
+                                    fi
                                     ;;
 
                                 s*) # subinterface
@@ -1404,10 +1466,10 @@ _netsh()
                                 tcpc*) # tcpconnections
                                     if [[ $cword -eq 5 ]]; then
                                         # TODO: list local ip addresses
-                                        options="localaddresses\="
+                                        options='localaddresses\='
 
                                     elif [[ $cword -eq 6 ]]; then
-                                        options="localport\="
+                                        options='localport\='
 
                                     elif [[ $cword -eq 7 ]]; then
                                         # TODO: list remote addresses
@@ -1425,10 +1487,10 @@ _netsh()
                                 udpc*) # udpconnections
                                     if [[ $cword -eq 5 ]]; then
                                         # TODO: list local ip addresses
-                                        options="localaddresses\="
+                                        options='localaddresses\='
 
                                     elif [[ $cword -eq 6 ]]; then
-                                        options="localport\="
+                                        options='localport\='
 
                                     elif [[ $cword -eq 7 ]]; then
                                         options='rr\='
@@ -1454,6 +1516,8 @@ _netsh()
                         6*) # 6to4
                             if [[ $cword -eq 4 ]]; then
                                 options='dump set show'
+                                COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                                return
                             fi
 
                             case ${words[4]} in
@@ -1461,6 +1525,8 @@ _netsh()
                                 set)
                                     if [[ $cword -eq 5 ]]; then
                                         options='interface relay routing state'
+                                        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                                        return
                                     fi
 
                                     case ${words[5]} in
@@ -1527,6 +1593,8 @@ _netsh()
                                 options='address dnsservers excludedportrange
                                 neighbors potentialrouter prefixpolicy route
                                 v6v4tunnel'
+                                COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                                return
                             fi
 
                             case ${words[4]} in
@@ -1807,20 +1875,21 @@ _netsh()
         rp*) # rpc
             if [[ $cword -eq 2 ]]; then
                 options='add delete dump filter reset show'
-            else
-
-                case ${words[2]} in
-
-                    de*) # delete
-                        # TODO: implement
-                        ;;
-
-                    f*) # filter
-                        # TODO: implement
-                        ;;
-
-                esac
+                COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                return
             fi
+
+            case ${words[2]} in
+
+                de*) # delete
+                    # TODO: implement
+                    ;;
+
+                f*) # filter
+                    # TODO: implement
+                    ;;
+
+            esac
             ;;
 
         se*) # set
@@ -1855,52 +1924,79 @@ _netsh()
         winh*) # winhttp
             if [[ $cword -eq 2 ]]; then
                 options='dump import reset set show'
-            else
-                case ${words[3]} in
-
-                    i*) # import
-                        if [[ $cword -eq 3 ]]; then
-                            options='proxy'
-
-                        elif [[ $cword -eq 4 ]]; then
-                            options='ie'
-
-                        fi
-                        ;;
-
-                    r*) # reset
-                        if [[ $cword -eq 3 ]]; then
-                            options='proxy tracing'
-                        fi
-                        ;;
-
-                    set)
-                        if [[ $cword -eq 3 ]]; then
-                            options='proxy tracing'
-
-                        else
-                            case ${words[4]} in
-
-                                p*) # proxy
-                                    # TODO: implement
-                                    ;;
-
-                                t*) # tracing
-                                    # TODO: implement
-                                    ;;
-
-                            esac
-                        fi
-                        ;;
-
-                    sh*) # show
-                        if [[ $cword -eq 3 ]]; then
-                            options='proxy tracing'
-                        fi
-                        ;;
-
-                esac
+                COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                return
             fi
+
+            case ${words[2]} in
+
+                i*) # import
+                    if [[ $cword -eq 3 ]]; then
+                        options='proxy'
+
+                    elif [[ $cword -eq 4 ]]; then
+                        options='ie'
+
+                    fi
+                    ;;
+
+                r*) # reset
+                    if [[ $cword -eq 3 ]]; then
+                        options='proxy tracing'
+                    fi
+                    ;;
+
+                set)
+                    if [[ $cword -eq 3 ]]; then
+                        options='proxy tracing'
+                        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                        return
+                    fi
+
+                    case ${words[3]} in
+
+                        p*) # proxy
+                            if [[ $cword -eq 4 ]]; then
+                                options='proxy-server\='
+
+                            elif [[ $cword -eq 5 ]]; then
+                                options='bypass-list\='
+
+                            fi
+                            ;;
+
+                        t*) # tracing
+                            if [[ $cword -eq 4 ]]; then
+                                options='file debugger both'
+
+                            elif [[ $cword -eq 5 ]]; then
+                                options='trace-file-prefix\='
+
+                            elif [[ $cword -eq 6 ]]; then
+                                options='default verbose'
+
+                            elif [[ $cword -eq 7 ]]; then
+                                options='ansi hex'
+
+                            elif [[ $cword -eq 8 ]]; then
+                                options='max-trace-file-size\='
+
+                            elif [[ $cword -eq 9 ]]; then
+                                options='enabled disabled'
+
+                            fi
+                            ;;
+
+                    esac
+                    ;;
+
+                sh*) # show
+                    if [[ $cword -eq 3 ]]; then
+                        options='proxy tracing'
+                    fi
+                    ;;
+
+            esac
             ;;
 
         wins*) # winsock
@@ -2013,39 +2109,39 @@ _netsh()
                 de*) # delete
                     if [[ $cword -eq 3 ]]; then
                         options='filter profile'
-
-                    else
-
-                        case ${words[3]} in
-
-                            f*) # filter
-                                if [[ $cword -eq 4 ]]; then
-                                    options='allow block denyall'
-
-                                elif [[ $cword -eq 5 ]]; then
-                                    IFS=$'\n'
-                                    options=$(_netsh_wlan_profiles)
-
-                                elif [[ $cword -eq 6 ]]; then
-                                    options='infrastructure adhoc'
-
-                                fi
-                                ;;
-
-                            p*) # profile
-                                if [[ $cword -eq 4 ]]; then
-                                    IFS=$'\n'
-                                    options=$(_netsh_wlan_profiles)
-
-                                elif [[ $cword -eq 5 ]]; then
-                                    IFS=$'\n'
-                                    options=$(_netsh_wlan_interfaces)
-
-                                fi
-                                ;;
-
-                        esac
+                        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                        return
                     fi
+
+                    case ${words[3]} in
+
+                        f*) # filter
+                            if [[ $cword -eq 4 ]]; then
+                                options='allow block denyall'
+
+                            elif [[ $cword -eq 5 ]]; then
+                                IFS=$'\n'
+                                options=$(_netsh_wlan_profiles)
+
+                            elif [[ $cword -eq 6 ]]; then
+                                options='infrastructure adhoc'
+
+                            fi
+                            ;;
+
+                        p*) # profile
+                            if [[ $cword -eq 4 ]]; then
+                                IFS=$'\n'
+                                options=$(_netsh_wlan_profiles)
+
+                            elif [[ $cword -eq 5 ]]; then
+                                IFS=$'\n'
+                                options=$(_netsh_wlan_interfaces)
+
+                            fi
+                            ;;
+
+                    esac
                     ;;
 
                 di*) # disconnect
@@ -2058,30 +2154,31 @@ _netsh()
                 e*) # export
                     if [[ $cword -eq 3 ]]; then
                         options='hostednetworkprofile profile'
-                    else
-
-                        case ${words[3]} in
-
-                            p*) # profile
-                                if [[ $cword -eq 4 ]]; then
-                                    IFS=$'\n'
-                                    options=$(_netsh_wlan_profiles)
-
-                                elif [[ $cword -eq 5 ]]; then
-                                    options='folder\='
-
-                                elif [[ $cword -eq 6 ]]; then
-                                    IFS=$'\n'
-                                    options=$(_netsh_wlan_interfaces)
-
-                                elif [[ $cword -eq 7 ]]; then
-                                    options='key\=clear'
-
-                                fi
-                                ;;
-
-                        esac
+                        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                        return
                     fi
+
+                    case ${words[3]} in
+
+                        p*) # profile
+                            if [[ $cword -eq 4 ]]; then
+                                IFS=$'\n'
+                                options=$(_netsh_wlan_profiles)
+
+                            elif [[ $cword -eq 5 ]]; then
+                                options='folder\='
+
+                            elif [[ $cword -eq 6 ]]; then
+                                IFS=$'\n'
+                                options=$(_netsh_wlan_interfaces)
+
+                            elif [[ $cword -eq 7 ]]; then
+                                options='key\=clear'
+
+                            fi
+                            ;;
+
+                    esac
                     ;;
 
                 ref*) # refresh
@@ -2095,151 +2192,152 @@ _netsh()
                         options="allowexplicitcreds autoconfig blockednetworks \
                             blockperiod createalluserprofile hostednetwork \
                             profileorder profileparameter profiletype tracing"
-                    else
-
-                        case ${words[3]} in
-
-                            al*) # allowexplicitcreds
-                                if [[ $cword -eq 4 ]]; then
-                                    options='yes no'
-                                fi
-                                ;;
-
-                            au*) # autoconfig
-                                if [[ $cword -eq 4 ]]; then
-                                    options='yes no'
-
-                                elif [[ $cword -eq 5 ]]; then
-                                    IFS=$'\n'
-                                    options=$(_netsh_wlan_interfaces)
-
-                                fi
-                                ;;
-
-                            blocke*) # blockednetworks
-                                if [[ $cword -eq 4 ]]; then
-                                    options='show hide'
-                                fi
-                                ;;
-
-                            blockp*) # blockperiod
-                                if [[ $cword -eq 4 ]]; then
-                                    options='value\='
-                                fi
-                                ;;
-
-                            c*) # createalluserprofile
-                                if [[ $cword -eq 4 ]]; then
-                                    options='yes no'
-                                fi
-                                ;;
-
-                            h*) # hostednetwork
-                                if [[ $cword -eq 4 ]]; then
-                                    options='allow disallow'
-
-                                elif [[ $cword -eq 5 ]]; then
-                                    IFS=$'\n'
-                                    options=$(_netsh_wlan_profiles)
-
-                                elif [[ $cword -eq 6 ]]; then
-                                    options='key\='
-
-                                elif [[ $cword -eq 7 ]]; then
-                                    options='persistent temporary'
-
-                                fi
-                                ;;
-
-                            profileo*) # profileorder
-                                if [[ $cword -eq 4 ]]; then
-                                    IFS=$'\n'
-                                    options=$(_netsh_wlan_profiles)
-
-                                elif [[ $cword -eq 5 ]]; then
-                                    IFS=$'\n'
-                                    options=$(_netsh_wlan_interfaces)
-
-                                elif [[ $cword -eq 6 ]]; then
-                                    options='priority\='
-
-                                fi
-                                ;;
-
-                            profilep*) # profileparameter
-                                if [[ $cword -eq 4 ]]; then
-                                    IFS=$'\n'
-                                    options=$(_netsh_wlan_profiles)
-
-                                elif [[ $cword -eq 5 ]]; then
-                                    IFS=$'\n'
-                                    options=$(_netsh_wlan_interfaces)
-
-                                else
-                                    # TODO: list options for ssidname
-                                    options=('ssidname\=' 'connectiontype\=ess'
-                                    'connectiontype\=ibss' 'autoswitch\=yes'
-                                    'autoswitch\=no' 'connectionmode\=auto'
-                                    'connectionmode\=manual'
-                                    'nonbroadcast\=yes' 'nonbroadcast\=no'
-                                    'randomization\=yes' 'randomization\=no'
-                                    'randomization\=daily'
-                                    'authentication\=open'
-                                    'authentication\=shared'
-                                    'authentication\=wpa'
-                                    'authentication\=wpa2'
-                                    'authentication\=wpapsk'
-                                    'authentication\=wpa2psk'
-                                    'encryption\=none' 'encryption\=wep'
-                                    'encryption\=tkip' 'encryption\=aes'
-                                    'keytype\=networkkey' 'keytype\=passphrase'
-                                    'keyindex\=' 'keymaterial\='
-                                    'pmkcachemode\=yes' 'pmkcachemode\=no'
-                                    'pmkcachesize\=' 'pmkcachettl\='
-                                    'preauthmode\=yes' 'preauthmode\=no'
-                                    'preauththrottle\=' 'fips\=yes' 'fips\=no'
-                                    'useonex\=yes' 'useonex\=no'
-                                    'authmode\=machineoruser'
-                                    'authmode\=machineonly'
-                                    'authmode\=useronly' 'authmode\=guest'
-                                    'ssomode\=prelogon' 'ssomode\=postlogon'
-                                    'ssomode\=none' 'maxdelay\='
-                                    'allowdialog\=yes' 'allowdialog\=no'
-                                    'uservlan\=yes' 'uservlan\=no'
-                                    'heldperiod\=' 'authperiod\='
-                                    'startperiod\=' 'maxstart\='
-                                    'maxauthfailures\=' 'cacheuserdata\=yes'
-                                    'cacheuserdata\=no' 'cost\=default'
-                                    'cost\=unrestricted' 'cost\=fixed'
-                                    'cost\=variable')
-                                    options=$(_complement cmds[@] options[@])
-
-                                fi
-                                ;;
-
-                            profilet*) # profiletype
-                                if [[ $cword -eq 4 ]]; then
-                                    IFS=$'\n'
-                                    options=$(_netsh_wlan_profiles)
-
-                                elif [[ $cword -eq 5 ]]; then
-                                    options='all current'
-
-                                elif [[ $cword -eq 6 ]]; then
-                                    IFS=$'\n'
-                                    options=$(_netsh_wlan_interfaces)
-
-                                fi
-                                ;;
-
-                            t*) # tracing
-                                if [[ $cword -eq 4 ]]; then
-                                    options='yes no persistent'
-                                fi
-                                ;;
-
-                        esac
+                        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                        return
                     fi
+
+                    case ${words[3]} in
+
+                        al*) # allowexplicitcreds
+                            if [[ $cword -eq 4 ]]; then
+                                options='yes no'
+                            fi
+                            ;;
+
+                        au*) # autoconfig
+                            if [[ $cword -eq 4 ]]; then
+                                options='yes no'
+
+                            elif [[ $cword -eq 5 ]]; then
+                                IFS=$'\n'
+                                options=$(_netsh_wlan_interfaces)
+
+                            fi
+                            ;;
+
+                        blocke*) # blockednetworks
+                            if [[ $cword -eq 4 ]]; then
+                                options='show hide'
+                            fi
+                            ;;
+
+                        blockp*) # blockperiod
+                            if [[ $cword -eq 4 ]]; then
+                                options='value\='
+                            fi
+                            ;;
+
+                        c*) # createalluserprofile
+                            if [[ $cword -eq 4 ]]; then
+                                options='yes no'
+                            fi
+                            ;;
+
+                        h*) # hostednetwork
+                            if [[ $cword -eq 4 ]]; then
+                                options='allow disallow'
+
+                            elif [[ $cword -eq 5 ]]; then
+                                IFS=$'\n'
+                                options=$(_netsh_wlan_profiles)
+
+                            elif [[ $cword -eq 6 ]]; then
+                                options='key\='
+
+                            elif [[ $cword -eq 7 ]]; then
+                                options='persistent temporary'
+
+                            fi
+                            ;;
+
+                        profileo*) # profileorder
+                            if [[ $cword -eq 4 ]]; then
+                                IFS=$'\n'
+                                options=$(_netsh_wlan_profiles)
+
+                            elif [[ $cword -eq 5 ]]; then
+                                IFS=$'\n'
+                                options=$(_netsh_wlan_interfaces)
+
+                            elif [[ $cword -eq 6 ]]; then
+                                options='priority\='
+
+                            fi
+                            ;;
+
+                        profilep*) # profileparameter
+                            if [[ $cword -eq 4 ]]; then
+                                IFS=$'\n'
+                                options=$(_netsh_wlan_profiles)
+
+                            elif [[ $cword -eq 5 ]]; then
+                                IFS=$'\n'
+                                options=$(_netsh_wlan_interfaces)
+
+                            else
+                                # TODO: list options for ssidname
+                                options=('ssidname\=' 'connectiontype\=ess'
+                                'connectiontype\=ibss' 'autoswitch\=yes'
+                                'autoswitch\=no' 'connectionmode\=auto'
+                                'connectionmode\=manual'
+                                'nonbroadcast\=yes' 'nonbroadcast\=no'
+                                'randomization\=yes' 'randomization\=no'
+                                'randomization\=daily'
+                                'authentication\=open'
+                                'authentication\=shared'
+                                'authentication\=wpa'
+                                'authentication\=wpa2'
+                                'authentication\=wpapsk'
+                                'authentication\=wpa2psk'
+                                'encryption\=none' 'encryption\=wep'
+                                'encryption\=tkip' 'encryption\=aes'
+                                'keytype\=networkkey' 'keytype\=passphrase'
+                                'keyindex\=' 'keymaterial\='
+                                'pmkcachemode\=yes' 'pmkcachemode\=no'
+                                'pmkcachesize\=' 'pmkcachettl\='
+                                'preauthmode\=yes' 'preauthmode\=no'
+                                'preauththrottle\=' 'fips\=yes' 'fips\=no'
+                                'useonex\=yes' 'useonex\=no'
+                                'authmode\=machineoruser'
+                                'authmode\=machineonly'
+                                'authmode\=useronly' 'authmode\=guest'
+                                'ssomode\=prelogon' 'ssomode\=postlogon'
+                                'ssomode\=none' 'maxdelay\='
+                                'allowdialog\=yes' 'allowdialog\=no'
+                                'uservlan\=yes' 'uservlan\=no'
+                                'heldperiod\=' 'authperiod\='
+                                'startperiod\=' 'maxstart\='
+                                'maxauthfailures\=' 'cacheuserdata\=yes'
+                                'cacheuserdata\=no' 'cost\=default'
+                                'cost\=unrestricted' 'cost\=fixed'
+                                'cost\=variable')
+                                options=$(_complement cmds[@] options[@])
+
+                            fi
+                            ;;
+
+                        profilet*) # profiletype
+                            if [[ $cword -eq 4 ]]; then
+                                IFS=$'\n'
+                                options=$(_netsh_wlan_profiles)
+
+                            elif [[ $cword -eq 5 ]]; then
+                                options='all current'
+
+                            elif [[ $cword -eq 6 ]]; then
+                                IFS=$'\n'
+                                options=$(_netsh_wlan_interfaces)
+
+                            fi
+                            ;;
+
+                        t*) # tracing
+                            if [[ $cword -eq 4 ]]; then
+                                options='yes no persistent'
+                            fi
+                            ;;
+
+                    esac
                     ;;
 
                 sh*) # show
@@ -2249,50 +2347,51 @@ _netsh()
                             hostednetwork interfaces networks  \
                             onlyUseGPProfilesforAllowedNetworks profiles settings \
                             tracing"
-                    else
-
-                        case ${words[3]} in
-
-                            f*) # filters
-                                if [[ $cword -eq 4 ]]; then
-                                    options='allow block'
-                                fi
-                                ;;
-
-                            h*) # hostednetwork
-                                if [[ $cword -eq 4 ]]; then
-                                    options='security'
-                                fi
-                                ;;
-
-                            n*) # networks
-                                if [[ $cword -eq 4 ]]; then
-                                    IFS=$'\n'
-                                    options=$(_netsh_wlan_interfaces)
-
-                                elif [[ $cword -eq 5 ]]; then
-                                    options='ssid bssid'
-
-                                fi
-                                ;;
-
-                            p*) # profiles
-                                if [[ $cword -eq 4 ]]; then
-                                    IFS=$'\n'
-                                    options=$(_netsh_wlan_profiles)
-
-                                elif [[ $cword -eq 5 ]]; then
-                                    IFS=$'\n'
-                                    options=$(_netsh_wlan_interfaces)
-
-                                elif [[ $cword -eq 6 ]]; then
-                                    options='key\=clear'
-
-                                fi
-                                ;;
-
-                        esac
+                        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+                        return
                     fi
+
+                    case ${words[3]} in
+
+                        f*) # filters
+                            if [[ $cword -eq 4 ]]; then
+                                options='allow block'
+                            fi
+                            ;;
+
+                        h*) # hostednetwork
+                            if [[ $cword -eq 4 ]]; then
+                                options='security'
+                            fi
+                            ;;
+
+                        n*) # networks
+                            if [[ $cword -eq 4 ]]; then
+                                IFS=$'\n'
+                                options=$(_netsh_wlan_interfaces)
+
+                            elif [[ $cword -eq 5 ]]; then
+                                options='ssid bssid'
+
+                            fi
+                            ;;
+
+                        p*) # profiles
+                            if [[ $cword -eq 4 ]]; then
+                                IFS=$'\n'
+                                options=$(_netsh_wlan_profiles)
+
+                            elif [[ $cword -eq 5 ]]; then
+                                IFS=$'\n'
+                                options=$(_netsh_wlan_interfaces)
+
+                            elif [[ $cword -eq 6 ]]; then
+                                options='key\=clear'
+
+                            fi
+                            ;;
+
+                    esac
                     ;;
 
                 sta*) # start

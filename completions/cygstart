@@ -13,16 +13,15 @@ _cygstart()
 
     options=('--help' '-?' '--usage' '--version' '--license' '--reference' '-v'
     '--verbose' '-w' '-a' '--action\=open' '--action\=explore' '--action\=edit'
-    '--action\=find' '--action\=print' '-o' '--open' '-x' '--explore' '-e'
-    '--edit' '-f' '--find' '-p' '--print' '--hide' '--maximize' '--minimize'
-    '--restore' '--show' '--shownormal' '--showmaximized' '--showminimized'
-    '--showminnoactive' '--showna' '--shownoactivate' '--wait' '-d'
-    '--directory=')
-
+    '--action\=runas' '--action\=find' '--action\=print' '-o' '--open' '-x'
+    '--explore' '-e' '--edit' '-f' '--find' '-p' '--print' '--hide'
+    '--maximize' '--minimize' '--restore' '--show' '--shownormal'
+    '--showmaximized' '--showminimized' '--showminnoactive' '--showna'
+    '--shownoactivate' '--wait' '-d' '--directory=')
     options=$(_complement cmds[@] options[@])
 
     COMPREPLY=( $(compgen -W '$options' -- $cur ) )
-    [[ $COMPREPLY == *: ]] && compopt -o nospace
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
 }
 
 complete -o default -F _cygstart cygstart cygstart.exe

@@ -16,7 +16,7 @@ _netsh_interface_gateway_ipv4()
 {
     local options IFS
     IFS=$'\n'
-    options=$(netsh interface ipv4 show addresses $1 | sed -e '/Default Gateway/!d' -e 's/^[A-z :]*//')
+    options=$(netsh interface ipv4 show addresses $1 | sed -e '/Default/!d' -e 's/^[^0-9]*//')
     printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
 }
 
@@ -24,7 +24,7 @@ _netsh_interface_addresses_ipv4()
 {
     local options IFS
     IFS=$'\n'
-    options=$(netsh interface ipv4 show addresses $1 | sed -e '/IP/!d' -e 's/^[A-z :]*//')
+    options=$(netsh interface ipv4 show addresses $1 | sed -e '/IP/!d' -e 's/^[^0-9]*//')
     printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
 }
 
@@ -72,7 +72,7 @@ _netsh_ipv6_subinterfaces()
 {
     local options IFS
     IFS=$'\n'
-    options=$(netsh interface ipv6 show subinterfaces level=verbose | sed -e '/^SubInterface/!d' -e 's/[^ ]\+ //' -e 's/[^ ]\+$//' -e 's/[ ]\+$//')
+    options=$(netsh interface ipv6 show subinterfaces level=verbose | sed -e '/^Sub/!d' -e 's/[^ ]\+ //' -e 's/[^ ]\+$//' -e 's/[ ]\+$//')
     printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
 }
 
@@ -80,7 +80,7 @@ _netsh_ipv4_subinterfaces()
 {
     local options IFS
     IFS=$'\n'
-    options=$(netsh interface ipv4 show subinterfaces level=verbose | sed -e '/^SubInterface/!d' -e 's/[^ ]\+ //' -e 's/[^ ]\+$//' -e 's/[ ]\+$//')
+    options=$(netsh interface ipv4 show subinterfaces level=verbose | sed -e '/^Sub/!d' -e 's/[^ ]\+ //' -e 's/[^ ]\+$//' -e 's/[ ]\+$//')
     printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
 }
 
@@ -555,9 +555,8 @@ _netsh()
                         options=$(_netsh_interfaces)
 
                     elif [[ $cword -eq 5 ]]; then
-                        # TODO: test with multiple servers
                         IFS=$'\n'
-                        options=$(netsh int ip show dnsservers ${words[4]//\\/} | sed -e 's/^[^0-9]\+//' -e '/^$/d')
+                        options=$(netsh int ip show dnsservers ${words[4]//\\/} | sed -e '/[0-9]/!d' -e '/\./!d' -e 's/^[^0-9]\+//')
                         options+=$'\n''all'
 
                     elif [[ $cword -eq 6 ]]; then

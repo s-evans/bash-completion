@@ -5,7 +5,7 @@ _sc_inactive_services()
     local IFS options
     IFS=$'\n'
     options=$(sc query state\= inactive | sed -e '/^SERV/!d' -e 's/^[^ ]\+ //')
-    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
 _sc_active_services()
@@ -13,7 +13,7 @@ _sc_active_services()
     local IFS options
     IFS=$'\n'
     options=$(sc query | sed -e '/^SERV/!d' -e 's/^[^ ]\+ //')
-    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
 _sc_services()
@@ -21,7 +21,7 @@ _sc_services()
     local services IFS
     IFS=$'\n'
     options=$(sc query state\= all | sed -e '/^SERV/!d' -e 's/^[^ ]\+ //')
-    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
 _sc()

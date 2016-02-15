@@ -8,7 +8,7 @@ _cygdrop_group()
     local options IFS
     IFS=$'\n'
     options=$(wmic group get name | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
-    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
 _cygdrop()

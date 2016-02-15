@@ -7,7 +7,7 @@ _cygrunsrv_list_users()
     local options IFS
     IFS=$'\n'
     options=$(wmic useraccount get name | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
-    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
 _cygrunsrv_list_svcs()
@@ -15,7 +15,7 @@ _cygrunsrv_list_svcs()
     local options IFS
     IFS=$'\n'
     options=$(cygrunsrv --list)
-    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
 _cygrunsrv()

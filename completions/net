@@ -1,9 +1,29 @@
 #!/usr/bin/env sh
 
+# TODO: 's/[:=]/\\\&/g' should be 's/[:=]/\\&/g' in all files
+
+_net_used_devices()
+{
+    local IFS options
+    IFS=$'\n'
+    options=$(net use | sed -e '/:/!d' -e 's/^[^ ]\+[ ]\+//' -e 's/ .*//')
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
+}
+
+_net_resources()
+{
+    local IFS options
+    IFS=$'\n'
+    options=$(net view $1 /all | sed -e '1,/^-/d' -e '$d' -e '/\(  \)\+/!d' -e 's/ .*//')
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
+}
+
 _net_computer_names()
 {
-    local options=$(printf '%q ' $(net view /all | sed -e '/^\\\\/!d' -e 's/ .*//'))
-    echo ${options,,}
+    local IFS options
+    IFS=$'\n'
+    local options=$(net view /all | sed -e '/^\\\\/!d' -e 's/ .*//')
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
 _net_inactive_services()
@@ -11,7 +31,7 @@ _net_inactive_services()
     local IFS options
     IFS=$'\n'
     options=$(sc query state\= inactive | sed -e '/^SERV/!d' -e 's/^[^ ]\+ //')
-    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
 _net_active_services()
@@ -19,7 +39,7 @@ _net_active_services()
     local IFS options
     IFS=$'\n'
     options=$(sc query | sed -e '/^SERV/!d' -e 's/^[^ ]\+ //')
-    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
 _windows_net_users()
@@ -27,7 +47,7 @@ _windows_net_users()
     local IFS options
     IFS=$'\n'
     options=$(wmic useraccount get name | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
-    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
 _net_localgroup()
@@ -35,7 +55,7 @@ _net_localgroup()
     local IFS options
     IFS=$'\n'
     options=$(net localgroup | sed -e '/^\*/!d' -e 's/^\*//')
-    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
 _windows_net()
@@ -46,7 +66,7 @@ _windows_net()
 
     if [[ $cword -eq 1 ]] ; then
         COMPREPLY=( $( compgen -W 'accounts computer config continue file group
-        helpmsg localgroup pause session share start statistics stop time
+        helpmsg localgroup pause session share start statistics stop time help
         use user view' -- $cur ) )
         return
     fi
@@ -60,6 +80,14 @@ _windows_net()
     # Command-specific arguments
     case ${words[1]} in
 
+        help)
+            if [[ $cword -eq 2 ]]; then
+                options='accounts computer config continue file group helpmsg
+                localgroup pause session share start statistics stop time use user
+                view'
+            fi
+            ;;
+
         accounts)
             options=('/forcelogoff\:no' '/forcelogoff\:' '/minpwlen\:'
             '/maxpwage\:' '/minpwage\:' '/uniquepw\:' '/domain')
@@ -68,6 +96,7 @@ _windows_net()
 
         computer)
             if [[ $cword -eq 2 ]]; then
+                IFS=$'\n'
                 options=$(_net_computer_names)
 
             elif [[ $cword -eq 3 ]]; then
@@ -101,12 +130,12 @@ _windows_net()
             if [[ $cword -eq 2 ]]; then
                 IFS=$'\n'
                 options=$(_net_localgroup)
-                options+=$'\n''/domain'
+                options+=$'\n/domain'
 
             elif [[ $cword -eq 3 ]]; then
                 IFS=$'\n'
                 options=$(_windows_net_users)
-                options+=$'\n''/comment\:'$'\n''/delete'$'\n''/domain'$'\n''/add'
+                options+=$'\n/comment\:\n/delete\n/domain\n/add'
 
             elif [[ ${words[3]} == /add ]]; then
                 options='/comment\: /domain'
@@ -129,13 +158,14 @@ _windows_net()
             else
                 IFS=$'\n'
                 options=$(_windows_net_users)
-                options+=$'\n''/delete'$'\n''/domain'$'\n''/add'
+                options+=$'\n/delete\n/domain\n/add'
 
             fi
             ;;
 
         session)
             if [[ $cword -eq 2 ]]; then
+                IFS=$'\n'
                 options=$(_net_computer_names)
 
             elif [[ $cword -eq 3 ]]; then
@@ -189,8 +219,9 @@ _windows_net()
         time)
             if [[ $cword -eq 2 ]]; then
                 # TODO: also suggest domains
+                IFS=$'\n'
                 options=$(_net_computer_names)
-                options=' /domain\: /domain /rtsdomain\: /rtsdomain '
+                options=$'\n/domain\:\n/domain\n/rtsdomain\:\n/rtsdomain'
 
             elif [[ $cword -eq 3 ]]; then
                 options='/set'
@@ -200,23 +231,43 @@ _windows_net()
 
         use)
             if [[ $cword -eq 2 ]]; then
-                # TODO: also list device names currently in use
-                options='\* /persistent\:yes /persistent\:no'
+                # TODO: more completion for resources as below
+                IFS=$'\n'
+                options=$(_net_used_devices)
+                options+=$'\n'$(printf '%s\\\\' $(_net_computer_names))
+                options+=$'\n\*\n/persistent\:yes\n/persistent\:no'
 
             elif [[ ${words[2]} == /persistent\\:* ]]; then
                 return
 
             elif [[ $cword -eq 3 ]]; then
-                # TODO: do completion for shared resources and folders for each computer
-                options=$(_net_computer_names)
-                options+=' \* '
+                IFS=$'\n'
+                local resource=$(echo ${words[3]} | sed -e 's/^\\\\\\\\[^\]\+//')
+                local computer=$(echo ${words[3]} | sed -e 's/\(^\\\\\\\\[^\]\+\).*/\1/')
+
+                if [[ "$resource" ]]; then
+                    # TODO: do completion for folders within shared disks
+                    local unescaped_computer=$(printf '%b' "$computer")
+                    local escaped_computer=$(printf '%q' $computer)
+                    options=$(_net_resources $unescaped_computer | sed -e 's/^/'$escaped_computer'\\\\/')
+
+                else
+                    options=$(printf '%s\\\\' $(_net_computer_names))
+
+                fi
+
+                # TODO: missing some logic here based on whether or not ${words[2]} is a device or a computername and resource
+                # options+=$'\n\*\n/home\n/user\:\n/smartcard\n/savecred\n/delete\n/persistent\:yes\n/persistent\:no'
+
+            elif [[ "${words[3]}" == /home ]]; then
+                return
+
+            elif [[ "${words[4]}" == /home ]]; then
+                return
 
             elif [[ $cword -eq 4 ]]; then
-                options='/home /user\: /smartcard /savecred /delete
+                options='\* /home /user\: /smartcard /savecred /delete
                 /persistent\:yes /persistent\:no'
-
-            elif [[ ${word[4]} == /home ]]; then
-                return
 
             else
                 options=('/user\:' '/smartcard' '/savecred' '/delete'
@@ -230,7 +281,7 @@ _windows_net()
             if [[ $cword -eq 2 ]]; then
                 IFS=$'\n'
                 options=$(_windows_net_users)
-                options+=$'\n''?'$'\n''/domain'
+                options+=$'\n?\n/domain'
 
             elif [[ $cword -eq 3 ]]; then
                 options='\* /delete /times\: /times\:all'
@@ -256,8 +307,9 @@ _windows_net()
 
         view)
             if [[ $cword -eq 2 ]]; then
+                IFS=$'\n'
                 options=$(_net_computer_names)
-                options+=' /all /domain /domain\: '
+                options+=$'\n/all\n/domain\n/domain\:'
 
             elif [[ $cword -eq 3 && $prev != /all && $prev != /domain* ]]; then
                 options='/cache'
@@ -269,6 +321,7 @@ _windows_net()
 
     COMPREPLY=( $(compgen -W '$options' -- $cur ) )
     [[ $COMPREPLY == *: ]] && compopt -o nospace
+    [[ $COMPREPLY == *\\ ]] && compopt -o nospace
 }
 
 complete -o default -F _windows_net net net.exe

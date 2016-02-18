@@ -5,13 +5,13 @@
 _net_local_share_names()
 {
     local IFS=$'\n'
-    printf '%q\n' $(wmic share get name | sed -e '1d' -e '$d' -e 's/./\l&/g' -e 's/\s*$//') | sed -e 's/[:=]/\\&/g'
+    printf '%q\n' $(wmic share get name 2> /dev/null | sed -e '1d' -e '$d' -e 's/./\l&/g' -e 's/\s*$//') | sed -e 's/[:=]/\\&/g'
 }
 
 _net_shared_paths()
 {
     local IFS=$'\n'
-    printf '%q\n' $(wmic share get path | sed -e '1d' -e '$d' -e 's/\s*$//' -e '/^$/d' -e 's/./\l&/g') | sed -e 's/[:=]/\\&/g'
+    printf '%q\n' $(wmic share get path 2> /dev/null | sed -e '1d' -e '$d' -e 's/\s*$//' -e '/^$/d' -e 's/./\l&/g') | sed -e 's/[:=]/\\&/g'
 }
 
 _net_complete_share()
@@ -31,20 +31,26 @@ _net_complete_share()
     fi
 }
 
+_net_local_disks()
+{
+    local IFS=$'\n'
+    printf '%q\n' $(wmic logicaldisk where drivetype!=4 get deviceid 2> /dev/null | sed -e '1d' -e '$d' -e 's/\s\+//' -e 's/./\l&/') | sed -e 's/[:=]/\\&/g'
+}
+
 _net_all_drive_letters()
 {
     printf "$(printf '\\x%x\n' $(seq 97 122))"
 }
 
-_net_local_disks()
+_net_local_drive_letters()
 {
-    wmic logicaldisk where drivetype!=4 get deviceid 2> /dev/null | sed -e '1d' -e '$d' -e 's/://' -e 's/\W\+//' -e 's/./\l&/'
+    wmic logicaldisk where drivetype!=4 get deviceid 2> /dev/null | sed -e '1d' -e '$d' -e 's/\W\+//' -e 's/./\l&/'
 }
 
 _net_available_and_network_drive_letters()
 {
     # list all possible drive letters that are not mapped to local drives
-    local local_drives=( $(_net_local_disks) )
+    local local_drives=( $(_net_local_drive_letters) )
     local all_drives=( $(_net_all_drive_letters) )
     printf '%s\: \n' $(_complement local_drives[@] all_drives[@])
 }

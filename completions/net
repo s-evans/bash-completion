@@ -1,5 +1,19 @@
 #!/usr/bin/env sh
 
+# TODO: mutual exclusivity of options
+
+_net_local_share_names()
+{
+    local IFS=$'\n'
+    printf '%q\n' $(wmic share get name | sed -e '1d' -e '$d' -e 's/./\l&/g' -e 's/\s*$//') | sed -e 's/[:=]/\\&/g'
+}
+
+_net_shared_paths()
+{
+    local IFS=$'\n'
+    printf '%q\n' $(wmic share get path | sed -e '1d' -e '$d' -e 's/\s*$//' -e '/^$/d' -e 's/./\l&/g') | sed -e 's/[:=]/\\&/g'
+}
+
 _net_complete_share()
 {
     local resource=$(echo $1 | sed -e '/^\\\\\\\\[^\]\+/!d' -e 's/^\\\\\\\\[^\]\+//')
@@ -217,21 +231,49 @@ _windows_net()
 
         share)
             if [[ $cword -eq 2 ]]; then
-                # TODO: list share and device names
-                options=''
+                IFS=$'\n'
 
-            elif [[ ${words[2]} == *=* ]]; then
-                # TODO: /grant should be username,permission
-                options=('/grant\:full' '/grant\:change' '/grant\:read'
-                '/users\:' '/unlimited' '/remark\:' '/cache\:manual'
+                # TODO: this conditional could be improved to avoid matching directories containing an equals sign
+                if [[ ${words[2]} == *\\=* ]]; then
+                    # TODO: suggest windows devices and file paths therein
+                    options=$'\n'
+
+                else
+                    options=$(_net_local_share_names)
+                    options+=$'\n'$(_net_shared_paths)
+
+                    if [[ "${words[2]}" ]]; then
+                        # TODO: this doesn't work with spaces and special chars...
+                        options+=$'\n'$cur'\='
+                    fi
+
+                fi
+
+            elif [[ "$(_net_local_share_names | command grep $(printf '%q' ${words[2],,}))" ]]; then
+                options=('/users\:' '/unlimited' '/remark\:' '/cache\:manual'
                 '/cache\:documents' '/cache\:programs' '/cache\:branchcache'
                 '/cache\:none')
                 options=$(_complement cmds[@] options[@])
 
+                if [[ $cword -eq 3 ]]; then
+                    options+=' /delete'
+
+                elif [[ ${words[3]} == /delete ]]; then
+                    return
+
+                fi
+
+            elif [[ "$(_net_shared_paths | command grep $(printf '%q' ${words[2],,}))" ]]; then
+                if [[ $cword -eq 3 ]]; then
+                    options='/delete'
+                fi
+
             else
-                options=('/users\:' '/unlimited' '/remark\:' '/cache\:manual'
+                # TODO: update logic for grant. should be '/grant\:username,permission'
+                options=('/grant\:read' '/grant\:change' '/grant\:full'
+                '/users\:' '/unlimited' '/remark\:' '/cache\:manual'
                 '/cache\:documents' '/cache\:programs' '/cache\:branchcache'
-                '/cache\:none' '/delete')
+                '/cache\:none')
                 options=$(_complement cmds[@] options[@])
 
             fi
@@ -375,6 +417,7 @@ _windows_net()
 
     COMPREPLY=( $(compgen -W '$options' -- $cur ) )
     [[ $COMPREPLY == *: ]] && compopt -o nospace
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
     [[ $COMPREPLY == *\\ ]] && compopt -o nospace
 }
 

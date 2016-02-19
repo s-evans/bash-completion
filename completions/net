@@ -233,8 +233,7 @@ _windows_net()
             if [[ $cword -eq 2 ]]; then
                 IFS=$'\n'
 
-                # TODO: this conditional could be improved to avoid matching directories containing an equals sign
-                if [[ ${words[2]} == *\\=* ]]; then
+                if [[ ${words[2]} != \\* && ${words[2]} != ?\\:* && ${words[2]} == *=* ]]; then
                     # TODO: suggest windows devices and file paths therein
                     options=$'\n'
 
@@ -242,14 +241,14 @@ _windows_net()
                     options=$(_net_local_share_names)
                     options+=$'\n'$(_net_shared_paths)
 
-                    if [[ "${words[2]}" ]]; then
-                        # TODO: this doesn't work with spaces and special chars...
-                        options+=$'\n'$cur'\='
+                    if [[ "${words[2]}" && ${words[2]} != \\* && ${words[2]} != ?\\:* ]]; then
+                        options+=$'\n'${words[2]}'\='
+
                     fi
 
                 fi
 
-            elif [[ "$(_net_local_share_names | command grep $(printf '%q' ${words[2],,}))" ]]; then
+            elif [[ "$(_net_local_share_names | command grep -wF "${words[2],,}")" ]]; then
                 options=('/users\:' '/unlimited' '/remark\:' '/cache\:manual'
                 '/cache\:documents' '/cache\:programs' '/cache\:branchcache'
                 '/cache\:none')
@@ -263,7 +262,7 @@ _windows_net()
 
                 fi
 
-            elif [[ "$(_net_shared_paths | command grep $(printf '%q' ${words[2],,}))" ]]; then
+            elif [[ "$(_net_shared_paths | command grep -wF "${words[2],,}")" ]]; then
                 if [[ $cword -eq 3 ]]; then
                     options='/delete'
                 fi
@@ -338,7 +337,7 @@ _windows_net()
                     options='\* /home /user\: /smartcard /savecred
                     /persistent\:yes /persistent\:no'
 
-                    if [[ "$( _net_connected | command grep $(printf '%q' ${words[2],,}))" ]]; then
+                    if [[ "$( _net_connected | command grep -wF "${words[2],,}")" ]]; then
                         options+=' /delete'
                     fi
 
@@ -352,7 +351,7 @@ _windows_net()
 
                 fi
 
-            elif [[ "$( _net_used_devices | command grep $(printf '%q' ${words[2],,}))" ]]; then
+            elif [[ "$( _net_used_devices | command grep -wF "${words[2],,}")" ]]; then
                 if [[ $cword -eq 3 ]]; then
                     options='/delete'
                 fi

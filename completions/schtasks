@@ -10,6 +10,7 @@ _schtasks_event_channels()
     printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
 }
 
+# TODO: remove leading slashes from computer names
 _schtasks_computer_names()
 {
     local IFS options
@@ -58,7 +59,12 @@ _schtasks()
         /run)
             case "$prev" in
 
-                /s|/p)
+                /s)
+                    IFS=$'\n'
+                    options=$(_schtasks_computer_names)
+                    ;;
+
+                /p)
                     return
                     ;;
 
@@ -83,7 +89,12 @@ _schtasks()
         /end)
             case "$prev" in
 
-                /s|/p)
+                /s)
+                    IFS=$'\n'
+                    options=$(_schtasks_computer_names)
+                    ;;
+
+                /p)
                     return
                     ;;
 
@@ -234,7 +245,12 @@ _schtasks()
         /delete)
             case "$prev" in
 
-                /s|/p)
+                /s)
+                    IFS=$'\n'
+                    options=$(_schtasks_computer_names)
+                    ;;
+
+                /p)
                     return
                     ;;
 
@@ -259,7 +275,12 @@ _schtasks()
         /query)
             case "$prev" in
 
-                /s|/p)
+                /s)
+                    IFS=$'\n'
+                    options=$(_schtasks_computer_names)
+                    ;;
+
+                /p)
                     return
                     ;;
 

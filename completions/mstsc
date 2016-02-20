@@ -24,7 +24,7 @@ _mstsc()
 
         /v\\:*)
             IFS=$'\n'
-            options=$(printf '/v\\:%s\n' _mstsc_computer_names)
+            options=$(printf '/v\\:%s\n' $(_mstsc_computer_names))
             ;;
 
         *)

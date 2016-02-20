@@ -16,6 +16,14 @@ _wevtutil_logs()
     printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
+_wevtutil_users()
+{
+    local IFS options
+    IFS=$'\n'
+    options=$(wmic useraccount get name 2> /dev/null | sed -e '1d' -e '$d' -e 's/\W*$//')
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
+}
+
 _wevtutil_computer_names()
 {
     local IFS options
@@ -31,24 +39,39 @@ _wevtutil()
 
     cur=$(printf '%q' "${cur,,}")
 
-    if [[ $prev == '/?' ]]; then
-        return
-    fi
-
     if [[ $cword -eq 1 ]]; then
         options='enum-logs get-log set-log enum-publishers
         get-publisher install-manifest uninstall-manifest query-events
         get-log-info export-log archive-log clear-log el gl sl ep gp im
-        um qe gli epl al cl /?'
+        um qe gli epl al cl'
         COMPREPLY=( $( compgen -W '$options' -- $cur ) )
         return
     fi
 
-    # TODO: computername and username completion
-    options=('/remote\:' '/username\:' '/password\:'
-    '/authentication\:default' '/authentication\:negotiate'
-    '/authentication\:kerberos' '/authentication\:ntlm' '/unicode\:true'
-    '/unicode\:false')
+    case ${words[cword]} in
+
+        /remote\\:*)
+            IFS=$'\n'
+            options=$(printf '/remote\:%s\n' $(_wevtutil_computer_names))
+            COMPREPLY=( $( compgen -W '$options' -- $cur ) )
+            return
+            ;;
+
+        /username\\:*)
+            IFS=$'\n'
+            options=$(printf '/username\:%s\n' $(_wevtutil_users))
+            COMPREPLY=( $( compgen -W '$options' -- $cur ) )
+            return
+            ;;
+
+        *)
+            options=('/remote\:' '/username\:' '/password\:'
+            '/authentication\:default' '/authentication\:negotiate'
+            '/authentication\:kerberos' '/authentication\:ntlm'
+            '/unicode\:true' '/unicode\:false')
+            ;;
+
+    esac
 
     local cmds=( ${words[@]::cword} ) 
 
@@ -90,7 +113,7 @@ _wevtutil()
                 return
 
             else
-                options=('/logfile\:true' '/logfile\:false'
+                options+=('/logfile\:true' '/logfile\:false'
                 '/structuredquery\:true' '/structuredquery\:false' '/query\:'
                 '/overwrite\:true' '/overwrite\:false')
                 options=$(_complement cmds[@] options[@])
@@ -104,7 +127,7 @@ _wevtutil()
                 options=$(_wevtutil_logs)
 
             else
-                options=('/format\:xml' '/format\:text')
+                options+=('/format\:xml' '/format\:text')
                 options=$(_complement cmds[@] options[@])
 
             fi
@@ -116,7 +139,7 @@ _wevtutil()
                 options=$(_wevtutil_publishers)
 
             else
-                options=('/getevents\:true' '/getevents\:false'
+                options+=('/getevents\:true' '/getevents\:false'
                 '/getmessage\:true' '/getmessage\:false' '/format\:xml'
                 '/format\:text')
                 options=$(_complement cmds[@] options[@])
@@ -129,7 +152,7 @@ _wevtutil()
                 return
 
             else
-                options=('/resourceFilePath\:' '/messageFilePath\:'
+                options+=('/resourceFilePath\:' '/messageFilePath\:'
                 '/parameterFilePath\:')
                 options=$(_complement cmds[@] options[@])
 
@@ -142,7 +165,7 @@ _wevtutil()
                 options=$(_wevtutil_logs)
 
             else
-                options=('/logfile\:true' '/logfile\:false'
+                options+=('/logfile\:true' '/logfile\:false'
                 '/structuredquery\:true' '/structuredquery\:false' '/query\:'
                 '/bookmark\:' '/savebookmark\:' '/reversedirection\:true'
                 '/reversedirection\:false' '/format\:xml' '/format\:text'
@@ -158,7 +181,7 @@ _wevtutil()
                 options=$(_wevtutil_logs)
 
             else
-                options=('/enabled\:true' '/enabled\:false' '/quiet\:true'
+                options+=('/enabled\:true' '/enabled\:false' '/quiet\:true'
                 '/quiet\:false' '/filemax\:' '/isolation\:system'
                 '/isolation\:application' '/isolation\:custom' '/logfilename\:'
                 '/retention\:true' '/retention\:false' '/autobackup\:true'

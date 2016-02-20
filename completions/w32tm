@@ -47,7 +47,7 @@ _w32tm()
                 /computers\\:*)
                     IFS=$'\n'
                     local prefix=$(printf "$cur" | sed 's/\([:,]\)[^:,]*$/\1/')
-                    options=$(printf "$prefix\*%s\n$prefix%s\n" $(_w32tm_computer_names))
+                    options=$(printf "$prefix\*%s,\n$prefix%s,\n" $(_w32tm_computer_names))
                     ;;
 
                 *)
@@ -188,6 +188,7 @@ _w32tm()
 
     COMPREPLY=( $( compgen -W '$options' -- "$cur" ) )
     [[ $COMPREPLY == *: ]] && compopt -o nospace
+    [[ $COMPREPLY == *, ]] && compopt -o nospace
 }
 
 complete -o default -F _w32tm w32tm w32tm.exe

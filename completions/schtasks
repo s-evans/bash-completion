@@ -10,12 +10,11 @@ _schtasks_event_channels()
     printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
 }
 
-# TODO: remove leading slashes from computer names
 _schtasks_computer_names()
 {
     local IFS options
     IFS=$'\n'
-    local options=$(net view /all 2> /dev/null | sed -e '/^\\\\/!d' -e 's/ .*//')
+    local options=$(net view /all 2> /dev/null | sed -e '/^\\\\/!d' -e 's/ .*//' -e 's/^\\\\//')
     printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 

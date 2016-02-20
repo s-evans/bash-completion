@@ -8,7 +8,7 @@ _windbg_services()
     local IFS options
     IFS=$'\n'
     options=$(sc query | sed -e '/^SERV/!d' -e 's/^[^ ]\+ //')
-    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
 _windbg_task_images()
@@ -16,7 +16,7 @@ _windbg_task_images()
     local IFS options
     IFS=$'\n'
     options=$(tasklist /fo list | sed -e '/^Image/ !d' -e 's/^[^:]\+: \+//')
-    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
 _windbg()

@@ -1,9 +1,90 @@
 #!/usr/bin/env sh
 
+# TODO: mutual exclusivity of options
+
+_net_local_share_names()
+{
+    local IFS=$'\n'
+    printf '%q\n' $(wmic share get name 2> /dev/null | sed -e '1d' -e '$d' -e 's/./\l&/g' -e 's/\s*$//') | sed -e 's/[:=]/\\&/g'
+}
+
+_net_shared_paths()
+{
+    local IFS=$'\n'
+    printf '%q\n' $(wmic share get path 2> /dev/null | sed -e '1d' -e '$d' -e 's/\s*$//' -e '/^$/d' -e 's/./\l&/g') | sed -e 's/[:=]/\\&/g'
+}
+
+_net_complete_share()
+{
+    local resource=$(echo $1 | sed -e '/^\\\\\\\\[^\]\+/!d' -e 's/^\\\\\\\\[^\]\+//')
+    local computer=$(echo $1 | sed -e 's/\(^\\\\\\\\[^\]\+\).*/\1/')
+
+    if [[ "$resource" ]]; then
+        # TODO: do completion for folders within shared disks
+        local unescaped_computer=$(printf '%b' "$computer")
+        local escaped_computer=$(printf '%q' $computer)
+        _net_resources $unescaped_computer | sed -e 's/^/'$escaped_computer'\\\\/'
+
+    else
+        printf '%s\\\\' $(_net_computer_names)
+
+    fi
+}
+
+_net_local_disks()
+{
+    local IFS=$'\n'
+    printf '%q\n' $(wmic logicaldisk where drivetype!=4 get deviceid 2> /dev/null | sed -e '1d' -e '$d' -e 's/\s\+//' -e 's/./\l&/') | sed -e 's/[:=]/\\&/g'
+}
+
+_net_all_drive_letters()
+{
+    printf "$(printf '\\x%x\n' $(seq 97 122))"
+}
+
+_net_local_drive_letters()
+{
+    wmic logicaldisk where drivetype!=4 get deviceid 2> /dev/null | sed -e '1d' -e '$d' -e 's/\W\+//' -e 's/./\l&/'
+}
+
+_net_available_and_network_drive_letters()
+{
+    # list all possible drive letters that are not mapped to local drives
+    local local_drives=( $(_net_local_drive_letters) )
+    local all_drives=( $(_net_all_drive_letters) )
+    printf '%s\: \n' $(_complement local_drives[@] all_drives[@])
+}
+
+_net_used_devices()
+{
+    local IFS options
+    IFS=$'\n'
+    options=$(net use | sed -e '/:/!d' -e 's/^[^ ]\+[ ]\+//' -e 's/ .*//')
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
+}
+
+_net_connected()
+{
+    local IFS options
+    IFS=$'\n'
+    options=$(wmic netuse where localname=null get name 2> /dev/null | sed -e '1d' -e '$d' -e 's/[ \r]*$//' -e 's/./\l&/g')
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
+}
+
+_net_resources()
+{
+    local IFS options
+    IFS=$'\n'
+    options=$(net view $1 /all | sed -e '1,/^-/d' -e '$d' -e '/\(  \)\+/!d' -e 's/ .*//')
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
+}
+
 _net_computer_names()
 {
-    local options=$(printf '%q ' $(net view /all | sed -e '/^\\\\/!d' -e 's/ .*//'))
-    echo ${options,,}
+    local IFS options
+    IFS=$'\n'
+    local options=$(net view /all | sed -e '/^\\\\/!d' -e 's/ .*//')
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
 _net_inactive_services()
@@ -11,7 +92,7 @@ _net_inactive_services()
     local IFS options
     IFS=$'\n'
     options=$(sc query state\= inactive | sed -e '/^SERV/!d' -e 's/^[^ ]\+ //')
-    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
 _net_active_services()
@@ -19,7 +100,7 @@ _net_active_services()
     local IFS options
     IFS=$'\n'
     options=$(sc query | sed -e '/^SERV/!d' -e 's/^[^ ]\+ //')
-    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
 _windows_net_users()
@@ -27,7 +108,7 @@ _windows_net_users()
     local IFS options
     IFS=$'\n'
     options=$(wmic useraccount get name | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
-    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
 _net_localgroup()
@@ -35,7 +116,7 @@ _net_localgroup()
     local IFS options
     IFS=$'\n'
     options=$(net localgroup | sed -e '/^\*/!d' -e 's/^\*//')
-    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
 _windows_net()
@@ -46,7 +127,7 @@ _windows_net()
 
     if [[ $cword -eq 1 ]] ; then
         COMPREPLY=( $( compgen -W 'accounts computer config continue file group
-        helpmsg localgroup pause session share start statistics stop time
+        helpmsg localgroup pause session share start statistics stop time help
         use user view' -- $cur ) )
         return
     fi
@@ -60,6 +141,14 @@ _windows_net()
     # Command-specific arguments
     case ${words[1]} in
 
+        help)
+            if [[ $cword -eq 2 ]]; then
+                options='accounts computer config continue file group helpmsg
+                localgroup pause session share start statistics stop time use user
+                view'
+            fi
+            ;;
+
         accounts)
             options=('/forcelogoff\:no' '/forcelogoff\:' '/minpwlen\:'
             '/maxpwage\:' '/minpwage\:' '/uniquepw\:' '/domain')
@@ -68,6 +157,7 @@ _windows_net()
 
         computer)
             if [[ $cword -eq 2 ]]; then
+                IFS=$'\n'
                 options=$(_net_computer_names)
 
             elif [[ $cword -eq 3 ]]; then
@@ -101,12 +191,12 @@ _windows_net()
             if [[ $cword -eq 2 ]]; then
                 IFS=$'\n'
                 options=$(_net_localgroup)
-                options+=$'\n''/domain'
+                options+=$'\n/domain'
 
             elif [[ $cword -eq 3 ]]; then
                 IFS=$'\n'
                 options=$(_windows_net_users)
-                options+=$'\n''/comment\:'$'\n''/delete'$'\n''/domain'$'\n''/add'
+                options+=$'\n/comment\:\n/delete\n/domain\n/add'
 
             elif [[ ${words[3]} == /add ]]; then
                 options='/comment\: /domain'
@@ -129,13 +219,14 @@ _windows_net()
             else
                 IFS=$'\n'
                 options=$(_windows_net_users)
-                options+=$'\n''/delete'$'\n''/domain'$'\n''/add'
+                options+=$'\n/delete\n/domain\n/add'
 
             fi
             ;;
 
         session)
             if [[ $cword -eq 2 ]]; then
+                IFS=$'\n'
                 options=$(_net_computer_names)
 
             elif [[ $cword -eq 3 ]]; then
@@ -146,21 +237,48 @@ _windows_net()
 
         share)
             if [[ $cword -eq 2 ]]; then
-                # TODO: list share and device names
-                options=''
+                IFS=$'\n'
 
-            elif [[ ${words[2]} == *=* ]]; then
-                # TODO: /grant should be username,permission
-                options=('/grant\:full' '/grant\:change' '/grant\:read'
-                '/users\:' '/unlimited' '/remark\:' '/cache\:manual'
+                if [[ ${words[2]} != \\* && ${words[2]} != ?\\:* && ${words[2]} == *=* ]]; then
+                    # TODO: suggest windows devices and file paths therein
+                    options=$'\n'
+
+                else
+                    options=$(_net_local_share_names)
+                    options+=$'\n'$(_net_shared_paths)
+
+                    if [[ "${words[2]}" && ${words[2]} != \\* && ${words[2]} != ?\\:* ]]; then
+                        options+=$'\n'${words[2]}'\='
+
+                    fi
+
+                fi
+
+            elif [[ "$(_net_local_share_names | command grep -wF "${words[2],,}")" ]]; then
+                options=('/users\:' '/unlimited' '/remark\:' '/cache\:manual'
                 '/cache\:documents' '/cache\:programs' '/cache\:branchcache'
                 '/cache\:none')
                 options=$(_complement cmds[@] options[@])
 
+                if [[ $cword -eq 3 ]]; then
+                    options+=' /delete'
+
+                elif [[ ${words[3]} == /delete ]]; then
+                    return
+
+                fi
+
+            elif [[ "$(_net_shared_paths | command grep -wF "${words[2],,}")" ]]; then
+                if [[ $cword -eq 3 ]]; then
+                    options='/delete'
+                fi
+
             else
-                options=('/users\:' '/unlimited' '/remark\:' '/cache\:manual'
+                # TODO: update logic for grant. should be '/grant\:username,permission'
+                options=('/grant\:read' '/grant\:change' '/grant\:full'
+                '/users\:' '/unlimited' '/remark\:' '/cache\:manual'
                 '/cache\:documents' '/cache\:programs' '/cache\:branchcache'
-                '/cache\:none' '/delete')
+                '/cache\:none')
                 options=$(_complement cmds[@] options[@])
 
             fi
@@ -189,8 +307,9 @@ _windows_net()
         time)
             if [[ $cword -eq 2 ]]; then
                 # TODO: also suggest domains
+                IFS=$'\n'
                 options=$(_net_computer_names)
-                options=' /domain\: /domain /rtsdomain\: /rtsdomain '
+                options=$'\n/domain\:\n/domain\n/rtsdomain\:\n/rtsdomain'
 
             elif [[ $cword -eq 3 ]]; then
                 options='/set'
@@ -200,27 +319,60 @@ _windows_net()
 
         use)
             if [[ $cword -eq 2 ]]; then
-                # TODO: also list device names currently in use
-                options='\* /persistent\:yes /persistent\:no'
+                IFS=$'\n'
+
+                # list all possible drive letters that are not mapped to local drives
+                options=$(_net_available_and_network_drive_letters)
+
+                # list network connections that are unmapped
+                options+=$'\n'$(_net_connected)
+
+                # list basic options
+                options+=$'\n\*\n/persistent\:yes\n/persistent\:no'
+
+                # list computer names and shares found on the network
+                if [[ $cur == \\* ]]; then
+                    options+=$'\n'$(_net_complete_share ${words[2]})
+                fi
 
             elif [[ ${words[2]} == /persistent\\:* ]]; then
                 return
 
+            elif [[ ${words[2]} == \\\\* ]]; then
+                if [[ $cword -eq 3 ]]; then
+                    options='\* /home /user\: /smartcard /savecred
+                    /persistent\:yes /persistent\:no'
+
+                    if [[ "$( _net_connected | command grep -wF "${words[2],,}")" ]]; then
+                        options+=' /delete'
+                    fi
+
+                elif [[ ${words[3]} == /delete ]]; then
+                    return
+
+                else
+                    options=('/home' '/user\:' '/smartcard' '/savecred'
+                    '/persistent\:yes' '/persistent\:no')
+                    options=$(_complement cmds[@] options[@])
+
+                fi
+
+            elif [[ "$( _net_used_devices | command grep -wF "${words[2],,}")" ]]; then
+                if [[ $cword -eq 3 ]]; then
+                    options='/delete'
+                fi
+
             elif [[ $cword -eq 3 ]]; then
-                # TODO: do completion for shared resources and folders for each computer
-                options=$(_net_computer_names)
-                options+=' \* '
+                IFS=$'\n'
+                options=$(_net_complete_share ${words[3]})
 
             elif [[ $cword -eq 4 ]]; then
-                options='/home /user\: /smartcard /savecred /delete
-                /persistent\:yes /persistent\:no'
-
-            elif [[ ${word[4]} == /home ]]; then
-                return
+                options='\* /user\: /smartcard /savecred /persistent\:yes
+                /persistent\:no'
 
             else
-                options=('/user\:' '/smartcard' '/savecred' '/delete'
-                '/persistent\:yes' '/persistent\:no')
+                options=('/user\:' '/smartcard' '/savecred' '/persistent\:yes'
+                '/persistent\:no')
                 options=$(_complement cmds[@] options[@])
 
             fi
@@ -230,12 +382,12 @@ _windows_net()
             if [[ $cword -eq 2 ]]; then
                 IFS=$'\n'
                 options=$(_windows_net_users)
-                options+=$'\n''?'$'\n''/domain'
+                options+=$'\n?\n/domain'
 
             elif [[ $cword -eq 3 ]]; then
                 options='\* /delete /times\: /times\:all'
 
-            elif [[ ${words[3]} == '/delete' ]]; then
+            elif [[ ${words[3]} == /delete ]]; then
                 if [[ $cword -eq 4 ]]; then
                     options='/domain'
                 fi
@@ -256,8 +408,9 @@ _windows_net()
 
         view)
             if [[ $cword -eq 2 ]]; then
+                IFS=$'\n'
                 options=$(_net_computer_names)
-                options+=' /all /domain /domain\: '
+                options+=$'\n/all\n/domain\n/domain\:'
 
             elif [[ $cword -eq 3 && $prev != /all && $prev != /domain* ]]; then
                 options='/cache'
@@ -269,6 +422,8 @@ _windows_net()
 
     COMPREPLY=( $(compgen -W '$options' -- $cur ) )
     [[ $COMPREPLY == *: ]] && compopt -o nospace
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+    [[ $COMPREPLY == *\\ ]] && compopt -o nospace
 }
 
 complete -o default -F _windows_net net net.exe

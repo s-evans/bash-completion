@@ -44,7 +44,7 @@ _windows_reg_keys()
 
     # escape bash tokenizer strings and separate with newlines
     IFS=$'\n'
-    options=$(printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d")
+    options=$(printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d")
 
     # create additional completions with short root key names for convenience
     echo "$options" | sed -e 's/^hkey_local_machine/hklm/' -e \
@@ -78,7 +78,7 @@ _windows_reg_values()
     # escape bash tokenizer strings and separate with newlines
     # escape bash completion word breaks that aren't otherwise escaped by "printf '%q'"
     # remove the quoted blank string that occurs if there are no values echo "${options,,}" | sed -e 's/[:=]/\\\&/g'
-    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
 # TODO: mutually exclusive options (ie. reg:32 and reg:64)

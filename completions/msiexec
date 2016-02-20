@@ -52,6 +52,7 @@ _msiexec()
             if [[ $cword -eq 2 ]]; then
                 # TODO: suggest msi files?
                 options=''
+
             else
                 options="/t /g $restart_options $display_options $log_options"
 
@@ -80,8 +81,10 @@ _msiexec()
                 # TODO: suggest msi files?
                 local IFS=$'\n'
                 options=$(_msiexec_pkgs)
+
             else
                 options="$restart_options $display_options $log_options"
+
             fi
 
             _msiexec_end

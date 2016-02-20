@@ -23,6 +23,7 @@ _mstsc()
     case $cur in
 
         /v\\:*)
+            # TODO: remove leading slashes
             IFS=$'\n'
             options=$(printf '/v\\:%s\n' _mstsc_computer_names)
             ;;

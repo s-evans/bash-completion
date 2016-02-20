@@ -31,7 +31,7 @@ _mstsc()
             cmds=( ${words[@]::cword} ) 
             options=('/admin' '/f' '/fullscreen' '/w\:' '/h\:' '/public'
             '/plan' '/multimon' '/migrate' '/edit' '/v\:')
-            options=$(_complement words[@]::cword options[@])
+            options=$(_complement cmds options[@])
             ;;
 
     esac

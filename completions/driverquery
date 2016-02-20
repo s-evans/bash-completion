@@ -56,7 +56,7 @@ _driverquery()
             esac
 
             local cmds=( ${words[@]::cword} ) 
-            options=$(_complement words[@]::cword options[@])
+            options=$(_complement cmds options[@])
             ;;
 
     esac

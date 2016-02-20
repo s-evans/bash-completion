@@ -1,0 +1,69 @@
+#!/usr/bin/env sh
+
+_at_computer_names()
+{
+    local IFS options
+    IFS=$'\n'
+    local options=$(net view /all 2> /dev/null | sed -e '/^\\\\/!d' -e 's/ .*//')
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
+}
+
+_at()
+{
+    local cur prev words cword options IFS cmds
+    _init_completion
+    cur=$(printf '%q' "${cur,,}")
+    cmds=( ${words[@]::cword} ) 
+
+    if [[ "$prev" == "/?" ]]; then
+        return
+    fi
+
+    if [[ $cword -eq 1 ]] ; then
+        if [[ "$cur" == \\\\* ]]; then
+            IFS=$'\n'
+            options=$(_at_computer_names)
+
+        elif [[ "$cur" != *:* ]]; then
+            options=$(printf '%02d\: ' $(seq 0 23))
+            options+=' \\\\'
+            # TODO: suggest task ids from the local computer
+
+        elif [[ "$cur" == *:* ]]; then
+            options=$(printf "${cur%%:*}:%02d " $(seq 0 59))
+
+        fi
+
+    elif [[ $cword -eq 2 && ${words[1]} == \\\\* ]]; then
+        if [[ "$cur" != *:* ]]; then
+            options=$(printf '%02d\: ' $(seq 0 23))
+            # TODO: suggest task ids from the remote computer
+
+        elif [[ "$cur" == *:* ]]; then
+            options=$(printf "${cur%%:*}:%02d " $(seq 0 59))
+
+        fi
+
+    elif [[ ( ${words[1]} == \\\\* && ${words[2]} == *:* ) || ${words[1]} == *:* ]]; then
+        # TODO: completion for /every and /next
+        options=('/interactive' '/every\:' '/next\:')
+        options=$(_complement cmds[@] options[@])
+
+    else
+        if [[ $prev == /delete ]]; then
+            options='/yes'
+
+        else
+            options=('/delete')
+            options=$(_complement cmds[@] options[@])
+
+        fi
+
+    fi
+
+    COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+    [[ $COMPREPLY == *: ]] && compopt -o nospace
+}
+
+complete -o default -F _at at at.exe
+

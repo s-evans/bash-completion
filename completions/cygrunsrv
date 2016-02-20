@@ -2,15 +2,15 @@
 
 # TODO: completion for the program specified by the --path / -p argument?
 
-_cygrunsrv_list_users()
+_cygrunsrv_users()
 {
-    local options IFS
+    local IFS options
     IFS=$'\n'
-    options=$(wmic useraccount get name | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
+    options=$(wmic useraccount get name 2> /dev/null | sed -e '1d' -e '$d' -e 's/\W*$//')
     printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
-_cygrunsrv_list_svcs()
+_cygrunsrv_svcs()
 {
     local options IFS
     IFS=$'\n'
@@ -36,17 +36,20 @@ _cygrunsrv()
         -R|-S|-E|-Q|-L|--remove|--start|--stop|--query|--list)
             if [[ $cword -eq 2 ]]; then
                 IFS=$'\n'
-                options=$(_cygrunsrv_list_svcs)
+                options=$(_cygrunsrv_svcs)
             fi
             ;;
 
         -I|--install)
             if [[ $cword -eq 2 ]]; then
-                options=''
+                return
+
             elif [[ $cword -eq 3 ]]; then
-                options='-p --path'
+                return
+
             elif [[ $cword -eq 4 ]]; then
-                options=''
+                return
+
             else
 
                 case $prev in
@@ -61,7 +64,7 @@ _cygrunsrv()
 
                     -u|--user)
                         IFS=$'\n'
-                        options=$(_cygrunsrv_list_users)
+                        options=$(_cygrunsrv_users)
                         ;;
 
                     -s|--termsig|-z|--shutsig)
@@ -70,7 +73,7 @@ _cygrunsrv()
 
                     -y|--dep)
                         IFS=$'\n'
-                        options=$(_cygrunsrv_list_svcs)
+                        options=$(_cygrunsrv_svcs)
                         ;;
 
                     *)

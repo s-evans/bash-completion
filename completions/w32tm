@@ -21,6 +21,8 @@ _w32tm()
             ;;
 
         /monitor)
+            # TODO: complete domains
+            # TODO: complete computer names?
             options=('/domain\:' '/computers\:' '/threads\:' '/ipprotocol\:4' '/ipprotocol\:6' '/nowarn')
             options=$(_complement cmds[@] options[@])
             ;;
@@ -32,14 +34,18 @@ _w32tm()
 
         /stripchart)
             if [[ $cword -eq 2 ]]; then
+                # TODO: complete computer names?
                 options='/computer\:'
+
             else
                 options=('/period\:' '/dataonly' '/samples\:' '/packetinfo' '/ipprotocol\:4' '/ipprotocol\:6')
                 options=$(_complement cmds[@] options[@])
+
             fi
             ;;
 
         /config)
+            # TODO: complete computer names?
             options=('/computer\:' '/update' '/manualpeerlist\:'
             '/syncfromflags\:all' '/syncfromflags\:manual'
             '/syncfromflags\:domhier' '/syncfromflags\:no'
@@ -49,36 +55,47 @@ _w32tm()
             ;;
 
         /dumpreg)
+            # TODO: complete computer names?
             options=('/subkey\:' '/computer\:')
             options=$(_complement cmds[@] options[@])
             ;;
 
         /query)
             if [[ $cword -eq 2 ]]; then
+                # TODO: complete computer names?
                 options='/source /configuration /peers /status /computer\:'
+
             elif [[ ${words[2]} == /computer\\:* ]]; then
                 if [[ $cword -eq 3 ]]; then
                     options='/source /configuration /peers /status'
+
                 elif [[ $cword -eq 4 ]]; then
                     options='/verbose'
+
                 fi
             elif [[ $cword -eq 3 ]]; then
                 options='/verbose'
+
             fi
             ;;
 
         /debug)
             if [[ $cword -eq 2 ]]; then
                 options='/disable /enable'
+
             elif [[ ${words[2]} == /enable ]]; then
                 if [[ $cword -eq 3 ]]; then
                     options='/file\:'
+
                 elif [[ $cword -eq 4 ]]; then
                     options='/size\:'
+
                 elif [[ $cword -eq 5 ]]; then
                     options='/entries\:'
+
                 elif [[ $cword -eq 6 ]]; then
                     options='/truncate'
+
                 fi
             fi
             ;;

@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 
 # TODO: pass completion off to other function for the associated command
-# TODO: remove duplicate and mutual exclusive options
+# TODO: remove mutually exclusive options
 
 _cygcheck_list()
 {
@@ -12,8 +12,7 @@ _cygcheck()
 {
     local cur prev words cword options IFS
     _init_completion
-
-    cur=$(printf '%q' "$cur")
+    cur=$(printf '%q' "${cur,,}")
 
     if [[ $cword -eq 1 ]]; then
         options='-c --check-setup -s --sysinfo -k --keycheck -f --find-package
@@ -24,11 +23,12 @@ _cygcheck()
         return
     fi
 
-    case $(printf '%q' "${words[1]}") in
+    case ${words[1]} in
 
         -h|-v|--help|--verbose)
             if [[ $cword -eq 2 ]]; then
                 options='-v -h --verbose --help'
+
             fi
             ;;
 
@@ -38,17 +38,21 @@ _cygcheck()
                 if [[ $cur != -* ]]; then
                     options=$(_cygcheck_list)
                 fi
+
                 options+=$'\n''-d' 
                 options+=$'\n''--dump-only'
+
             elif [[ $cword -eq 3 && ( ${words[2]} == -d || ${words[2]} == --dump-only ) ]]; then
                 IFS=$'\n'
                 options=$(_cygcheck_list)
+
             fi
             ;;
 
         -s|--sysinfo)
             if [[ $cword -ge 2 && $cword -le 4 ]]; then
                 options='-r --registry -v --verbose -h --help'
+
             fi
             ;;
 

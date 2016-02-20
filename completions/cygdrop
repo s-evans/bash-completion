@@ -1,13 +1,13 @@
 #!/usr/bin/env sh
 
 # TODO: pass completion off to other function for the associated command
-# TODO: remove duplicate and mutual exclusive options
+# TODO: remove mutually exclusive options
 
 _cygdrop_group()
 {
     local options IFS
     IFS=$'\n'
-    options=$(wmic group get name | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
+    options=$(wmic group get name 2> /dev/null | sed -e '1d' -e '$d' -e 's/\W*$//')
     printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 

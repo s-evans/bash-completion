@@ -83,7 +83,6 @@ _windows_reg_values()
 
 # TODO: mutually exclusive options (ie. reg:32 and reg:64)
 # TODO: dependent options (ie. /k /d /c /e are dependent upon /f)
-# TODO: fix option culling loops for escaped characters
 
 _reg()
 {

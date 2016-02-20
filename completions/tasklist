@@ -1,40 +1,50 @@
 #!/usr/bin/env sh
 
-_windows_tasklist()
+# TODO: mutual exclusivity and dependence of options
+
+_tasklist_computer_names()
 {
-    local cur prev words cword options
+    local IFS options
+    IFS=$'\n'
+    local options=$(net view /all 2> /dev/null | sed -e '/^\\\\/!d' -e 's/ .*//')
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
+}
+
+_tasklist_users()
+{
+    local IFS options
+    IFS=$'\n'
+    options=$(wmic useraccount get name 2> /dev/null | sed -e '1d' -e '$d' -e 's/\W*$//')
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
+}
+
+_tasklist()
+{
+    local cur prev words cword options IFS
     _init_completion
 
     cur=$(printf '%q' "${cur,,}")
-
-    if [[ $prev == "/?" ]]; then
-        return
-    fi
 
     # Command-specific arguments
     case $prev in
 
         /s)
-            # TODO: suggest computer names
-            options=''
+            IFS=$'\n'
+            options=$(_tasklist_computer_names)
             ;;
 
         /u)
-            # TODO: suggest users
-            options=''
+            IFS=$'\n'
+            options=$(_tasklist_users)
             ;;
 
-        /p)
-            options=''
-            ;;
-
-        /m)
-            options=''
+        /m|/p|'/?')
+            return
             ;;
 
         /fi)
             # TODO: tons of options here
-            options=''
+            return
             ;;
 
         /fo)
@@ -42,7 +52,9 @@ _windows_tasklist()
             ;;
 
         *)
-            options='/apps /v /fi /nh /fo /svc /m /p /s /u /?'
+            local cmds=( ${words[@]::cword} )
+            options=('/v' '/fi' '/nh' '/fo' '/svc' '/m' '/p' '/s' '/u' '/?')
+            options=$(_complement cmds[@] options[@])
             ;;
 
     esac
@@ -50,5 +62,5 @@ _windows_tasklist()
     COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
 }
 
-complete -o default -F _windows_tasklist tasklist tasklist.exe
+complete -o default -F _tasklist tasklist tasklist.exe
 

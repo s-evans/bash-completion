@@ -1,8 +1,16 @@
 #!/usr/bin/env sh
 
+_mstsc_computer_names()
+{
+    local IFS options
+    IFS=$'\n'
+    local options=$(net view /all 2> /dev/null | sed -e '/^\\\\/!d' -e 's/ .*//')
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
+}
+
 _mstsc()
 {
-    local cur prev words cword options cmds
+    local cur prev words cword options cmds IFS
     _init_completion
     cur=$(printf '%q' "${cur,,}")
 
@@ -15,8 +23,8 @@ _mstsc()
     case $cur in
 
         /v\\:*)
-            # TODO: suggest servers/ports
-            options='/v\:'
+            IFS=$'\n'
+            options=$(printf '/v\\:%s\n' _mstsc_computer_names)
             ;;
 
         *)

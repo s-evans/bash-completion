@@ -2,6 +2,12 @@
 
 # TODO: mutual exclusivity of options
 
+_net_domains()
+{
+    # TODO: list domains
+    echo ""
+}
+
 _net_local_share_names()
 {
     local IFS=$'\n'
@@ -75,7 +81,7 @@ _net_resources()
 {
     local IFS options
     IFS=$'\n'
-    options=$(net view $1 /all | sed -e '1,/^-/d' -e '$d' -e '/\(  \)\+/!d' -e 's/ .*//')
+    options=$(net view $1 /all 2> /dev/null | sed -e '1,/^-/d' -e '$d' -e '/\(  \)\+/!d' -e 's/ .*//')
     printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
@@ -83,7 +89,7 @@ _net_computer_names()
 {
     local IFS options
     IFS=$'\n'
-    local options=$(net view /all | sed -e '/^\\\\/!d' -e 's/ .*//')
+    local options=$(net view /all 2> /dev/null | sed -e '/^\\\\/!d' -e 's/ .*//')
     printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
@@ -103,11 +109,11 @@ _net_active_services()
     printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
-_windows_net_users()
+_net_users()
 {
     local IFS options
     IFS=$'\n'
-    options=$(wmic useraccount get name | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
+    options=$(wmic useraccount get name 2> /dev/null | sed -e '1d' -e '$d' -e 's/\W*$//')
     printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
@@ -115,11 +121,11 @@ _net_localgroup()
 {
     local IFS options
     IFS=$'\n'
-    options=$(net localgroup | sed -e '/^\*/!d' -e 's/^\*//')
+    options=$(net localgroup 2> /dev/null | sed -e '/^\*/!d' -e 's/^\*//')
     printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
-_windows_net()
+_net()
 {
     local cur prev words cword options IFS cmds
     _init_completion
@@ -195,7 +201,7 @@ _windows_net()
 
             elif [[ $cword -eq 3 ]]; then
                 IFS=$'\n'
-                options=$(_windows_net_users)
+                options=$(_net_users)
                 options+=$'\n/comment\:\n/delete\n/domain\n/add'
 
             elif [[ ${words[3]} == /add ]]; then
@@ -218,7 +224,7 @@ _windows_net()
 
             else
                 IFS=$'\n'
-                options=$(_windows_net_users)
+                options=$(_net_users)
                 options+=$'\n/delete\n/domain\n/add'
 
             fi
@@ -306,10 +312,23 @@ _windows_net()
 
         time)
             if [[ $cword -eq 2 ]]; then
-                # TODO: also suggest domains
                 IFS=$'\n'
-                options=$(_net_computer_names)
-                options=$'\n/domain\:\n/domain\n/rtsdomain\:\n/rtsdomain'
+                case $cur in
+
+                    /rtsdomain\\:*|/domain\\:*)
+                        # TODO: suggest domains
+                        options=$(printf "${cur%:*}:%s\n" $(_net_domains))
+                        ;;
+
+                    \\\\*)
+                        options=$(_net_computer_names)
+                        ;;
+
+                    *)
+                        options=$'\\\\\n/domain\:\n/domain\n/rtsdomain\:\n/rtsdomain'
+                        ;;
+
+                esac
 
             elif [[ $cword -eq 3 ]]; then
                 options='/set'
@@ -381,7 +400,7 @@ _windows_net()
         user)
             if [[ $cword -eq 2 ]]; then
                 IFS=$'\n'
-                options=$(_windows_net_users)
+                options=$(_net_users)
                 options+=$'\n?\n/domain'
 
             elif [[ $cword -eq 3 ]]; then
@@ -396,6 +415,7 @@ _windows_net()
                 return
 
             else
+                # TODO: suggest domains
                 options=('/comment\:' '/countrycode\:' '/expires\:' '/domain'
                 '/expires\:never' '/fullname\:' '/homedir\:' '/passwordchg\:no'
                 '/passwordchg\:yes' '/passwordreq\:no' '/passwordreq\:yes'
@@ -409,10 +429,24 @@ _windows_net()
         view)
             if [[ $cword -eq 2 ]]; then
                 IFS=$'\n'
-                options=$(_net_computer_names)
-                options+=$'\n/all\n/domain\n/domain\:'
+                case $cur in
 
-            elif [[ $cword -eq 3 && $prev != /all && $prev != /domain* ]]; then
+                    /domain\\:*)
+                        # TODO: suggest domains
+                        options=$(printf "${cur%:*}:%s\n" $(_net_domains))
+                        ;;
+
+                    \\\\*)
+                        options=$(_net_computer_names)
+                        ;;
+
+                    *)
+                        options=$'\\\\\n/all\n/domain\n/domain\:'
+                        ;;
+
+                esac
+
+            elif [[ $cword -eq 3 && $prev == \\\\* ]]; then
                 options='/cache'
 
             fi
@@ -426,5 +460,5 @@ _windows_net()
     [[ $COMPREPLY == *\\ ]] && compopt -o nospace
 }
 
-complete -o default -F _windows_net net net.exe
+complete -o default -F _net net net.exe
 

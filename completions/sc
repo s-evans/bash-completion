@@ -49,11 +49,15 @@ _sc()
 
     local cmds=( ${words[@]::cword} ) 
 
+    # TODO: suggest computer names if cword -eq 1 and words[1] == \\*
+    # TODO: change the case statement below to find the command at words[2] if words[1] == \\*
+
     # Command-specific arguments
     case ${words[1]} in
 
         query|queryex)
             case $prev in
+
                 type\\=)
                     options='all driver service userservice'
                     ;;

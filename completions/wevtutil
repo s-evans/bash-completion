@@ -36,6 +36,7 @@ _wevtutil()
         return
     fi
 
+    # TODO: computername and username completion
     options=('/remote\:' '/username\:' '/password\:'
     '/authentication\:default' '/authentication\:negotiate'
     '/authentication\:kerberos' '/authentication\:ntlm' '/unicode\:true'
@@ -48,9 +49,11 @@ _wevtutil()
         al|archive-log)
             if [[ $cword -eq 2 ]]; then
                 return
+
             else
                 options+=( '/locale\:' )
                 options=$(_complement cmds[@] options[@])
+
             fi
             ;;
 
@@ -58,9 +61,11 @@ _wevtutil()
             if [[ $cword -eq 2 ]]; then
                 IFS=$'\n'
                 options=$(_wevtutil_logs)
+
             else
                 options+=( '/backup\:' )
                 options=$(_complement cmds[@] options[@])
+
             fi
             ;;
 
@@ -72,13 +77,16 @@ _wevtutil()
             if [[ $cword -eq 2 ]]; then
                 IFS=$'\n'
                 options=$(_wevtutil_logs)
+
             elif [[ $cword -eq 3 ]]; then
                 return
+
             else
                 options=('/logfile\:true' '/logfile\:false'
                 '/structuredquery\:true' '/structuredquery\:false' '/query\:'
                 '/overwrite\:true' '/overwrite\:false')
                 options=$(_complement cmds[@] options[@])
+
             fi
             ;;
 
@@ -86,9 +94,11 @@ _wevtutil()
             if [[ $cword -eq 2 ]]; then
                 IFS=$'\n'
                 options=$(_wevtutil_logs)
+
             else
                 options=('/format\:xml' '/format\:text')
                 options=$(_complement cmds[@] options[@])
+
             fi
             ;;
 
@@ -96,21 +106,25 @@ _wevtutil()
             if [[ $cword -eq 2 ]]; then
                 IFS=$'\n'
                 options=$(_wevtutil_publishers)
+
             else
                 options=('/getevents\:true' '/getevents\:false'
                 '/getmessage\:true' '/getmessage\:false' '/format\:xml'
                 '/format\:text')
                 options=$(_complement cmds[@] options[@])
+
             fi
             ;;
 
         im|install-manifest)
             if [[ $cword -eq 2 ]]; then
                 return
+
             else
                 options=('/resourceFilePath\:' '/messageFilePath\:'
                 '/parameterFilePath\:')
                 options=$(_complement cmds[@] options[@])
+
             fi
             ;;
 
@@ -118,6 +132,7 @@ _wevtutil()
             if [[ $cword -eq 2 ]]; then
                 IFS=$'\n'
                 options=$(_wevtutil_logs)
+
             else
                 options=('/logfile\:true' '/logfile\:false'
                 '/structuredquery\:true' '/structuredquery\:false' '/query\:'
@@ -125,6 +140,7 @@ _wevtutil()
                 '/reversedirection\:false' '/format\:xml' '/format\:text'
                 '/format\:renderedxml' '/locale\:' '/count\:' '/element\:')
                 options=$(_complement cmds[@] options[@])
+
             fi
             ;;
 
@@ -132,6 +148,7 @@ _wevtutil()
             if [[ $cword -eq 2 ]]; then
                 IFS=$'\n'
                 options=$(_wevtutil_logs)
+
             else
                 options=('/enabled\:true' '/enabled\:false' '/quiet\:true'
                 '/quiet\:false' '/filemax\:' '/isolation\:system'
@@ -140,6 +157,7 @@ _wevtutil()
                 '/autobackup\:false' '/maxsize\:' '/level\:' '/keywords\:'
                 '/config\:')
                 options=$(_complement cmds[@] options[@])
+
             fi
             ;;
 

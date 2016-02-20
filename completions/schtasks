@@ -12,15 +12,17 @@ _schtasks_event_channels()
 
 _schtasks_computer_names()
 {
-    local options=$(printf '%q ' $(net view /all | sed -e '/^\\\\/!d' -e 's/ .*//'))
-    echo ${options,,}
+    local IFS options
+    IFS=$'\n'
+    local options=$(net view /all 2> /dev/null | sed -e '/^\\\\/!d' -e 's/ .*//')
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
 _schtasks_users()
 {
     local IFS options
     IFS=$'\n'
-    options=$(wmic useraccount get name | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
+    options=$(wmic useraccount get name 2> /dev/null | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
     printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g -e "/''/d"'
 }
 
@@ -28,7 +30,7 @@ _get_schtasks()
 {
     local IFS options
     IFS=$'\n'
-    options=$(schtasks /query /fo list | sed -e '/^Task/ !d' -e 's/^[^ ]\+ \+//')
+    options=$(schtasks /query /fo list 2> /dev/null | sed -e '/^Task/ !d' -e 's/^[^ ]\+ \+//')
     printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 

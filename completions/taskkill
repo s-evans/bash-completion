@@ -2,6 +2,7 @@
 
 # TODO: mutual exclusivity and dependence of options
 
+# TODO: remove leading backslashes
 _taskkill_computer_names()
 {
     local IFS options

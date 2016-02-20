@@ -1,5 +1,8 @@
 #!/usr/bin/env sh
 
+# TODO: list aliases: wmic /?
+# TODO: list properties: wmic <alias> get /?
+
 _wmic_users()
 {
     local options IFS

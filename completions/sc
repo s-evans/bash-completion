@@ -119,12 +119,12 @@ _sc()
                 IFS=$'\n'
                 options=$(_sc_services)
 
-            elif [[ $cword -eq 3 ]]; then
-                options='binpath\='
-
-            elif [[ $cword -gt 4 ]]; then
-
+            else [[ $cword -gt 4 ]]; then
                 case $prev in
+
+                    binpath\\=)
+                        return
+                        ;;
 
                     depend\\=)
                         # TODO: forwardslash separated
@@ -163,10 +163,11 @@ _sc()
                         ;;
 
                     *)
-                        options=( 'type\=' 'start\=' 'error\=' 'group\='
+                        options=( 'type\=' 'start\=' 'error\=' 'group\=' 'binpath\='
                         'tag\=' 'depend\=' 'obj\=' 'displayname\=' 'password\=')
                         options=$(_complement cmds[@] options[@])
                         ;;
+
                 esac
             fi
             ;;

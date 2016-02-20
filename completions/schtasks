@@ -1,5 +1,21 @@
 #!/usr/bin/env sh
 
+# TODO: mutual exclusivity and dependency of options
+
+_schtasks_event_channels()
+{
+    local options IFS
+    IFS=$'\n'
+    options=$(wevtutil el | sed -e 's/\r//')
+    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\\&/g' -e "/''/d"
+}
+
+_schtasks_computer_names()
+{
+    local options=$(printf '%q ' $(net view /all | sed -e '/^\\\\/!d' -e 's/ .*//'))
+    echo ${options,,}
+}
+
 _schtasks_users()
 {
     local IFS options
@@ -20,11 +36,11 @@ _schtasks()
 {
     local cur prev words cword options IFS cmds
     _init_completion
-    cur=$(printf '%q' "$cur")
+    cur=$(printf '%q' "${cur,,}")
 
     if [[ $cword -eq 1 ]] ; then
         COMPREPLY=( $( compgen -W '/run /end /create /delete /query /change
-        /showsid' -- "${cur,,}" ) )
+        /showsid' -- "$cur" ) )
         return
     fi
 
@@ -38,8 +54,8 @@ _schtasks()
     case ${words[1]} in
 
         /run)
-
             case "$prev" in
+
                 /s|/p)
                     return
                     ;;
@@ -63,8 +79,8 @@ _schtasks()
             ;;
 
         /end)
-
             case "$prev" in
+
                 /s|/p)
                     return
                     ;;
@@ -88,20 +104,112 @@ _schtasks()
             ;;
 
         /create)
-
             case "$prev" in
-                /s|/rp|/delay|/rl|/ed|/sd|/du|/et|/ri|/st|/tr|/i|/m|/d|/mo|/p)
+
+                /rp|/p|/xml)
                     return
                     ;;
 
+                /tr)
+                    # TODO: pass off to another completion function?
+                    return
+                    ;;
+
+                /mo)
+                    # TODO: base completion off of the given schedule type, if available
+                    # MINUTE:  1 - 1439 minutes.
+                    # HOURLY:  1 - 23 hours.
+                    # DAILY:   1 - 365 days.
+                    # WEEKLY:  weeks 1 - 52.
+                    # ONCE:    No modifiers.
+                    # ONSTART: No modifiers.
+                    # ONLOGON: No modifiers.
+                    # ONIDLE:  No modifiers.
+                    # MONTHLY: 1 - 12, or FIRST, SECOND, THIRD, FOURTH, LAST, LASTDAY.
+                    # ONEVENT:  XPath event query string.
+                    return
+                    ;;
+
+                /ri)
+                    options='1 599940'
+                    ;;
+
+                /s)
+                    IFS=$'\n'
+                    options=$(_schtasks_computer_names)
+                    ;;
+
+                /ec)
+                    IFS=$'\n'
+                    options=$(_schtasks_event_channels)
+                    ;;
+
+                /i)
+                    options=$(printf '%d ' $(seq 1 999))
+                    ;;
+
+                /delay)
+                    if [[ "$cur" != *:* ]]; then
+                        options=$(printf '%04d\: ' $(seq 0 10))
+
+                    elif [[ "$cur" == *:* ]]; then
+                        options=$(printf "${cur%:*}:%02d " $(seq 0 59))
+
+                    fi
+                    ;;
+
+                /ed|/sd)
+                    if [[ "$cur" != ??/* ]]; then
+                        options=$(printf '%02d/ ' $(seq 1 12))
+
+                    elif [[ "$cur" != ??/??/* ]]; then
+                        options=$(printf "${cur%/*}/%02d/ " $(seq 1 31))
+
+                    elif [[ "$cur" == ??/??/* ]]; then
+                        options=${cur%/*}/$(date +%Y)
+
+                    fi
+                    ;;
+
+                /du|/et|/st)
+                    if [[ "$cur" != *:* ]]; then
+                        options=$(printf '%02d\: ' $(seq 0 23))
+
+                    elif [[ "$cur" == *:* ]]; then
+                        options=$(printf "${cur%%:*}:%02d " $(seq 0 59))
+
+                    fi
+                    ;;
+
+                /rl)
+                    options='limited highest'
+                    ;;
+
                 /sc)
-                    options='minute hourly daily weekly monthly once \
-                        onstart onlogon onidle onevent'
+                    options='minute hourly daily weekly monthly once onstart onlogon onidle onevent'
+                    ;;
+
+                /m)
+                    options='jan feb mar apr may jun jul aug sep oct nov dec \*'
+                    ;;
+
+                /d)
+                    # TODO: only display for weekly tasks
+                    options='mon tue wed thu fri sat sun'
+
+                    # TODO: only display for monthly tasks
+                    options+=$(printf ' %s' $(seq 1 31))
+
+                    # TODO: always display
+                    options+=' \*'
                     ;;
 
                 /ru|/u)
                     IFS=$'\n'
                     options=$(_schtasks_users)
+                    options+=$'\n''nt\ authority\\system'
+                    options+=$'\n''nt\ authority\\localservice'
+                    options+=$'\n''nt\ authority\\networkservice'
                     ;;
 
                 /tn)
@@ -110,10 +218,10 @@ _schtasks()
                     ;;
 
                 *)
-                    options=('/s' '/u' '/p' '/tn' '/ru' '/sc'
-                    '/mo' '/d' '/m' '/i' '/ec' '/rp' '/tr' '/st' '/ri'
-                    '/et' '/du' '/k' '/sd' '/ed' '/it' '/np' '/xml'
-                    '/v1' '/f' '/rl' '/z' '/delay' '/hresult')
+                    options=('/s' '/u' '/p' '/tn' '/ru' '/sc' '/mo' '/d' '/m'
+                    '/i' '/ec' '/rp' '/tr' '/st' '/ri' '/et' '/du' '/k' '/sd'
+                    '/ed' '/it' '/np' '/xml' '/v1' '/f' '/rl' '/z' '/delay'
+                    '/hresult')
                     options=$(_complement cmds[@] options[@])
                     ;;
 
@@ -122,8 +230,8 @@ _schtasks()
 
 
         /delete)
-
             case "$prev" in
+
                 /s|/p)
                     return
                     ;;
@@ -147,8 +255,8 @@ _schtasks()
             ;;
 
         /query)
-
             case "$prev" in
+
                 /s|/p)
                     return
                     ;;
@@ -180,18 +288,69 @@ _schtasks()
             ;;
 
         /change)
-
             case "$prev" in
-                /s|/rp|/delay|/rl|/ed|/sd|/ec|/du|/et|/ri|/st|/tr|/xml|/p)
+
+                /rp|/p)
                     return
                     ;;
 
-                /u)
-                    IFS=$'\n'
-                    options=$(_schtasks_users)
+                /tr)
+                    # TODO: pass off to another completion function?
+                    return
                     ;;
 
-                /ru)
+                /ri)
+                    options='1 599940'
+                    ;;
+
+                /delay)
+                    if [[ "$cur" != *:* ]]; then
+                        options=$(printf '%04d\: ' $(seq 0 10))
+
+                    elif [[ "$cur" == *:* ]]; then
+                        options=$(printf "${cur%:*}:%02d " $(seq 0 59))
+
+                    fi
+                    ;;
+
+                /rl)
+                    options='limited highest'
+                    ;;
+
+                /ec)
+                    IFS=$'\n'
+                    options=$(_schtasks_event_channels)
+                    ;;
+
+                /s)
+                    IFS=$'\n'
+                    options=$(_schtasks_computer_names)
+                    ;;
+
+                /ed|/sd)
+                    if [[ "$cur" != ??/* ]]; then
+                        options=$(printf '%02d/ ' $(seq 1 12))
+
+                    elif [[ "$cur" != ??/??/* ]]; then
+                        options=$(printf "${cur%/*}/%02d/ " $(seq 1 31))
+
+                    elif [[ "$cur" == ??/??/* ]]; then
+                        options=${cur%/*}/$(date +%Y)
+
+                    fi
+                    ;;
+
+                /du|/et|/st)
+                    if [[ "$cur" != *:* ]]; then
+                        options=$(printf '%02d\: ' $(seq 0 23))
+
+                    elif [[ "$cur" == *:* ]]; then
+                        options=$(printf "${cur%%:*}:%02d " $(seq 0 59))
+
+                    fi
+                    ;;
+
+                /ru|/u)
                     IFS=$'\n'
                     options=$(_schtasks_users)
                     ;;
@@ -213,7 +372,6 @@ _schtasks()
             ;;
 
         /showsid)
-
             case "$prev" in
 
                 /tn)
@@ -231,7 +389,9 @@ _schtasks()
 
     esac
 
-    COMPREPLY=( $(compgen -W '$options' -- "${cur,,}" ) )
+    COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+    [[ $COMPREPLY == *: ]] && compopt -o nospace
+    [[ $COMPREPLY == */ ]] && compopt -o nospace
 }
 
 complete -o default -F _schtasks schtasks schtasks.exe

@@ -1,5 +1,8 @@
 #!/usr/bin/env sh
 
+# TODO: suggest the existing value of a key where possible
+# TODO: support remote registry queries
+
 _reg_keys()
 {
     local IFS options

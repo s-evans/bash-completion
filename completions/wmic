@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 
 # TODO: [where [property comparison value [...]]] verb [property [, ...]] [switch [...]]
+# TODO: caching of wmic output
 
 _wmic_base_switches()
 {
@@ -65,7 +66,6 @@ _wmic()
         current_alias=${words[alias_position]}
         current_verb=${words[verb_position]}
     fi
-
 
     if [[ -z "$current_alias" ]]; then
         case ${words[cword]} in
@@ -143,6 +143,8 @@ _wmic()
     else
         cmds=( ${words[@]:verb_position+1:cword} )
         local has_switch=$(printf '%s\n' ${cmds[@]} | sed '/^\//!d')
+
+        # TODO: reduce the number of calls to wmic
 
         IFS=$'\n'
         switches=( $(_wmic_alias_verb_switches $current_alias $current_verb) )

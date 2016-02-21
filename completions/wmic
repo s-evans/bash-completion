@@ -1,10 +1,6 @@
 #!/usr/bin/env sh
 
-# TODO: use the functions below
-# TODO: comma space separate when completing properties
-# TODO: offer up the option of doing a where clause
-# TODO: completion for comparison operators
-# TODO: [where [property operation value [...]]] verb [property [, ...]] [switch [...]]
+# TODO: [where [property comparison value [...]]] verb [property [, ...]] [switch [...]]
 
 _wmic_base_switches()
 {
@@ -13,27 +9,27 @@ _wmic_base_switches()
 
 _wmic_aliases()
 {
-    wmic /? | sed '/ - /!d; :loop; s/ .*//; s/./\l&/g; n; / - /b loop; q'
+    wmic /? | sed '1,/:/d; 1,/:/d; 1,/:/d; 1,/:/d; s/\r//g; /^$/,$d; s/ .*//; s/./\l&/g'
 }
 
-_wmic_verbs()
+_wmic_alias_verbs()
 {
     wmic $1 /? | sed '1,/:/d; 1,/:/d; s/\r//g; /^$/d; s/^[^ ]* //; s/ .*//; s/./\l&/g'
-}
-
-_wmic_alias_properties()
-{
-    wmic $1 get /? | sed '1,/^=/d; s/\r//g; /^$/,$d; s/ .*//; s/./\l&/g'
-}
-
-_wmic_alias_list_formats()
-{
-    wmic $1 list /? | sed '/ - /!d; /^\//d; s/ .*//; s/./\l&/g'
 }
 
 _wmic_alias_verb_switches()
 {
     wmic $1 $2 /? | sed '/^\//!d; s/[(< \[].*//; s/./\l&/g; s/[:=]/\\&/g'
+}
+
+_wmic_alias_properties()
+{
+    wmic $1 $2 /? | sed '1,/^=/d; s/\r//g; /^$/,$d; s/ .*//; s/./\l&/g'
+}
+
+_wmic_alias_list_formats()
+{
+    wmic $1 list /? | sed '/ - /!d; /^\//d; s/ .*//; s/./\l&/g'
 }
 
 _wmic_alias_methods()
@@ -51,796 +47,145 @@ _wmic_users()
 
 _wmic()
 {
-    local cur prev words cword options IFS command commands subcmd
+    local cur prev words cword options IFS aliases current_alias current_verb cmds switches properties
+    declare -i verb_position alias_position
     _init_completion
-    cur=$(printf '%q' "$cur")
+    cur=$(printf '%q' "${cur,,}")
 
     if [[ "$prev" == '/\?'* ]]; then
         return
     fi
 
-    commands=('alias' 'baseboard' 'bios' 'bootconfig'
-        'cdrom' 'computersystem' 'cpu' 'csproduct' 'datafile'
-        'dcomapp' 'desktop' 'desktopmonitor'
-        'devicememoryaddress' 'diskdrive' 'diskquota'
-        'dmachannel' 'environment' 'fsdir' 'group'
-        'idecontroller' 'irq' 'job' 'loadorder' 'logicaldisk'
-        'logon' 'memcache' 'memorychip' 'memphysical'
-        'netclient' 'netlogin' 'netprotocol' 'netuse' 'nic'
-        'nicconfig' 'ntdomain' 'ntevent' 'nteventlog'
-        'onboarddevice' 'os' 'pagefile' 'pagefileset'
-        'partition' 'port' 'portconnector' 'printer'
-        'printerconfig' 'printjob' 'process' 'product' 'qfe'
-        'quotasetting' 'rdaccount' 'rdnic' 'rdpermissions'
-        'rdtoggle' 'recoveros' 'registry' 'scsicontroller'
-        'server' 'service' 'shadowcopy' 'shadowstorage' 'share'
-        'softwareelement' 'softwarefeature' 'sounddev'
-        'startup' 'sysaccount' 'sysdriver' 'systemenclosure'
-        'systemslot' 'tapedrive' 'temperature' 'timezone' 'ups'
-        'useraccount' 'voltage' 'volume' 'volumequotasetting'
-        'volumeuserquota' 'wmiset')
+    aliases=( $(_wmic_aliases) )
+    alias_position=$(printf '%s\n' ${words[@]::cword} | (command grep -m 1 -h -Fxnf <(printf '%s\n' ${aliases[@]}) || echo 0) | sed 's/:.*//')
 
-    declare -i count=0
+    if [[ $alias_position -ne 0 ]]; then
+        alias_position=alias_position-1
+        verb_position=alias_position+1
+        current_alias=${words[alias_position]}
+        current_verb=${words[verb_position]}
+    fi
 
-    # find the command in the command string
-    for word in ${words[@]::$cword} ; do
 
-        for option in ${commands[@]} ; do
+    if [[ -z "$current_alias" ]]; then
+        case ${words[cword]} in
 
-            if [[ "$option" == "$word" ]]; then
-                command=$option
-                break
-            fi
+            /authority\\:*|/password\\:*|/record\\:*|/locale\\:*|/node\\:*|/role\\:*|/namespace\\:*)
+                return
+                ;;
 
-        done
+            /user\\:*)
+                IFS=$'\n'
+                options=$(_wmic_users | sed -e 's/.*/\/user\\:&/')
+                ;;
 
-        if [[ -n $command ]]; then
-            break
-        fi
+            /implevel\\:*)
+                options='/implevel\:anonymous /implevel\:identify
+                /implevel\:impersonate /implevel\:delegate'
+                ;;
 
-        count+=1
-    done
+            /authlevel\\:*)
+                options='/authlevel\:default /authlevel\:none
+                /authlevel\:connect /authlevel\:call /authlevel\:pkt
+                /authlevel\:pktintegrity /authlevel\:pktprivacy'
+                ;;
 
-    subcmd=${words[$count+1]}
-    count=$cword-$count
+            /privileges\\:*)
+                options='/priveleges\:enable /priveleges\:disable'
+                ;;
 
-    case "$command" in
+            /aggregate\\:*)
+                options='/aggregate\:on /aggregate\:off'
+                ;;
 
-        # command not found
-        '')
+            /failfast\\:*)
+                options='/failfast\:on /failfast\:off'
+                ;;
 
-            case "$cur" in
+            /interactive\\:*)
+                options='/interactive\:on /interactive\:off'
+                ;;
 
-                /authority\\:*)
-                    ;&
-                /password\\:*)
-                    ;&
-                /record\\:*)
-                    ;&
-                /locale\\:*)
-                    ;&
-                /node\\:*)
-                    ;&
-                /role\\:*)
-                    ;&
-                /namespace\\:*)
-                    return
+            /trace\\:*)
+                options='/trace\:on /trace\:off'
+                ;;
+
+            /output\\:*)
+                # TODO: filename completion
+                options='/output\:stdout /output\:clipboard'
+                ;;
+
+            /append\\:*)
+                # TODO: filename completion
+                options='/append\:stdout /append\:clipboard'
+                ;;
+
+            *)
+                cmds=( ${words[@]::cword} )
+                switches=( $(_wmic_base_switches) )
+                options=$(_complement cmds[@] switches[@])
+                ;;
+
+        esac
+
+        options+=" ${aliases[*]} /?\\:brief /?\\:full "
+
+    elif [[ $cword -eq $verb_position ]]; then
+        IFS=$'\n'
+        options=$(_wmic_alias_verbs $current_alias)
+        options+=$'\nwhere'
+
+    elif [[ $current_verb == where ]]; then
+        # TODO: implement
+        return
+
+    else
+        cmds=( ${words[@]:verb_position+1:cword} )
+        local has_switch=$(printf '%s\n' ${cmds[@]} | sed '/^\//!d')
+
+        IFS=$'\n'
+        switches=( $(_wmic_alias_verb_switches $current_alias $current_verb) )
+        options=$(_complement cmds[@] switches[@])
+
+        if [[ -z "$has_switch" ]]; then
+            case $current_verb in
+
+                call)
+                    # TODO: complete method arguments
+                    if [[ $cword -eq $verb_position+1 ]]; then
+                        options+=$'\n'$(_wmic_alias_methods $current_alias)
+                    fi
                     ;;
 
-                /user\\:*)
-                    IFS=$'\n'
-                    options=$(_wmic_users | sed -e 's/.*/\/user\\:&/')
+                list)
+                    if [[ $cword -eq $verb_position+1 ]]; then
+                        options+=$'\n'$(_wmic_alias_list_formats $current_alias)
+                    fi
                     ;;
 
-                /implevel\\:*)
-                    options='/implevel\:anonymous /implevel\:identify
-                        /implevel\:impersonate /implevel\:delegate'
+                get)
+                    properties=( $(printf '%s,\n' $(_wmic_alias_properties $current_alias $current_verb)) )
+                    options+=$'\n'$(_complement cmds[@] properties[@])
                     ;;
 
-                /authlevel\\:*)
-                    options='/authlevel\:default /authlevel\:none
-                        /authlevel\:connect /authlevel\:call /authlevel\:pkt
-                        /authlevel\:pktintegrity /authlevel\:pktprivacy'
-                        ;;
-
-                /privileges\\:*)
-                    options='/priveleges\:enable /priveleges\:disable'
+                set)
+                    # TODO: complete assignment operator and skip values?
+                    # TODO: comma separate properties list?
+                    options+=$'\n'$(_wmic_alias_properties $current_alias $current_verb)
                     ;;
 
-                /aggregate\\:*)
-                    options='/aggregate\:on /aggregate\:off'
-                    ;;
-
-                /failfast\\:*)
-                    options='/failfast\:on /failfast\:off'
-                    ;;
-
-                /interactive\\:*)
-                    options='/interactive\:on /interactive\:off'
-                    ;;
-
-                /trace\\:*)
-                    options='/trace\:on /trace\:off'
-                    ;;
-
-                /output\\:*)
-                    options='/output\:stdout /output\:clipboard'
-                    options+=$(compgen -f -- ${cur#/output\\:} | sed 's/.*/\/output\\:&/')
-                    ;;
-
-                /append\\:*)
-                    options='/append\:stdout'$'\n''/append\:clipboard'
-                    options+=$(compgen -f -- ${cur#/append\\:} | sed 's/.*/\/append\\:&/')
+                create)
+                    # TODO: complete assignment operator and skip values?
+                    # TODO: comma separate properties list?
+                    options+=$'\n'$(_wmic_alias_properties $current_alias $current_verb)
                     ;;
 
                 *)
-                    # remove global options that have been used
-                    local cmds=( ${words[@]::cword} ) 
-                    options=( '/namespace\:' '/role\:'
-                    '/node\:' '/implevel\:' '/authlevel\:' '/locale\:'
-                    '/privileges\:' '/trace\:' '/record\:' '/interactive\:'
-                    '/failfast\:' '/user\:' '/password\:' '/output\:'
-                    '/append\:' '/aggregate\:' '/authority\:' )
-                    options=$(_complement cmds[@] options[@])
                     ;;
 
             esac
-
-            options+=" ${commands[*]} /? /?\\:brief /?\\:full " 
-
-            ;;
-
-        # TODO: more completions for each command
-
-        alias)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        baseboard)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        bios)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        bootconfig)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        cdrom)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        computersystem)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list set /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        cpu)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        csproduct)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        datafile)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        dcomapp)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        desktop)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        desktopmonitor)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        devicememoryaddress)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        diskdrive)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        diskquota)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list set /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        dmachannel)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        environment)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list set /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        fsdir)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        group)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        idecontroller)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        irq)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        job)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        loadorder)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        logicaldisk)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list set /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        logon)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        memcache)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        memorychip)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        memphysical)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        netclient)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        netlogin)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        netprotocol)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        netuse)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        nic)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        nicconfig)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        ntdomain)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list set /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        ntevent)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        nteventlog)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list set /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        onboarddevice)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        os)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list set /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        pagefile)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        pagefileset)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list set /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        partition)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        port)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        portconnector)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        printer)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list set /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        printerconfig)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        printjob)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        process)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        product)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        qfe)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        quotasetting)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list set /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        rdaccount)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        rdnic)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list set /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        rdpermissions)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        rdtoggle)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        recoveros)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list set /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        registry)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list set /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        scsicontroller)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        server)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        service)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        shadowcopy)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        shadowstorage)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list set /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        share)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        softwareelement)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        softwarefeature)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        sounddev)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        startup)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        sysaccount)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        sysdriver)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        systemenclosure)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        systemslot)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        tapedrive)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        temperature)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        timezone)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        ups)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        useraccount)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list set /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        voltage)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        volume)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc call create delete get list set /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        volumequotasetting)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        volumeuserquota)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list set /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-        wmiset)
-            if [[ $count -eq 1 ]]; then 
-                options='assoc create delete get list set /? /?\:brief /?\:full'
-            else
-                options=''
-            fi
-            ;;
-
-    esac
+        fi
+    fi
 
     COMPREPLY=( $( compgen -W '$options' -- $cur ) )
     [[ $COMPREPLY == /*: ]] && compopt -o nospace

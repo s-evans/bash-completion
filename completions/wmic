@@ -70,6 +70,7 @@ _wmic()
     if [[ -z "$current_alias" ]]; then
         case ${words[cword]} in
 
+            # TODO: more completion possible here?
             /authority\\:*|/password\\:*|/record\\:*|/locale\\:*|/node\\:*|/role\\:*|/namespace\\:*)
                 return
                 ;;
@@ -146,6 +147,8 @@ _wmic()
         IFS=$'\n'
         switches=( $(_wmic_alias_verb_switches $current_alias $current_verb) )
         options=$(_complement cmds[@] switches[@])
+
+        # TODO: completion for switch values
 
         if [[ -z "$has_switch" ]]; then
             case $current_verb in

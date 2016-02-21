@@ -1,6 +1,32 @@
 #!/usr/bin/env sh
 
+# NOTE: invoke _wmic_init_cache to populate the cache and speed up retrieval of completion candidates
+
 # TODO: [where [property comparison value [...]]] verb [property [, ...]] [switch [...]]
+
+_wmic_init_cache_internal()
+{
+    local current_alias current_verb
+
+    _wmic_base_switches
+    _wmic_aliases
+
+    for current_alias in $_wmic_aliases_cache ; do
+        _wmic_alias_verbs "$current_alias"
+        _wmic_alias_list_formats "$current_alias"
+        _wmic_alias_methods "$current_alias"
+
+        for current_verb in $_wmic_alias_verbs_cache["$current_alias"] ; do
+            _wmic_alias_verb_init "$current_alias" "$current_verb"
+        done
+    done
+}
+
+_wmic_init_cache()
+{
+    declare -g -A _wmic_alias_verb_switches_cache _wmic_alias_verb_properties_cache _wmic_alias_verbs_cache _wmic_alias_list_formats_cache _wmic_alias_methods_cache
+    _wmic_init_cache_internal > /dev/null
+}
 
 _wmic_base_switches()
 {
@@ -26,59 +52,74 @@ _wmic_aliases()
 
 _wmic_alias_verbs()
 {
-    if [[ "${_wmic_alias_verbs_cache[$1]}" ]]; then
-        echo ${_wmic_alias_verbs_cache[$1]}
+    if [[ "${_wmic_alias_verbs_cache["$1"]}" ]]; then
+        echo ${_wmic_alias_verbs_cache["$1"]}
         return
     fi
 
-    _wmic_alias_verbs_cache[$1]=$(wmic $1 /? | sed '1,/:/d; 1,/:/d; s/\r//g; /^$/d; s/^[^ ]* //; s/ .*//; s/./\l&/g')
-    echo ${_wmic_alias_verbs_cache[$1]}
+    _wmic_alias_verbs_cache["$1"]=$(wmic $1 /? | sed '1,/:/d; 1,/:/d; s/\r//g; /^$/d; s/^[^ ]* //; s/ .*//; s/./\l&/g')
+    echo ${_wmic_alias_verbs_cache["$1"]}
+}
+
+_wmic_alias_verb_init()
+{
+    local subscript="$1_$2"
+
+    if [[ "${_wmic_alias_verb_switches_cache["$subscript"]}" ]]; then
+        return
+    fi
+
+    local output=$(wmic $1 $2 /?)
+    local IFS=$'\n'
+
+    _wmic_alias_verb_switches_cache["$subscript"]=$(printf '%s\n' $output | sed '/^\//!d; s/[(< \[].*//; s/./\l&/g; s/[:=]/\\&/g')
+    _wmic_alias_verb_properties_cache["$subscript"]=$(printf '%s\n' $output | sed '1,/^=/d; s/\r//g; /^$/,$d; s/ .*//; s/./\l&/g')
 }
 
 _wmic_alias_verb_switches()
 {
-    local subscript="$1$2"
-    if [[ "${_wmic_alias_verb_switches_cache[subscript]}" ]]; then
-        echo ${_wmic_alias_verb_switches_cache[subscript]}
+    local subscript="$1_$2"
+    if [[ "${_wmic_alias_verb_switches_cache["$subscript"]}" ]]; then
+        echo ${_wmic_alias_verb_switches_cache["$subscript"]}
         return
     fi
 
-    _wmic_alias_verb_switches_cache[subscript]=$(wmic $1 $2 /? | sed '/^\//!d; s/[(< \[].*//; s/./\l&/g; s/[:=]/\\&/g')
-    echo ${_wmic_alias_verb_switches_cache[subscript]}
+    _wmic_alias_verb_switches_cache["$subscript"]=$(wmic $1 $2 /? | sed '/^\//!d; s/[(< \[].*//; s/./\l&/g; s/[:=]/\\&/g')
+    echo ${_wmic_alias_verb_switches_cache["$subscript"]}
 }
 
 _wmic_alias_verb_properties()
 {
-    local subscript="$1$2"
-    if [[ "${_wmic_alias_verb_properties_cache[subscript]}" ]]; then
-        echo ${_wmic_alias_verb_properties_cache[subscript]}
+    local subscript="$1_$2"
+    if [[ "${_wmic_alias_verb_properties_cache["$subscript"]}" ]]; then
+        echo ${_wmic_alias_verb_properties_cache["$subscript"]}
         return
     fi
 
-    _wmic_alias_verb_properties_cache[subscript]=$(wmic $1 $2 /? | sed '1,/^=/d; s/\r//g; /^$/,$d; s/ .*//; s/./\l&/g')
-    echo ${_wmic_alias_verb_properties_cache[subscript]}
+    _wmic_alias_verb_properties_cache["$subscript"]=$(wmic $1 $2 /? | sed '1,/^=/d; s/\r//g; /^$/,$d; s/ .*//; s/./\l&/g')
+    echo ${_wmic_alias_verb_properties_cache["$subscript"]}
 }
 
 _wmic_alias_list_formats()
 {
-    if [[ "${_wmic_alias_list_formats_cache[$1]}" ]]; then
-        echo ${_wmic_alias_list_formats_cache[$1]}
+    if [[ "${_wmic_alias_list_formats_cache["$1"]}" ]]; then
+        echo ${_wmic_alias_list_formats_cache["$1"]}
         return
     fi
 
-    _wmic_alias_list_formats_cache[$1]=$(wmic $1 list /? | sed '/ - /!d; /^\//d; s/ .*//; s/./\l&/g')
-    echo ${_wmic_alias_list_formats_cache[$1]}
+    _wmic_alias_list_formats_cache["$1"]=$(wmic $1 list /? | sed '/ - /!d; /^\//d; s/ .*//; s/./\l&/g')
+    echo ${_wmic_alias_list_formats_cache["$1"]}
 }
 
 _wmic_alias_methods()
 {
-    if [[ "${_wmic_alias_methods_cache[$1]}" ]]; then
-        echo ${_wmic_alias_methods_cache[$1]}
+    if [[ "${_wmic_alias_methods_cache["$1"]}" ]]; then
+        echo ${_wmic_alias_methods_cache["$1"]}
         return
     fi
 
-    _wmic_alias_methods_cache[$1]=$(wmic $1 call /? | sed '1,/^=/d; s/\W.*//; /^$/d; s/./\l&/g')
-    echo ${_wmic_alias_methods_cache[$1]}
+    _wmic_alias_methods_cache["$1"]=$(wmic $1 call /? | sed '1,/^=/d; s/\W.*//; /^$/d; s/./\l&/g')
+    echo ${_wmic_alias_methods_cache["$1"]}
 }
 
 _wmic_users()
@@ -91,23 +132,37 @@ _wmic_users()
 
 _wmic()
 {
-    local cur prev words cword options IFS aliases current_alias current_verb cmds switches properties
-    declare -i verb_position alias_position
+    local cur prev words cword options IFS aliases current_alias current_verb cmds switches properties verbs
+    declare -i verb_position alias_position has_where_clause
     _init_completion
-    cur=$(printf '%q' "${cur,,}")
 
     if [[ "$prev" == '/\?'* ]]; then
         return
     fi
 
+    has_where_clause=0
+    cur=$(printf '%q' "${cur,,}")
     aliases=( $(_wmic_aliases) )
     alias_position=$(printf '%s\n' ${words[@]::cword} | (command grep -m 1 -h -Fxnf <(printf '%s\n' ${aliases[@]}) || echo 0) | sed 's/:.*//')
 
     if [[ $alias_position -ne 0 ]]; then
         alias_position=alias_position-1
-        verb_position=alias_position+1
         current_alias=${words[alias_position]}
+
+        verb_position=alias_position+1
         current_verb=${words[verb_position]}
+
+        if [[ $verb_position -ne $cword && "$current_verb" == where ]]; then
+            # TODO: due to where clause, the verb list must be constrained (remove 'create' if present in the verb list)
+            has_where_clause=1
+            verbs=( $(_wmic_alias_verbs $current_alias) )
+            verb_position=$(printf '%s\n' ${words[@]::cword} | (command grep -m 1 -h -Fxnf <(printf '%s\n' ${verbs[@]}) || echo 0) | sed 's/:.*//')
+
+            if [[ $verb_position -ne 0 ]]; then
+                verb_position=verb_position-1
+                current_verb=${words[verb_position]}
+            fi
+        fi
     fi
 
     if [[ -z "$current_alias" ]]; then

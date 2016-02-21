@@ -1,41 +1,84 @@
 #!/usr/bin/env sh
 
 # TODO: [where [property comparison value [...]]] verb [property [, ...]] [switch [...]]
-# TODO: caching of wmic output
 
 _wmic_base_switches()
 {
-    wmic /? | sed '/^\//!d; s/[ \[].*//; s/./\l&/g'
+    if [[ "$_wmic_base_switches_cache" ]]; then
+        echo $_wmic_base_switches_cache
+        return
+    fi
+
+    _wmic_base_switches_cache=$(wmic /? | sed '/^\//!d; s/[ \[].*//; s/./\l&/g')
+    echo $_wmic_base_switches_cache
 }
 
 _wmic_aliases()
 {
-    wmic /? | sed '1,/:/d; 1,/:/d; 1,/:/d; 1,/:/d; s/\r//g; /^$/,$d; s/ .*//; s/./\l&/g'
+    if [[ "$_wmic_aliases_cache" ]]; then
+        echo $_wmic_aliases_cache
+        return
+    fi
+
+    _wmic_aliases_cache=$(wmic /? | sed '1,/:/d; 1,/:/d; 1,/:/d; 1,/:/d; s/\r//g; /^$/,$d; s/ .*//; s/./\l&/g')
+    echo $_wmic_aliases_cache
 }
 
 _wmic_alias_verbs()
 {
-    wmic $1 /? | sed '1,/:/d; 1,/:/d; s/\r//g; /^$/d; s/^[^ ]* //; s/ .*//; s/./\l&/g'
+    if [[ "${_wmic_alias_verbs_cache[$1]}" ]]; then
+        echo ${_wmic_alias_verbs_cache[$1]}
+        return
+    fi
+
+    _wmic_alias_verbs_cache[$1]=$(wmic $1 /? | sed '1,/:/d; 1,/:/d; s/\r//g; /^$/d; s/^[^ ]* //; s/ .*//; s/./\l&/g')
+    echo ${_wmic_alias_verbs_cache[$1]}
 }
 
 _wmic_alias_verb_switches()
 {
-    wmic $1 $2 /? | sed '/^\//!d; s/[(< \[].*//; s/./\l&/g; s/[:=]/\\&/g'
+    local subscript="$1$2"
+    if [[ "${_wmic_alias_verb_switches_cache[subscript]}" ]]; then
+        echo ${_wmic_alias_verb_switches_cache[subscript]}
+        return
+    fi
+
+    _wmic_alias_verb_switches_cache[subscript]=$(wmic $1 $2 /? | sed '/^\//!d; s/[(< \[].*//; s/./\l&/g; s/[:=]/\\&/g')
+    echo ${_wmic_alias_verb_switches_cache[subscript]}
 }
 
-_wmic_alias_properties()
+_wmic_alias_verb_properties()
 {
-    wmic $1 $2 /? | sed '1,/^=/d; s/\r//g; /^$/,$d; s/ .*//; s/./\l&/g'
+    local subscript="$1$2"
+    if [[ "${_wmic_alias_verb_properties_cache[subscript]}" ]]; then
+        echo ${_wmic_alias_verb_properties_cache[subscript]}
+        return
+    fi
+
+    _wmic_alias_verb_properties_cache[subscript]=$(wmic $1 $2 /? | sed '1,/^=/d; s/\r//g; /^$/,$d; s/ .*//; s/./\l&/g')
+    echo ${_wmic_alias_verb_properties_cache[subscript]}
 }
 
 _wmic_alias_list_formats()
 {
-    wmic $1 list /? | sed '/ - /!d; /^\//d; s/ .*//; s/./\l&/g'
+    if [[ "${_wmic_alias_list_formats_cache[$1]}" ]]; then
+        echo ${_wmic_alias_list_formats_cache[$1]}
+        return
+    fi
+
+    _wmic_alias_list_formats_cache[$1]=$(wmic $1 list /? | sed '/ - /!d; /^\//d; s/ .*//; s/./\l&/g')
+    echo ${_wmic_alias_list_formats_cache[$1]}
 }
 
 _wmic_alias_methods()
 {
-    wmic $1 call /? | sed '1,/^=/d; s/\W.*//; /^$/d; s/./\l&/g'
+    if [[ "${_wmic_alias_methods_cache[$1]}" ]]; then
+        echo ${_wmic_alias_methods_cache[$1]}
+        return
+    fi
+
+    _wmic_alias_methods_cache[$1]=$(wmic $1 call /? | sed '1,/^=/d; s/\W.*//; /^$/d; s/./\l&/g')
+    echo ${_wmic_alias_methods_cache[$1]}
 }
 
 _wmic_users()
@@ -132,9 +175,8 @@ _wmic()
         options+=" ${aliases[*]} /?\\:brief /?\\:full "
 
     elif [[ $cword -eq $verb_position ]]; then
-        IFS=$'\n'
         options=$(_wmic_alias_verbs $current_alias)
-        options+=$'\nwhere'
+        options+=' where'
 
     elif [[ $current_verb == where ]]; then
         # TODO: implement
@@ -144,9 +186,6 @@ _wmic()
         cmds=( ${words[@]:verb_position+1:cword} )
         local has_switch=$(printf '%s\n' ${cmds[@]} | sed '/^\//!d')
 
-        # TODO: reduce the number of calls to wmic
-
-        IFS=$'\n'
         switches=( $(_wmic_alias_verb_switches $current_alias $current_verb) )
         options=$(_complement cmds[@] switches[@])
 
@@ -158,31 +197,31 @@ _wmic()
                 call)
                     # TODO: complete method arguments
                     if [[ $cword -eq $verb_position+1 ]]; then
-                        options+=$'\n'$(_wmic_alias_methods $current_alias)
+                        options+=' '$(_wmic_alias_methods $current_alias)
                     fi
                     ;;
 
                 list)
                     if [[ $cword -eq $verb_position+1 ]]; then
-                        options+=$'\n'$(_wmic_alias_list_formats $current_alias)
+                        options+=' '$(_wmic_alias_list_formats $current_alias)
                     fi
                     ;;
 
                 get)
-                    properties=( $(printf '%s,\n' $(_wmic_alias_properties $current_alias $current_verb)) )
-                    options+=$'\n'$(_complement cmds[@] properties[@])
+                    properties=( $(printf '%s, ' $(_wmic_alias_verb_properties $current_alias $current_verb)) )
+                    options+=' '$(_complement cmds[@] properties[@])
                     ;;
 
                 set)
                     # TODO: complete assignment operator and skip values?
                     # TODO: comma separate properties list?
-                    options+=$'\n'$(_wmic_alias_properties $current_alias $current_verb)
+                    options+=' '$(_wmic_alias_verb_properties $current_alias $current_verb)
                     ;;
 
                 create)
                     # TODO: complete assignment operator and skip values?
                     # TODO: comma separate properties list?
-                    options+=$'\n'$(_wmic_alias_properties $current_alias $current_verb)
+                    options+=' '$(_wmic_alias_verb_properties $current_alias $current_verb)
                     ;;
 
                 *)

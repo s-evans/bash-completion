@@ -1,7 +1,45 @@
 #!/usr/bin/env sh
 
-# TODO: list aliases: wmic /?
-# TODO: list properties: wmic <alias> get /?
+# TODO: use the functions below
+# TODO: comma space separate when completing properties
+# TODO: offer up the option of doing a where clause
+# TODO: completion for comparison operators
+# TODO: [where [property operation value [...]]] verb [property [, ...]] [switch [...]]
+
+_wmic_base_switches()
+{
+    wmic /? | sed '/^\//!d; s/[ \[].*//; s/./\l&/g'
+}
+
+_wmic_aliases()
+{
+    wmic /? | sed '/ - /!d; :loop; s/ .*//; s/./\l&/g; n; / - /b loop; q'
+}
+
+_wmic_verbs()
+{
+    wmic $1 /? | sed '1,/:/d; 1,/:/d; s/\r//g; /^$/d; s/^[^ ]* //; s/ .*//; s/./\l&/g'
+}
+
+_wmic_alias_properties()
+{
+    wmic $1 get /? | sed '1,/^=/d; s/\r//g; /^$/,$d; s/ .*//; s/./\l&/g'
+}
+
+_wmic_alias_list_formats()
+{
+    wmic $1 list /? | sed '/ - /!d; /^\//d; s/ .*//; s/./\l&/g'
+}
+
+_wmic_alias_verb_switches()
+{
+    wmic $1 $2 /? | sed '/^\//!d; s/[(< \[].*//; s/./\l&/g; s/[:=]/\\&/g'
+}
+
+_wmic_alias_methods()
+{
+    wmic $1 call /? | sed '1,/^=/d; s/\W.*//; /^$/d; s/./\l&/g'
+}
 
 _wmic_users()
 {

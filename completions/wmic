@@ -131,13 +131,14 @@ _wmic_users()
 _wmic()
 {
     local cur prev words cword options IFS aliases current_alias current_verb cmds switches properties verbs temp_verb_position
-    declare -i verb_position alias_position
+    declare -i verb_position alias_position has_where_clause
     _init_completion
 
     if [[ "$prev" == '/\?'* ]]; then
         return
     fi
 
+    has_where_clause=0
     cur=$(printf '%q' "${cur,,}")
     aliases=( $(_wmic_aliases) )
     alias_position=$(printf '%s\n' ${words[@]::cword} | (command grep -m 1 -h -Fxnf <(printf '%s\n' ${aliases[@]}) || echo 0) | sed 's/:.*//')
@@ -152,6 +153,7 @@ _wmic()
 
         # if there is a where clause, wait until the user is finished with it, then get the verb that follows
         if [[ "$current_verb" == where && $cword-1 -gt $verb_position ]]; then
+            has_where_clause=1
             verb_position=verb_position+2
             current_verb=${words[verb_position]}
         fi
@@ -224,7 +226,14 @@ _wmic()
 
     elif [[ $cword -eq $verb_position ]]; then
         options=$(_wmic_alias_verbs $current_alias)
-        options+=' where'
+
+        if [[ $has_where_clause -eq 1 ]]; then
+            options=${options//create/}
+
+        else
+            options+=' where'
+
+        fi
 
     elif [[ $current_verb == where ]]; then
         # TODO: support parenthseses

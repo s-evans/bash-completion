@@ -130,15 +130,14 @@ _wmic_users()
 
 _wmic()
 {
-    local cur prev words cword options IFS aliases current_alias current_verb cmds switches properties verbs
-    declare -i verb_position alias_position has_where_clause
+    local cur prev words cword options IFS aliases current_alias current_verb cmds switches properties verbs temp_verb_position
+    declare -i verb_position alias_position
     _init_completion
 
     if [[ "$prev" == '/\?'* ]]; then
         return
     fi
 
-    has_where_clause=0
     cur=$(printf '%q' "${cur,,}")
     aliases=( $(_wmic_aliases) )
     alias_position=$(printf '%s\n' ${words[@]::cword} | (command grep -m 1 -h -Fxnf <(printf '%s\n' ${aliases[@]}) || echo 0) | sed 's/:.*//')
@@ -147,19 +146,16 @@ _wmic()
         alias_position=alias_position-1
         current_alias=${words[alias_position]}
 
+        # generally, the verb comes immediately after the alias
         verb_position=alias_position+1
         current_verb=${words[verb_position]}
 
-        if [[ $verb_position -ne $cword && "$current_verb" == where ]]; then
-            has_where_clause=1
-            verbs=( $(_wmic_alias_verbs $current_alias | sed 's/\<create\>//g') )
-            verb_position=$(printf '%s\n' ${words[@]::cword} | (command grep -m 1 -h -Fxnf <(printf '%s\n' ${verbs[@]}) || echo 0) | sed 's/:.*//')
-
-            if [[ $verb_position -ne 0 ]]; then
-                verb_position=verb_position-1
-                current_verb=${words[verb_position]}
-            fi
+        # if there is a where clause, wait until the user is finished with it, then get the verb that follows
+        if [[ "$current_verb" == where && $cword-1 -gt $verb_position ]]; then
+            verb_position=verb_position+2
+            current_verb=${words[verb_position]}
         fi
+
     fi
 
     if [[ -z "$current_alias" ]]; then
@@ -231,27 +227,67 @@ _wmic()
         options+=' where'
 
     elif [[ $current_verb == where ]]; then
-        # TODO: where clause is interpreted as one argument by wmic. need quotes surrounding it or to escape spaces and word breaks.
         # TODO: support parenthseses
 
-        declare -i count=$cword-$alias_position-2
+        # get the where clause as a single argument
+        local real_cur="${COMP_WORDS[COMP_CWORD]}"
+
+        # drop cword and following args
+        COMP_WORDS=( "${COMP_WORDS[@]::COMP_CWORD}" )
+
+        # split the where clause on spaces and add each token to the array
+        COMP_WORDS+=( $(printf '%s\n' $(printf '%s' "$real_cur" "0" | sed 's/\\ / /g')) )
+
+        # update the arg count
+        COMP_CWORD=${#COMP_WORDS[@]}-1
+
+        # drop the excess trailing character that was used to get an accurate arg count
+        COMP_WORDS[COMP_CWORD]=$(printf %s "${COMP_WORDS[COMP_CWORD]}" | sed 's/.$//')
+
+        # figure out where we are in the where clause
+        declare -i count=$COMP_CWORD-$alias_position-2
         declare -i mod=$count%4
 
-        if [[ $mod -eq 0 ]]; then
+        # figure out where the where clause is in the arg list
+        declare -i clause_position=$verb_position+1
+        declare -i clause_length=$COMP_CWORD-$clause_position
+
+        # get the where clause
+        local clause=( ${COMP_WORDS[@]:clause_position:clause_length} )
+
+        # create the prefix
+        if [[ ${#clause[@]} -ne 0 ]]; then
+            local prefix="$(printf '%s\ ' ${clause[@]})"
+        fi
+
+        # determine options
+        if [[ $mod -eq 0 ]]; then # properties
             options=$(_wmic_alias_verb_properties $current_alias get)
 
-        elif [[ $mod -eq 1 ]]; then
-            options='= != like < <= > >='
+        elif [[ $mod -eq 1 ]]; then # comparison opertors
+            options='\= \!\= like \< \<\= \> \>\='
 
-        elif [[ $mod -eq 2 ]]; then
-            # TODO: complete values
+        elif [[ $mod -eq 2 ]]; then # values
+            # TODO: complete values from a query
+            # TODO: generally these are enclosed in escaped single quotes
             options=''
 
-        elif [[ $mod -eq 3 ]]; then
-            options=$(_wmic_alias_verbs $current_alias | sed 's/\<create\>//g')
-            options+=' and or not'
+        elif [[ $mod -eq 3 ]]; then # boolean logic
+            options='and or not'
 
         fi
+
+        # prefix options with the existing clause
+        options=$(printf "${prefix}%s\ \n" $options)
+
+        # update cur
+        cur="${prefix}${COMP_WORDS[COMP_CWORD]}"
+
+        # do completion
+        IFS=$'\n'
+        compopt -o nospace
+        COMPREPLY=( $( compgen -W '$options' -- "$(printf '%q' $cur)" ) )
+        return
 
     else
         cmds=( ${words[@]:verb_position+1:cword} )
@@ -306,5 +342,5 @@ _wmic()
     [[ $COMPREPLY == /*: ]] && compopt -o nospace
 }
 
-complete -o default -F _wmic wmic wmic.exe
+complete -o default -F _wmic wmic wmic.exe WMIC WMIC.exe
 

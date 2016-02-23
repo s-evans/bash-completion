@@ -33,7 +33,7 @@ _wmic_base_switches()
         return
     fi
 
-    _wmic_base_switches_cache=$(wmic /? | sed '/^\//!d; s/[ \[].*//; s/./\l&/g')
+    _wmic_base_switches_cache=$(wmic /? 2> /dev/null | sed '/^\//!d; s/[ \[].*//; s/./\l&/g')
     echo $_wmic_base_switches_cache
 }
 
@@ -44,7 +44,7 @@ _wmic_aliases()
         return
     fi
 
-    _wmic_aliases_cache=$(wmic /? | sed '1,/:/d; 1,/:/d; 1,/:/d; 1,/:/d; s/\r//g; /^$/,$d; s/ .*//; s/./\l&/g')
+    _wmic_aliases_cache=$(wmic /? 2> /dev/null | sed '1,/:/d; 1,/:/d; 1,/:/d; 1,/:/d; s/\r//g; /^$/,$d; s/ .*//; s/./\l&/g')
     echo $_wmic_aliases_cache
 }
 
@@ -55,7 +55,7 @@ _wmic_alias_verbs()
         return
     fi
 
-    _wmic_alias_verbs_cache["$1"]=$(wmic $1 /? | sed '1,/:/d; 1,/:/d; s/\r//g; /^$/d; s/^[^ ]* //; s/ .*//; s/./\l&/g')
+    _wmic_alias_verbs_cache["$1"]=$(wmic $1 /? 2> /dev/null | sed '1,/:/d; 1,/:/d; s/\r//g; /^$/d; s/^[^ ]* //; s/ .*//; s/./\l&/g')
     echo ${_wmic_alias_verbs_cache["$1"]}
 }
 
@@ -82,7 +82,7 @@ _wmic_alias_verb_switches()
         return
     fi
 
-    _wmic_alias_verb_switches_cache["$subscript"]=$(wmic $1 $2 /? | sed '/^\//!d; s/[(< \[].*//; s/./\l&/g; s/[:=]/\\&/g')
+    _wmic_alias_verb_switches_cache["$subscript"]=$(wmic $1 $2 /? 2> /dev/null | sed '/^\//!d; s/[(< \[].*//; s/./\l&/g; s/[:=]/\\&/g')
     echo ${_wmic_alias_verb_switches_cache["$subscript"]}
 }
 
@@ -94,7 +94,7 @@ _wmic_alias_verb_properties()
         return
     fi
 
-    _wmic_alias_verb_properties_cache["$subscript"]=$(wmic $1 $2 /? | sed '1,/^=/d; s/\r//g; /^$/,$d; s/ .*//; s/./\l&/g')
+    _wmic_alias_verb_properties_cache["$subscript"]=$(wmic $1 $2 /? 2> /dev/null | sed '1,/^=/d; s/\r//g; /^$/,$d; s/ .*//; s/./\l&/g')
     echo ${_wmic_alias_verb_properties_cache["$subscript"]}
 }
 
@@ -105,7 +105,7 @@ _wmic_alias_list_formats()
         return
     fi
 
-    _wmic_alias_list_formats_cache["$1"]=$(wmic $1 list /? | sed '/ - /!d; /^\//d; s/ .*//; s/./\l&/g')
+    _wmic_alias_list_formats_cache["$1"]=$(wmic $1 list /? 2> /dev/null | sed '/ - /!d; /^\//d; s/ .*//; s/./\l&/g')
     echo ${_wmic_alias_list_formats_cache["$1"]}
 }
 
@@ -116,16 +116,20 @@ _wmic_alias_methods()
         return
     fi
 
-    _wmic_alias_methods_cache["$1"]=$(wmic $1 call /? | sed '1,/^=/d; s/\W.*//; /^$/d; s/./\l&/g')
+    _wmic_alias_methods_cache["$1"]=$(wmic $1 call /? 2> /dev/null | sed '1,/^=/d; s/\W.*//; /^$/d; s/./\l&/g')
     echo ${_wmic_alias_methods_cache["$1"]}
 }
 
 _wmic_users()
 {
-    local options IFS
-    IFS=$'\n'
-    options=$(wmic useraccount get name | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
-    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
+    local IFS=$'\n'
+    printf '%q\n' $(wmic useraccount get name | sed 's/\s*$//; /^$/d; 1d; s/./\l&/g') | sed 's/[:=]/\\&/g; /'\'\''/d'
+}
+
+_wmic_alias_property_values()
+{
+    local IFS=$'\n'
+    wmic $1 get $2 2> /dev/null | sed '1d; s/\s*$//; /^$/d; s/./\l&/g; s/['$' \t"\'><=;|&(:\\'']/\\&/g; s/^\|$/'\''/g; s/'\''/\\&/g'
 }
 
 _wmic()
@@ -241,17 +245,25 @@ _wmic()
         # get the where clause as a single argument
         local real_cur="${COMP_WORDS[COMP_CWORD]}"
 
-        # drop cword and following args
+        # drop cword and all following args
         COMP_WORDS=( "${COMP_WORDS[@]::COMP_CWORD}" )
 
-        # split the where clause on spaces and add each token to the array
-        COMP_WORDS+=( $(printf '%s\n' $(printf '%s' "$real_cur" "0" | sed 's/\\ / /g')) )
+        # unescape the where clause
+        local unescaped="$(echo "$real_cur" | sed 's/\\\(.\)/\1/g')0"
+
+        # split the tokens with newlines
+        local split=$(printf '%s\n' $unescaped)
+
+        # rebuild COMP_CWORDS with the split where clause tokens
+        IFS=$'\n'
+        COMP_WORDS+=( $split )
+        IFS=$' \t\n'
 
         # update the arg count
         COMP_CWORD=${#COMP_WORDS[@]}-1
 
         # drop the excess trailing character that was used to get an accurate arg count
-        COMP_WORDS[COMP_CWORD]=$(printf %s "${COMP_WORDS[COMP_CWORD]}" | sed 's/.$//')
+        COMP_WORDS[COMP_CWORD]=$(printf %s "${COMP_WORDS[COMP_CWORD]}" | sed 's/.$//; s/['$' \t"\'><=;|&(:'']/\\&/g')
 
         # figure out where we are in the where clause
         declare -i count=$COMP_CWORD-$alias_position-2
@@ -264,9 +276,9 @@ _wmic()
         # get the where clause
         local clause=( ${COMP_WORDS[@]:clause_position:clause_length} )
 
-        # create the prefix
+        # create the prefix by joining and escaping the where clause
         if [[ ${#clause[@]} -ne 0 ]]; then
-            local prefix="$(printf '%s\ ' ${clause[@]})"
+            local prefix="$(printf '%q\ ' "${clause[@]}" | sed 's/[:=]/\\&/g')"
         fi
 
         # determine options
@@ -277,25 +289,28 @@ _wmic()
             options='\= \!\= like \< \<\= \> \>\='
 
         elif [[ $mod -eq 2 ]]; then # values
-            # TODO: complete values from a query
-            # TODO: generally these are enclosed in escaped single quotes
-            options=''
+            IFS=$'\n'
+            local current_property="${COMP_WORDS[COMP_CWORD-2]}"
+            options="$(_wmic_alias_property_values $current_alias $current_property)"
 
         elif [[ $mod -eq 3 ]]; then # boolean logic
             options='and or not'
 
         fi
 
-        # prefix options with the existing clause
-        options=$(printf "${prefix}%s\ \n" $options)
+        # prefix options with the existing where clause and suffix with a space
+        options=( $(printf '%s\n' $options) )
+        options=( "${options[@]/#/${prefix}}" )
+        options=( "${options[@]/%/\\ }" )
+        options=$(printf "%s\n" "${options[@]}")
 
-        # update cur
-        cur="${prefix}${COMP_WORDS[COMP_CWORD]}"
+        # update cur with proper escaping
+        cur="$(printf %q "${prefix}${COMP_WORDS[COMP_CWORD]}" | sed 's/[:=]/\\&/g')"
 
         # do completion
         IFS=$'\n'
         compopt -o nospace
-        COMPREPLY=( $( compgen -W '$options' -- "$(printf '%q' $cur)" ) )
+        COMPREPLY=( $( compgen -W '$options' -- "$cur" ) )
         return
 
     else

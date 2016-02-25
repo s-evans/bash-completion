@@ -2,6 +2,12 @@
 
 # TODO: mutual exclusivity of options
 
+# TODO: use wmic for the below?
+# TODO: 'net start' should suggest stopped services only
+# TODO: 'net continue' should suggest paused services only
+# TODO: 'net stop' should suggest non-stopped and non-stop-pending services
+# TODO: 'net pause' should suggest running services only
+
 _net_domains()
 {
     # TODO: list domains
@@ -26,7 +32,6 @@ _net_complete_share()
     local computer=$(echo $1 | sed -e 's/\(^\\\\\\\\[^\]\+\).*/\1/')
 
     if [[ "$resource" ]]; then
-        # TODO: do completion for folders within shared disks
         local unescaped_computer=$(printf '%b' "$computer")
         local escaped_computer=$(printf '%q' $computer)
         _net_resources $unescaped_computer | sed -e 's/^/'$escaped_computer'\\\\/'
@@ -316,7 +321,6 @@ _net()
                 case $cur in
 
                     /rtsdomain\\:*|/domain\\:*)
-                        # TODO: suggest domains
                         options=$(printf "${cur%:*}:%s\n" $(_net_domains))
                         ;;
 
@@ -432,7 +436,6 @@ _net()
                 case $cur in
 
                     /domain\\:*)
-                        # TODO: suggest domains
                         options=$(printf "${cur%:*}:%s\n" $(_net_domains))
                         ;;
 

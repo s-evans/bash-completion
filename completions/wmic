@@ -14,6 +14,10 @@ _wmic_init_cache_internal()
         _wmic_alias_list_formats "$current_alias"
         _wmic_alias_methods "$current_alias"
 
+        for current_method in $_wmic_alias_methods_cache["$current_alias"] ; do
+            _wmic_alias_method_parameters "$current_alias" "$current_method"
+        done
+
         for current_verb in $_wmic_alias_verbs_cache["$current_alias"] ; do
             _wmic_alias_verb_init "$current_alias" "$current_verb"
         done
@@ -118,6 +122,18 @@ _wmic_alias_methods()
 
     _wmic_alias_methods_cache["$1"]=$(wmic $1 call /? 2> /dev/null | sed '1,/^=/d; s/\W.*//; /^$/d; s/./\l&/g')
     echo ${_wmic_alias_methods_cache["$1"]}
+}
+
+_wmic_alias_method_parameters()
+{
+    local subscript="$1_$2"
+    if [[ "${_wmic_alias_method_parameters_cache[$subscript]}" ]]; then
+        echo ${_wmic_alias_method_parameters_cache[$subscript]}
+        return
+    fi
+
+    _wmic_alias_method_parameters_cache[$subscript]=$(wmic $1 call $2 /? 2> /dev/null | sed '/\[IN \]/!d; s/.*\]//; s/(.*//; s/./\l&/g')
+    echo ${_wmic_alias_method_parameters_cache[$subscript]}
 }
 
 _wmic_users()

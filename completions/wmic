@@ -168,7 +168,12 @@ _wmic()
         case ${words[cword]} in
 
             # TODO: more completion possible here?
-            /authority\\:*|/password\\:*|/record\\:*|/locale\\:*|/node\\:*|/role\\:*|/namespace\\:*)
+            /authority\\:*|/password\\:*|/record\\:*|/locale\\:*|/role\\:*|/namespace\\:*)
+                return
+                ;;
+
+            /node\\:*)
+                # TODO: suggest computer names
                 return
                 ;;
 
@@ -326,15 +331,26 @@ _wmic()
             case $current_verb in
 
                 call)
-                    # TODO: complete method arguments
                     if [[ $cword -eq $verb_position+1 ]]; then
-                        options+=' '$(_wmic_alias_methods $current_alias)
+                        options=' '$(_wmic_alias_methods $current_alias)
+
+                    elif [[ $cur == *=* ]]; then
+                        IFS=$'\n'
+                        local current_property=${cur%%\\\\=*}
+                        options="$(_wmic_alias_property_values $current_alias $current_property | sed 's/^/'$current_property'\\=/')"
+
+                    else
+                        # TODO: test this out
+                        # TODO: better handling for no completions
+                        # TODO: cull suggested parameters based on those already used
+                        options+=' '$(printf '%s\\= ' $(_wmic_alias_method_parameters $current_alias $current_verb))
+
                     fi
                     ;;
 
                 list)
                     if [[ $cword -eq $verb_position+1 ]]; then
-                        options+=' '$(_wmic_alias_list_formats $current_alias)
+                        options=' '$(_wmic_alias_list_formats $current_alias)
                     fi
                     ;;
 
@@ -343,19 +359,18 @@ _wmic()
                     options+=' '$(_complement cmds[@] properties[@])
                     ;;
 
-                set)
-                    # TODO: complete assignment operator and skip values?
-                    # TODO: comma separate properties list?
-                    options+=' '$(_wmic_alias_verb_properties $current_alias $current_verb)
-                    ;;
+                set|create)
+                    if [[ $cur == *=* ]]; then
+                        IFS=$'\n'
+                        local current_property=${cur%%\\\\=*}
+                        options="$(_wmic_alias_property_values $current_alias $current_property | sed 's/^/'$current_property'\\=/')"
 
-                create)
-                    # TODO: complete assignment operator and skip values?
-                    # TODO: comma separate properties list?
-                    options+=' '$(_wmic_alias_verb_properties $current_alias $current_verb)
-                    ;;
+                    else
+                        # TODO: cull suggested properties based on those already used
+                        # TODO: better handling for no completions
+                        options+=' '$(printf '%s\\= ' $(_wmic_alias_verb_properties $current_alias $current_verb))
 
-                *)
+                    fi
                     ;;
 
             esac
@@ -364,6 +379,7 @@ _wmic()
 
     COMPREPLY=( $( compgen -W '$options' -- $cur ) )
     [[ $COMPREPLY == /*: ]] && compopt -o nospace
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
 }
 
 complete -o default -F _wmic wmic wmic.exe WMIC WMIC.exe

@@ -310,7 +310,7 @@ _wmic()
             options="$(_wmic_alias_property_values $current_alias $current_property)"
 
         elif [[ $mod -eq 3 ]]; then # boolean logic
-            options='and or not'
+            options='and or'
 
         fi
 

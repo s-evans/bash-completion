@@ -1,71 +1,184 @@
 #!/usr/bin/env sh
 
-# TODO: [where [property comparison value [...]]] verb [property [, ...]] [switch [...]]
+# NOTE: invoke _wmic_init_cache to populate the cache and speed up retrieval of completion candidates
+
+_wmic_init_cache_internal()
+{
+    local current_alias current_verb
+
+    _wmic_base_switches
+    _wmic_aliases
+
+    for current_alias in $_wmic_aliases_cache ; do
+        _wmic_alias_verbs "$current_alias"
+        _wmic_alias_list_formats "$current_alias"
+        _wmic_alias_methods "$current_alias"
+
+        for current_method in $_wmic_alias_methods_cache["$current_alias"] ; do
+            _wmic_alias_method_parameters "$current_alias" "$current_method"
+        done
+
+        for current_verb in $_wmic_alias_verbs_cache["$current_alias"] ; do
+            _wmic_alias_verb_init "$current_alias" "$current_verb"
+        done
+    done
+}
+
+_wmic_init_cache()
+{
+    declare -g -A _wmic_alias_verb_switches_cache _wmic_alias_verb_properties_cache _wmic_alias_verbs_cache _wmic_alias_list_formats_cache _wmic_alias_methods_cache
+    _wmic_init_cache_internal > /dev/null
+}
 
 _wmic_base_switches()
 {
-    wmic /? | sed '/^\//!d; s/[ \[].*//; s/./\l&/g'
+    if [[ "$_wmic_base_switches_cache" ]]; then
+        echo $_wmic_base_switches_cache
+        return
+    fi
+
+    _wmic_base_switches_cache=$(wmic /? 2> /dev/null | sed '/^\//!d; s/[ \[].*//; s/./\l&/g')
+    echo $_wmic_base_switches_cache
 }
 
 _wmic_aliases()
 {
-    wmic /? | sed '1,/:/d; 1,/:/d; 1,/:/d; 1,/:/d; s/\r//g; /^$/,$d; s/ .*//; s/./\l&/g'
+    if [[ "$_wmic_aliases_cache" ]]; then
+        echo $_wmic_aliases_cache
+        return
+    fi
+
+    _wmic_aliases_cache=$(wmic /? 2> /dev/null | sed '1,/:/d; 1,/:/d; 1,/:/d; 1,/:/d; s/\r//g; /^$/,$d; s/ .*//; s/./\l&/g')
+    echo $_wmic_aliases_cache
 }
 
 _wmic_alias_verbs()
 {
-    wmic $1 /? | sed '1,/:/d; 1,/:/d; s/\r//g; /^$/d; s/^[^ ]* //; s/ .*//; s/./\l&/g'
+    if [[ "${_wmic_alias_verbs_cache["$1"]}" ]]; then
+        echo ${_wmic_alias_verbs_cache["$1"]}
+        return
+    fi
+
+    _wmic_alias_verbs_cache["$1"]=$(wmic $1 /? 2> /dev/null | sed '1,/:/d; 1,/:/d; s/\r//g; /^$/d; s/^[^ ]* //; s/ .*//; s/./\l&/g')
+    echo ${_wmic_alias_verbs_cache["$1"]}
+}
+
+_wmic_alias_verb_init()
+{
+    local subscript="$1_$2"
+
+    if [[ "${_wmic_alias_verb_switches_cache["$subscript"]}" ]]; then
+        return
+    fi
+
+    local output=$(wmic $1 $2 /?)
+    local IFS=$'\n'
+
+    _wmic_alias_verb_switches_cache["$subscript"]=$(printf '%s\n' $output | sed '/^\//!d; s/[(< \[].*//; s/./\l&/g; s/[:=]/\\&/g')
+    _wmic_alias_verb_properties_cache["$subscript"]=$(printf '%s\n' $output | sed '1,/^=/d; s/\r//g; /^$/,$d; s/ .*//; s/./\l&/g')
 }
 
 _wmic_alias_verb_switches()
 {
-    wmic $1 $2 /? | sed '/^\//!d; s/[(< \[].*//; s/./\l&/g; s/[:=]/\\&/g'
+    local subscript="$1_$2"
+    if [[ "${_wmic_alias_verb_switches_cache["$subscript"]}" ]]; then
+        echo ${_wmic_alias_verb_switches_cache["$subscript"]}
+        return
+    fi
+
+    _wmic_alias_verb_switches_cache["$subscript"]=$(wmic $1 $2 /? 2> /dev/null | sed '/^\//!d; s/[(< \[].*//; s/./\l&/g; s/[:=]/\\&/g')
+    echo ${_wmic_alias_verb_switches_cache["$subscript"]}
 }
 
-_wmic_alias_properties()
+_wmic_alias_verb_properties()
 {
-    wmic $1 $2 /? | sed '1,/^=/d; s/\r//g; /^$/,$d; s/ .*//; s/./\l&/g'
+    local subscript="$1_$2"
+    if [[ "${_wmic_alias_verb_properties_cache["$subscript"]}" ]]; then
+        echo ${_wmic_alias_verb_properties_cache["$subscript"]}
+        return
+    fi
+
+    _wmic_alias_verb_properties_cache["$subscript"]=$(wmic $1 $2 /? 2> /dev/null | sed '1,/^=/d; s/\r//g; /^$/,$d; s/ .*//; s/./\l&/g')
+    echo ${_wmic_alias_verb_properties_cache["$subscript"]}
 }
 
 _wmic_alias_list_formats()
 {
-    wmic $1 list /? | sed '/ - /!d; /^\//d; s/ .*//; s/./\l&/g'
+    if [[ "${_wmic_alias_list_formats_cache["$1"]}" ]]; then
+        echo ${_wmic_alias_list_formats_cache["$1"]}
+        return
+    fi
+
+    _wmic_alias_list_formats_cache["$1"]=$(wmic $1 list /? 2> /dev/null | sed '/ - /!d; /^\//d; s/ .*//; s/./\l&/g')
+    echo ${_wmic_alias_list_formats_cache["$1"]}
 }
 
 _wmic_alias_methods()
 {
-    wmic $1 call /? | sed '1,/^=/d; s/\W.*//; /^$/d; s/./\l&/g'
+    if [[ "${_wmic_alias_methods_cache["$1"]}" ]]; then
+        echo ${_wmic_alias_methods_cache["$1"]}
+        return
+    fi
+
+    _wmic_alias_methods_cache["$1"]=$(wmic $1 call /? 2> /dev/null | sed '1,/^=/d; s/\W.*//; /^$/d; s/./\l&/g')
+    echo ${_wmic_alias_methods_cache["$1"]}
+}
+
+_wmic_alias_method_parameters()
+{
+    local subscript="$1_$2"
+    if [[ "${_wmic_alias_method_parameters_cache[$subscript]}" ]]; then
+        echo ${_wmic_alias_method_parameters_cache[$subscript]}
+        return
+    fi
+
+    _wmic_alias_method_parameters_cache[$subscript]=$(wmic $1 call $2 /? 2> /dev/null | sed '/\[IN \]/!d; s/.*\]//; s/(.*//; s/./\l&/g')
+    echo ${_wmic_alias_method_parameters_cache[$subscript]}
 }
 
 _wmic_users()
 {
-    local options IFS
-    IFS=$'\n'
-    options=$(wmic useraccount get name | sed -e '1d' -e 's/\r//' -e 's/ \+$//' -e '/\$$/ d' -e '/^$/ d')
-    printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
+    local IFS=$'\n'
+    printf '%q\n' $(wmic useraccount get name | sed 's/\s*$//; /^$/d; 1d; s/./\l&/g') | sed 's/[:=]/\\&/g; /'\'\''/d'
+}
+
+_wmic_alias_property_values()
+{
+    local IFS=$'\n'
+    wmic $1 get $2 2> /dev/null | sed '1d; s/\s*$//; /^$/d; s/./\l&/g; s/['$' \t"\'><=;|&(:\\'']/\\&/g; s/^\|$/'\''/g; s/'\''/\\&/g'
 }
 
 _wmic()
 {
-    local cur prev words cword options IFS aliases current_alias current_verb cmds switches properties
-    declare -i verb_position alias_position
+    local cur prev words cword options IFS aliases current_alias current_verb cmds switches properties verbs temp_verb_position
+    declare -i verb_position alias_position has_where_clause
     _init_completion
-    cur=$(printf '%q' "${cur,,}")
 
     if [[ "$prev" == '/\?'* ]]; then
         return
     fi
 
+    has_where_clause=0
+    cur=$(printf '%q' "${cur,,}")
     aliases=( $(_wmic_aliases) )
     alias_position=$(printf '%s\n' ${words[@]::cword} | (command grep -m 1 -h -Fxnf <(printf '%s\n' ${aliases[@]}) || echo 0) | sed 's/:.*//')
 
     if [[ $alias_position -ne 0 ]]; then
         alias_position=alias_position-1
-        verb_position=alias_position+1
         current_alias=${words[alias_position]}
-        current_verb=${words[verb_position]}
-    fi
 
+        # generally, the verb comes immediately after the alias
+        verb_position=alias_position+1
+        current_verb=${words[verb_position]}
+
+        # if there is a where clause, wait until the user is finished with it, then get the verb that follows
+        if [[ "$current_verb" == where && $cword-1 -gt $verb_position ]]; then
+            has_where_clause=1
+            verb_position=verb_position+2
+            current_verb=${words[verb_position]}
+        fi
+
+    fi
 
     if [[ -z "$current_alias" ]]; then
         case ${words[cword]} in
@@ -132,19 +245,94 @@ _wmic()
         options+=" ${aliases[*]} /?\\:brief /?\\:full "
 
     elif [[ $cword -eq $verb_position ]]; then
-        IFS=$'\n'
         options=$(_wmic_alias_verbs $current_alias)
-        options+=$'\nwhere'
+
+        if [[ $has_where_clause -eq 1 ]]; then
+            options=${options//create/}
+
+        else
+            options+=' where'
+
+        fi
 
     elif [[ $current_verb == where ]]; then
-        # TODO: implement
+        # TODO: support parenthseses
+
+        # get the where clause as a single argument
+        local real_cur="${COMP_WORDS[COMP_CWORD]}"
+
+        # drop cword and all following args
+        COMP_WORDS=( "${COMP_WORDS[@]::COMP_CWORD}" )
+
+        # unescape the where clause
+        local unescaped="$(echo "$real_cur" | sed 's/\\\(.\)/\1/g')0"
+
+        # split the tokens with newlines
+        local split=$(printf '%s\n' $unescaped)
+
+        # rebuild COMP_CWORDS with the split where clause tokens
+        IFS=$'\n'
+        COMP_WORDS+=( $split )
+        IFS=$' \t\n'
+
+        # update the arg count
+        COMP_CWORD=${#COMP_WORDS[@]}-1
+
+        # drop the excess trailing character that was used to get an accurate arg count
+        COMP_WORDS[COMP_CWORD]=$(printf %s "${COMP_WORDS[COMP_CWORD]}" | sed 's/.$//; s/['$' \t"\'><=;|&(:'']/\\&/g')
+
+        # figure out where we are in the where clause
+        declare -i count=$COMP_CWORD-$alias_position-2
+        declare -i mod=$count%4
+
+        # figure out where the where clause is in the arg list
+        declare -i clause_position=$verb_position+1
+        declare -i clause_length=$COMP_CWORD-$clause_position
+
+        # get the where clause
+        local clause=( ${COMP_WORDS[@]:clause_position:clause_length} )
+
+        # create the prefix by joining and escaping the where clause
+        if [[ ${#clause[@]} -ne 0 ]]; then
+            local prefix="$(printf '%q\ ' "${clause[@]}" | sed 's/[:=]/\\&/g')"
+        fi
+
+        # determine options
+        if [[ $mod -eq 0 ]]; then # properties
+            options=$(_wmic_alias_verb_properties $current_alias get)
+
+        elif [[ $mod -eq 1 ]]; then # comparison opertors
+            options='\= \!\= like \< \<\= \> \>\='
+
+        elif [[ $mod -eq 2 ]]; then # values
+            IFS=$'\n'
+            local current_property="${COMP_WORDS[COMP_CWORD-2]}"
+            options="$(_wmic_alias_property_values $current_alias $current_property)"
+
+        elif [[ $mod -eq 3 ]]; then # boolean logic
+            options='and or'
+
+        fi
+
+        # prefix options with the existing where clause and suffix with a space
+        options=( $(printf '%s\n' $options) )
+        options=( "${options[@]/#/${prefix}}" )
+        options=( "${options[@]/%/\\ }" )
+        options=$(printf "%s\n" "${options[@]}")
+
+        # update cur with proper escaping
+        cur="$(printf %q "${prefix}${COMP_WORDS[COMP_CWORD]}" | sed 's/[:=]/\\&/g')"
+
+        # do completion
+        IFS=$'\n'
+        compopt -o nospace
+        COMPREPLY=( $( compgen -W '$options' -- "$cur" ) )
         return
 
     else
         cmds=( ${words[@]:verb_position+1:cword} )
         local has_switch=$(printf '%s\n' ${cmds[@]} | sed '/^\//!d')
 
-        IFS=$'\n'
         switches=( $(_wmic_alias_verb_switches $current_alias $current_verb) )
         options=$(_complement cmds[@] switches[@])
 
@@ -156,31 +344,31 @@ _wmic()
                 call)
                     # TODO: complete method arguments
                     if [[ $cword -eq $verb_position+1 ]]; then
-                        options+=$'\n'$(_wmic_alias_methods $current_alias)
+                        options+=' '$(_wmic_alias_methods $current_alias)
                     fi
                     ;;
 
                 list)
                     if [[ $cword -eq $verb_position+1 ]]; then
-                        options+=$'\n'$(_wmic_alias_list_formats $current_alias)
+                        options+=' '$(_wmic_alias_list_formats $current_alias)
                     fi
                     ;;
 
                 get)
-                    properties=( $(printf '%s,\n' $(_wmic_alias_properties $current_alias $current_verb)) )
-                    options+=$'\n'$(_complement cmds[@] properties[@])
+                    properties=( $(printf '%s, ' $(_wmic_alias_verb_properties $current_alias $current_verb)) )
+                    options+=' '$(_complement cmds[@] properties[@])
                     ;;
 
                 set)
                     # TODO: complete assignment operator and skip values?
                     # TODO: comma separate properties list?
-                    options+=$'\n'$(_wmic_alias_properties $current_alias $current_verb)
+                    options+=' '$(_wmic_alias_verb_properties $current_alias $current_verb)
                     ;;
 
                 create)
                     # TODO: complete assignment operator and skip values?
                     # TODO: comma separate properties list?
-                    options+=$'\n'$(_wmic_alias_properties $current_alias $current_verb)
+                    options+=' '$(_wmic_alias_verb_properties $current_alias $current_verb)
                     ;;
 
                 *)
@@ -194,5 +382,5 @@ _wmic()
     [[ $COMPREPLY == /*: ]] && compopt -o nospace
 }
 
-complete -o default -F _wmic wmic wmic.exe
+complete -o default -F _wmic wmic wmic.exe WMIC WMIC.exe
 

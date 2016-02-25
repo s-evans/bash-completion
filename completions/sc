@@ -1,5 +1,11 @@
 #!/usr/bin/env sh
 
+# TODO: use wmic for the below?
+# TODO: 'sc start' should suggest stopped services only
+# TODO: 'sc continue' should suggest paused services only
+# TODO: 'sc stop' should suggest non-stopped and non-stop-pending services
+# TODO: 'sc pause' should suggest running services only
+
 _sc_inactive_services()
 {
     local IFS options

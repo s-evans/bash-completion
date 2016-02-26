@@ -356,11 +356,9 @@ _wmic()
                         options="$(_wmic_alias_property_values $current_alias $current_property | sed 's/^/'$current_property'\\=/')"
 
                     else
-                        # TODO: test this out
-                        # TODO: better handling for no completions
                         # TODO: cull suggested parameters based on those already used
                         local current_method=${words[$verb_position+1]}
-                        options+=' '$(printf '%s\\= ' $(_wmic_alias_method_parameters $current_alias $current_method))
+                        options+=' '$(_wmic_alias_method_parameters $current_alias $current_method | sed 's/.\>/&\\=/g')
 
                     fi
                     ;;
@@ -384,8 +382,7 @@ _wmic()
 
                     else
                         # TODO: cull suggested properties based on those already used
-                        # TODO: better handling for no completions
-                        options+=' '$(printf '%s\\= ' $(_wmic_alias_verb_properties $current_alias $current_verb))
+                        options+=' '$(_wmic_alias_verb_properties $current_alias $current_verb | sed 's/.\>/&\\=/g')
 
                     fi
                     ;;

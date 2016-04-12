@@ -49,7 +49,7 @@ _cleartool()
         unreserve update winkin'
 
     if [[ $cword -eq 1 ]] ; then
-        COMPREPLY=( $( compgen -W "$commands" -- $cur ) )
+        COMPREPLY=( $( compgen -W '$commands' -- $(printf '%q' $cur) ) )
     else
         if [[ "$cur" == -* ]]; then
             # Command-specific option flags
@@ -703,7 +703,7 @@ _cleartool()
             esac
             options="$options -h"
 
-            COMPREPLY=( $( compgen -W "$options" -- $cur ) )
+            COMPREPLY=( $( compgen -W '$options' -- $(printf '%q' $cur) ) )
         else
             # Command-specific arguments
             case "$command" in
@@ -722,15 +722,26 @@ _cleartool()
                     ;;
                 mount)
                     options=$(cleartool lsvob |sed -e "/^\*/d" -e "s/^\s\+\(\S*\).*/\1/" -e 's/\r//')
+                    local IFS=$'\n'
+                    options=$(printf '%q\n' ${options})
                     ;;
                 umount)
                     options=$(cleartool lsvob |sed -e "/^\s/d" -e "s/^\*\s\+\(\S*\).*/\1/" -e 's/\r//')
+                    local IFS=$'\n'
+                    options=$(printf '%q\n' ${options})
+                    ;;
+                startview)
+                    options=$(cleartool lsview -short | sed -e 's/\r//')
+                    local IFS=$'\n'
+                    options=$(printf '%q\n' ${options})
                     ;;
                 setview)
                     if [[ "$prev" == -exe?(c) ]]; then
                         COMPREPLY=( $(compgen -A command -- $cur) )
                     else
                         options=$(cleartool lsview -short | sed -e 's/\r//')
+                        local IFS=$'\n'
+                        options=$(printf '%q\n' ${options})
                     fi
                     ;;
                 lsview)
@@ -738,51 +749,75 @@ _cleartool()
                         _known_hosts
                     elif [[ "$prev" == -reg?(ion) ]]; then
                         options=$(cleartool lsregion -short | sed -e 's/\r//')
+                        local IFS=$'\n'
+                        options=$(printf '%q\n' ${options})
                     elif [[ "$prev" == -sto?(rage) ]]; then
                         # TODO: Doesn't work OK.
                         options=$(cleartool lsview |sed -e "s/.*\s\(\S*\)$/\1/" -e 's/\r//')
+                        local IFS=$'\n'
+                        options=$(printf '%q\n' ${options})
                     elif [[ "$prev" == -uui?(d) ]]; then
                         options=$(cleartool lsview -long |grep "^View uuid: " |sed -e "s/^View uuid: //" -e 's/\r//' |sort |uniq)
+                        local IFS=$'\n'
+                        options=$(printf '%q\n' ${options})
                     else
                         options=$(cleartool lsview -short | sed -e 's/\r//')
+                        local IFS=$'\n'
+                        options=$(printf '%q\n' ${options})
                     fi
                     ;;
                 uncheckout|unco)
                     # List of user's checked out elements
                     # TODO: Include list of activities for checkin
                     options=$(cleartool lscheckout -short -me | sed -e 's/\r//')
+                    local IFS=$'\n'
+                    options=$(printf '%q\n' ${options})
                     ;;
                 checkin|ci)
                     if [[ "$prev" != @(-fro?(m)|-cfi?(le)) ]]; then
                         options=$(cleartool lscheckout -short -me | sed -e 's/\r//')
+                        local IFS=$'\n'
+                        options=$(printf '%q\n' ${options})
                     fi
                     ;;
                 lsregion)
                     options=$(cleartool lsregion -short | sed -e 's/\r//')
+                    local IFS=$'\n'
+                    options=$(printf '%q\n' ${options})
                     ;;
                 rmregion)
                     if [[ "$prev" != -pas?(sword) ]]; then
                         options=$(cleartool lsregion -short | sed -e 's/\r//')
+                        local IFS=$'\n'
+                        options=$(printf '%q\n' ${options})
                     fi
                     ;;
                 lsvob)
                     if [[ "$prev" == -reg?(ion) ]]; then
                         options=$(cleartool lsregion -short | sed -e 's/\r//')
+                        local IFS=$'\n'
+                        options=$(printf '%q\n' ${options})
                     elif [[ "$prev" == -hos?(t) ]]; then
                         _known_hosts
                     elif [[ "$prev" == -uui?(d) ]]; then
                         options=$(cleartool lsvob -long |grep "^Vob replica uuid: " |sed -e "s/^Vob replica uuid: //" -e 's/\r//' |sort |uniq)
+                        local IFS=$'\n'
+                        options=$(printf '%q\n' ${options})
                     elif [[ "$prev" == -fam?(ily) ]]; then
                         options=$(cleartool lsvob -long |grep "^Vob family uuid: " |sed -e "s/^Vob family uuid: //" -e 's/\r//' |sort |uniq)
+                        local IFS=$'\n'
+                        options=$(printf '%q\n' ${options})
                     elif [[ "$prev" == -sto?(rage) ]]; then
                         # TODO: Doesn't work OK
                         options=$(cleartool lsvob |sed -e "s/^\*\?\ \S*\s*\(\S*\).*/\1/" -e 's/\r//')
+                        local IFS=$'\n'
+                        options=$(printf '%q\n' ${options})
                     fi
                     ;;
             esac
 
             if [ -n "$options" -a -z "$COMPREPLY" ]; then
-                COMPREPLY=( $(compgen -W "$options" -- $cur ) )
+                COMPREPLY=( $(compgen -W '$options' -- $(printf '%q' $cur) ) )
             fi
         fi
     fi
@@ -802,7 +837,7 @@ _multitool()
         restorereplica describe describe lspacket"
 
     if [[ $cword -eq 1 ]] ; then
-        COMPREPLY=( $( compgen -W "$commands" -- $cur ) )
+        COMPREPLY=( $( compgen -W '$commands' -- $(printf '%q' $cur) ) )
     else
         if [[ "$cur" == -* ]]; then
             # Command-specific option flags
@@ -899,7 +934,7 @@ _multitool()
             esac
             options="$options -h"
 
-            COMPREPLY=( $( compgen -W "$options" -- $cur ) )
+            COMPREPLY=( $( compgen -W '$options' -- $(printf '%q' $cur) ) )
         else
             case "$command" in
                 help|apropos|man)
@@ -908,7 +943,7 @@ _multitool()
             esac
 
             if [ -n "$options" -a -z "$COMPREPLY" ]; then
-                COMPREPLY=( $( compgen -W "$options" -- $cur ) )
+                COMPREPLY=( $( compgen -W '$options' -- $(printf '%q' $cur) ) )
             fi
         fi
     fi

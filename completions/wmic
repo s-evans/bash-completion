@@ -1,6 +1,24 @@
 #!/usr/bin/env sh
 
-# NOTE: invoke _wmic_init_cache to populate the cache and speed up retrieval of completion candidates
+# NOTE:
+# Setting _wmic_auto_init_cache initializes the cache when this completion file
+# is loaded (ie. during first completion request)
+
+# NOTE:
+# Cache can be manually initialized by calling _wmic_init_cache
+
+# NOTE:
+# Cache can be reinitialized by calling _wmic_init_cache
+
+_wmic_init_cache()
+{
+    declare -g -A _wmic_alias_list_formats_cache=""
+    declare -g -A _wmic_alias_methods_cache=""
+    declare -g -A _wmic_alias_verb_properties_cache=""
+    declare -g -A _wmic_alias_verb_switches_cache=""
+    declare -g -A _wmic_alias_verbs_cache=""
+    _wmic_init_cache_internal > /dev/null
+}
 
 _wmic_init_cache_internal()
 {
@@ -22,12 +40,6 @@ _wmic_init_cache_internal()
             _wmic_alias_verb_init "$current_alias" "$current_verb"
         done
     done
-}
-
-_wmic_init_cache()
-{
-    declare -g -A _wmic_alias_verb_switches_cache _wmic_alias_verb_properties_cache _wmic_alias_verbs_cache _wmic_alias_list_formats_cache _wmic_alias_methods_cache
-    _wmic_init_cache_internal > /dev/null
 }
 
 _wmic_base_switches()
@@ -397,4 +409,8 @@ _wmic()
 }
 
 complete -o default -F _wmic wmic wmic.exe WMIC WMIC.exe
+
+if [[ "$_wmic_auto_init_cache" ]]; then
+    _wmic_init_cache
+fi
 

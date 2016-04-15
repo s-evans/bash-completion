@@ -17,8 +17,119 @@
 
 # Rational ClearCase Completion
 # author: Jan Tomka
-# date: 2015-06-09 
+# date: 2015-06-09
 # source: http://jan.tomka.name/project/clearcase-completion-bash
+
+# TODO: add caching and improved completion for
+# streams
+# projects
+# activities
+# baselines
+
+# NOTE:
+# Setting _cleartool_auto_init_cache initializes the cache when this completion
+# file is loaded (ie. during first completion request)
+
+# NOTE:
+# Cache can be manually initialized by calling _cleartool_init_cache
+
+# NOTE:
+# Cache can be reinitialized by calling _cleartool_init_cache
+
+# NOTE:
+# Enabling caching may negatively impact the accuracy of completion candidates
+# suggested to the user
+
+_cleartool_init_cache()
+{
+    declare -g -A _cleartool_view_uuids_cache=""
+    declare -g -A _cleartool_views_cache=""
+    declare -g -A _cleartool_vobs_cache=""
+    declare -g _cleartool_caching=1
+    _cleartool_init_cache_internal > /dev/null
+}
+
+_cleartool_init_cache_internal()
+{
+    _cleartool_vobs
+    _cleartool_views
+    _cleartool_view_uuids
+}
+
+_cleartool_vobs()
+{
+    if [[ "$_cleartool_vobs_cache" ]]; then
+        echo $_cleartool_vobs_cache
+        return
+    fi
+    local IFS=$'\n'
+    _cleartool_vobs_cache=$(printf '%q ' $(cleartool lsvob -short | sed 's/\r//') | sed 's/[:=]/\\&/g')
+    echo $_cleartool_vobs_cache
+}
+
+_cleartool_mounted_vobs()
+{
+    if [[ "$_cleartool_caching" ]]; then
+        _cleartool_vobs
+        return
+    fi
+    local IFS=$'\n'
+    printf '%q ' $(cleartool lsvob | sed '/^\*/d; s/^\s\+\(\S*\).*/\1/; s/\r//') | sed 's/[:=]/\\&/g' 
+}
+
+_cleartool_unmounted_vobs()
+{
+    if [[ "$_cleartool_caching" ]]; then
+        _cleartool_vobs
+        return
+    fi
+    local IFS=$'\n'
+    printf '%q ' $(cleartool lsvob | sed '/^\*/d; s/^\s\+\(\S*\).*/\1/; s/\r//') | sed 's/[:=]/\\&/g'
+}
+
+_cleartool_view_uuids()
+{
+    if [[ "$_cleartool_view_uuids_cache" ]]; then
+        echo $_cleartool_view_uuids_cache
+        return
+    fi
+    local IFS=$'\n'
+    _cleartool_view_uuids_cache=$(printf '%q ' $(cleartool lsview -long | sed '/^View uuid: /!d; s/^View uuid: //; s/\r//' | sort | uniq) | sed 's/[:=]/\\&/g' )
+    echo $_cleartool_view_uuids_cache
+}
+
+_cleartool_views()
+{
+    if [[ "$_cleartool_views_cache" ]]; then
+        echo $_cleartool_views_cache
+        return
+    fi
+    local IFS=$'\n'
+    _cleartool_views_cache=$(printf '%q ' $(cleartool lsview -short | sed 's/\r//') | sed 's/[:=]/\\&/g')
+    echo $_cleartool_views_cache
+}
+
+_cleartool_started_views()
+{
+    if [[ "$_cleartool_caching" ]]; then
+        _cleartool_views
+        return
+    fi
+    local IFS=$'\n'
+    # TODO: return only started views
+    printf '%q ' $(cleartool lsview -short | sed 's/\r//') | sed 's/[:=]/\\&/g'
+}
+
+_cleartool_unstarted_views()
+{
+    if [[ "$_cleartool_caching" ]]; then
+        _cleartool_views
+        return
+    fi
+    local IFS=$'\n'
+    # TODO: return only unstarted views
+    printf '%q ' $(cleartool lsview -short | sed 's/\r//') | sed 's/[:=]/\\&/g'
+}
 
 _cleartool()
 {
@@ -721,97 +832,80 @@ _cleartool()
                         clearexport_pvcs clearexport_sccs"
                     ;;
                 mount)
-                    options=$(cleartool lsvob |sed -e "/^\*/d" -e "s/^\s\+\(\S*\).*/\1/" -e 's/\r//')
-                    local IFS=$'\n'
-                    options=$(printf '%q\n' ${options})
+                    options=$(_cleartool_unmounted_vobs)
                     ;;
                 umount)
-                    options=$(cleartool lsvob |sed -e "/^\s/d" -e "s/^\*\s\+\(\S*\).*/\1/" -e 's/\r//')
-                    local IFS=$'\n'
-                    options=$(printf '%q\n' ${options})
+                    options=$(_cleartool_mounted_vobs)
+                    ;;
+                endview)
+                    options=$(_cleartool_started_views)
                     ;;
                 startview)
-                    options=$(cleartool lsview -short | sed -e 's/\r//')
-                    local IFS=$'\n'
-                    options=$(printf '%q\n' ${options})
+                    options=$(_cleartool_unstarted_views)
                     ;;
                 setview)
                     if [[ "$prev" == -exe?(c) ]]; then
                         COMPREPLY=( $(compgen -A command -- $cur) )
                     else
-                        options=$(cleartool lsview -short | sed -e 's/\r//')
-                        local IFS=$'\n'
-                        options=$(printf '%q\n' ${options})
+                        options=$(_cleartool_views)
                     fi
                     ;;
                 lsview)
                     if [[ "$prev" == -hos?(t) ]]; then
                         _known_hosts
                     elif [[ "$prev" == -reg?(ion) ]]; then
-                        options=$(cleartool lsregion -short | sed -e 's/\r//')
-                        local IFS=$'\n'
+                        options=$(cleartool lsregion -short | sed 's/\r//')
                         options=$(printf '%q\n' ${options})
                     elif [[ "$prev" == -sto?(rage) ]]; then
                         # TODO: Doesn't work OK.
-                        options=$(cleartool lsview |sed -e "s/.*\s\(\S*\)$/\1/" -e 's/\r//')
-                        local IFS=$'\n'
-                        options=$(printf '%q\n' ${options})
+                        options=$(_cleartool_views)
                     elif [[ "$prev" == -uui?(d) ]]; then
-                        options=$(cleartool lsview -long |grep "^View uuid: " |sed -e "s/^View uuid: //" -e 's/\r//' |sort |uniq)
-                        local IFS=$'\n'
-                        options=$(printf '%q\n' ${options})
+                        options=$(_cleartool_view_uuids)
                     else
-                        options=$(cleartool lsview -short | sed -e 's/\r//')
-                        local IFS=$'\n'
-                        options=$(printf '%q\n' ${options})
+                        options=$(_cleartool_views)
                     fi
                     ;;
                 uncheckout|unco)
                     # List of user's checked out elements
                     # TODO: Include list of activities for checkin
-                    options=$(cleartool lscheckout -short -me | sed -e 's/\r//')
                     local IFS=$'\n'
-                    options=$(printf '%q\n' ${options})
+                    options=$(printf '%q\n' $(cleartool lscheckout -short -me | sed 's/\r//'))
                     ;;
                 checkin|ci)
                     if [[ "$prev" != @(-fro?(m)|-cfi?(le)) ]]; then
-                        options=$(cleartool lscheckout -short -me | sed -e 's/\r//')
                         local IFS=$'\n'
-                        options=$(printf '%q\n' ${options})
+                        options=$(printf '%q\n' $(cleartool lscheckout -short -me | sed 's/\r//'))
                     fi
                     ;;
                 lsregion)
-                    options=$(cleartool lsregion -short | sed -e 's/\r//')
+                    # TODO: region caching
                     local IFS=$'\n'
-                    options=$(printf '%q\n' ${options})
+                    options=$(printf '%q\n' $(cleartool lsregion -short | sed 's/\r//'))
                     ;;
                 rmregion)
                     if [[ "$prev" != -pas?(sword) ]]; then
-                        options=$(cleartool lsregion -short | sed -e 's/\r//')
+                        # TODO: region caching
                         local IFS=$'\n'
-                        options=$(printf '%q\n' ${options})
+                        options=$(printf '%q\n' $(cleartool lsregion -short | sed 's/\r//'))
                     fi
                     ;;
                 lsvob)
                     if [[ "$prev" == -reg?(ion) ]]; then
-                        options=$(cleartool lsregion -short | sed -e 's/\r//')
                         local IFS=$'\n'
-                        options=$(printf '%q\n' ${options})
+                        options=$(printf '%q\n' $(cleartool lsregion -short | sed 's/\r//'))
                     elif [[ "$prev" == -hos?(t) ]]; then
                         _known_hosts
                     elif [[ "$prev" == -uui?(d) ]]; then
-                        options=$(cleartool lsvob -long |grep "^Vob replica uuid: " |sed -e "s/^Vob replica uuid: //" -e 's/\r//' |sort |uniq)
+                        # TODO: vob uuid caching
                         local IFS=$'\n'
-                        options=$(printf '%q\n' ${options})
+                        options=$(printf '%q\n' $(cleartool lsvob -long | sed '/^Vob replica uuid: /!d; s/^Vob replica uuid: //; s/\r//' | sort | uniq) | sed 's/[:=]/\\&/g')
                     elif [[ "$prev" == -fam?(ily) ]]; then
-                        options=$(cleartool lsvob -long |grep "^Vob family uuid: " |sed -e "s/^Vob family uuid: //" -e 's/\r//' |sort |uniq)
                         local IFS=$'\n'
-                        options=$(printf '%q\n' ${options})
+                        options=$(printf '%q\n' $(cleartool lsvob -long | sed '/^Vob family uuid: /!d; s/^Vob family uuid: //; s/\r//' | sort | uniq) | sed 's/[:=]/\\&/g')
                     elif [[ "$prev" == -sto?(rage) ]]; then
                         # TODO: Doesn't work OK
-                        options=$(cleartool lsvob |sed -e "s/^\*\?\ \S*\s*\(\S*\).*/\1/" -e 's/\r//')
                         local IFS=$'\n'
-                        options=$(printf '%q\n' ${options})
+                        options=$(printf '%q\n' $(cleartool lsvob | sed 's/^\*\?\ \S*\s*\(\S*\).*/\1/; s/\r//') | sed 's/[:=]/\\&/g')
                     fi
                     ;;
             esac
@@ -1151,5 +1245,9 @@ _clearvobadmin()
     fi
 }
 complete -o default -F _clearvobadmin clearvobadmin clearvobadmin.exe
+
+if [[ "$_cleartool_auto_init_cache" ]]; then
+    _cleartool_init_cache
+fi
 
 # vi: ft=sh

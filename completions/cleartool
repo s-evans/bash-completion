@@ -20,6 +20,8 @@
 # date: 2015-06-09
 # source: http://jan.tomka.name/project/clearcase-completion-bash
 
+# TODO: add support for branches and versions of files
+
 # TODO: add caching and improved completion for
 # streams
 # projects
@@ -200,6 +202,7 @@ _cleartool()
                         -cwork'
                     ;;
                 checkout|co)
+                    # TODO: list branches
                     options='-reserved -unreserved \
                         -nmaster -out -ndata -ptime -branch \
                         -version -nwarn -comment -cfile \
@@ -268,7 +271,8 @@ _cleartool()
                         -complete -gmerge -ok -abort -serial \
                         -force -resume'
                     ;;
-                describe)
+                # describe
+                des*)
                     options='-graphical -local -long \
                         -short -fmt -alabel -all -aattr -all \
                         -ahlink -cview -version -ancestor \
@@ -818,6 +822,12 @@ _cleartool()
         else
             # Command-specific arguments
             case "$command" in
+                diff)
+                    if [[ "$prev" == -options ]]; then
+                        # TODO: list options
+                        options='-blank_ignore'
+                    fi
+                    ;;
                 help|apropos)
                     options="$commands"
                     ;;
@@ -928,7 +938,7 @@ _multitool()
     commands="help man quit cd pwd shell apropos lstype rmtype mkreplica \
         chreplica syncreplica lsreplica rmreplica rename chmaster \
         lsmaster reqmaster lsepoch chepoch recoverpacket \
-        restorereplica describe describe lspacket"
+        restorereplica describe lspacket"
 
     if [[ $cword -eq 1 ]] ; then
         COMPREPLY=( $( compgen -W '$commands' -- $(printf '%q' $cur) ) )

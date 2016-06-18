@@ -33,10 +33,7 @@
 # file is loaded (ie. during first completion request)
 
 # NOTE:
-# Cache can be manually initialized by calling _cleartool_init_cache
-
-# NOTE:
-# Cache can be reinitialized by calling _cleartool_init_cache
+# Cache can be manually (re-)initialized by calling _cleartool_init_cache
 
 # NOTE:
 # Enabling caching may negatively impact the accuracy of completion candidates
@@ -313,7 +310,7 @@ _cleartool()
                     options='-all -visible -nvisible \
                         -avobs -name -depth -nrecurse \
                         -directory -cview -user -group -type \
-                        -follow -nxname -element -branch \
+                        -kind -follow -nxname -element -branch \
                         -version -print -exec -ok'
                     ;;
                 findmerge)
@@ -850,6 +847,39 @@ _cleartool()
                 endview)
                     options=$(_cleartool_started_views)
                     ;;
+                find)
+                    case "$prev" in
+                        -kind)
+                            options='actype attype baseline branch brtype
+                            checkpoint dbid delem do domain dover dver eltype felem
+                            fver hlink hltype lbtype login oid pool replica
+                            replicauuid role rptype sibrep slink state sttype
+                            trtype user viewdb vob vobuuid wko lscomp lsfolder
+                            lsproject lsstream'
+                            ;;
+                        -type)
+                            options='f d l'
+                            ;;
+                        -user)
+                            # TODO: list users
+                            options=''
+                            ;;
+                        -group)
+                            # TODO: list groups
+                            options=''
+                            ;;
+                        -ver?(sion))
+                            ;&
+                        -ele?(ment))
+                            ;&
+                        -bra?(nch))
+                            # TODO: this could be vastly improved
+                            options='attr_sub() atttype() atttype_sub() brtype()
+                            created_by() created_since() eltype() hltype() lbtype()
+                            lbtype_sub() merge() pool() trtype() version()'
+                            ;;
+                    esac
+                    ;;
                 startview)
                     options=$(_cleartool_unstarted_views)
                     ;;
@@ -859,6 +889,36 @@ _cleartool()
                     else
                         options=$(_cleartool_views)
                     fi
+                    ;;
+                lshistory)
+                    case $prev in
+                        -branch)
+                            options=$(printf '%q ' $(cleartool lstype -kind brtype -fmt '%n ') | sed 's/[:=]/\\&/g')
+                            ;;
+                    esac
+                    ;;
+                mkbranch)
+                    case $prev in
+                        -c|-comment)
+                            options=''
+                            ;;
+                        -cfile)
+                            options=''
+                            ;;
+                        -version)
+                            options=''
+                            ;;
+                        -*|$command)
+                            options=$(printf '%q ' $(cleartool lstype -kind brtype -fmt '%n ') | sed 's/[:=]/\\&/g')
+                            ;;
+                    esac
+                    ;;
+                lstype)
+                    case $prev in
+                        -kind)
+                            options='attype brtype eltype hltype lbtype trtype'
+                            ;;
+                    esac
                     ;;
                 lsview)
                     if [[ "$prev" == -hos?(t) ]]; then

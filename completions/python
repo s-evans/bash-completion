@@ -45,6 +45,13 @@ _python()
 
     if [[ "$cur" != -* ]]; then
         _filedir 'py?([co])'
+    elif [[ `type -p pybashcomplete` ]]; then
+        pybash=`pybashcomplete $COMP_LINE`
+        if [[ $pybash =~ COMPLETE:(.+) ]] ; then
+            COMPREPLY="${BASH_REMATCH[1]}"
+        elif [[ $pybash =~ MULTIPLE:(.+) ]] ; then
+            COMPREPLY=(${BASH_REMATCH[1]})
+        fi
     else
         COMPREPLY=( $( compgen -W '$( _parse_help "$1" -h )' -- "$cur" ) )
     fi

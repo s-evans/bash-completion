@@ -1,0 +1,62 @@
+#!/usr/bin/env sh
+
+_vsinstr()
+{
+    _init_completion
+    local cur=$(printf '%q' "${cur,,}")
+    local first_opts=( '/u' '/help' '/?' '/dumpfuncs' )
+    local terminal_opts=( '/help' '/?' '/dumpfuncs' )
+    local opts=( '/control\:global' \
+        '/control\:process' \
+        '/control\:thread' \
+        '/coverage' \
+        '/exclude\:' \
+        '/excludesmallfuncs' \
+        '/include\:' \
+        '/mark\:after,' \
+        '/mark\:before,' \
+        '/mark\:bottom,' \
+        '/mark\:top,' \
+        '/nowarn' \
+        '/outputpath\:' \
+        '/resumeonly\:after,' \
+        '/resumeonly\:before,' \
+        '/resumeonly\:bottom,' \
+        '/resumeonly\:top,' \
+        '/start\:inside,' \
+        '/start\:outside,' \
+        '/startonly\:after,' \
+        '/startonly\:before,' \
+        '/startonly\:bottom,' \
+        '/startonly\:top,' \
+        '/stoponly\:after,' \
+        '/stoponly\:before,' \
+        '/stoponly\:bottom,' \
+        '/stoponly\:top,' \
+        '/suspend\:inside,' \
+        '/suspend\:outside,' \
+        '/suspendonly\:after,' \
+        '/suspendonly\:before,' \
+        '/suspendonly\:bottom,' \
+        '/suspendonly\:top,' \
+        '/verbose' \
+        )
+
+    for option in ${terminal_opts[@]} ; do
+        if [[ $option == $prev ]]; then
+            return
+        fi
+    done
+
+    if [[ $cur == /* ]]; then
+        if [[ $cword -eq 1 ]]; then
+            COMPREPLY=( $(compgen -W '${first_opts[@]} ${opts[@]}' -- $cur ) )
+        else
+            COMPREPLY=( $(compgen -W '${opts[@]}' -- $cur ) )
+        fi
+    fi
+
+    [[ $COMPREPLY == *[,:] ]] && compopt -o nospace
+}
+
+complete -o default -F _vsinstr vsinstr vsinstr.exe

@@ -53,7 +53,7 @@ _tasklist()
 
         *)
             local cmds=( ${words[@]::cword} )
-            options=('/apps' '/v' '/fi' '/nh' '/fo' '/svc' '/m' '/p' '/s' '/u' '/?')
+            options=('/apps' '/v' '/fi' '/nh' '/fo' '/apps' '/svc' '/m' '/p' '/s' '/u' '/?')
             options=$(_complement cmds[@] options[@])
             ;;
 

@@ -1,0 +1,46 @@
+#!/usr/bin/env sh
+
+# TODO: additional logic
+
+_vsperfcmd()
+{
+    _init_completion
+    local cur=$(printf '%q' "${cur,,}")
+    local first_opts=( '/u' '/help' '/?' )
+    local terminal_opts=( '/help' '/?' )
+    local opts=( '/start\:coverage' \
+        '/start\:sample' \
+        '/start\:concurrency' \
+        '/start\:trace' \
+        '/output\:' \
+        '/querycounters' \
+        '/events\:' \
+        '/status' \
+        '/shutdown' \
+        '/globalon' \
+        '/globaloff' \
+        '/launch\:' \
+        '/args\:' \
+        '/console' \
+        '/attach\:' \
+        '/detach' \
+        '/detach\:' \
+        '/lineoff' \
+        )
+
+    for option in ${terminal_opts[@]} ; do
+        if [[ $option == $prev ]]; then
+            return
+        fi
+    done
+
+    if [[ $cword -eq 1 ]]; then
+        COMPREPLY=( $(compgen -W '${first_opts[@]} ${opts[@]}' -- $cur ) )
+    else
+        COMPREPLY=( $(compgen -W '${opts[@]}' -- $cur ) )
+    fi
+
+    [[ $COMPREPLY == *[,:] ]] && compopt -o nospace
+}
+
+complete -o default -F _vsperfcmd vsperfcmd vsperfcmd.exe VSPerfCmd.exe VSPerfCmd

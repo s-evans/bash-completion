@@ -12,12 +12,30 @@
 
 _wmic_init_cache()
 {
-    declare -g -A _wmic_alias_list_formats_cache=""
-    declare -g -A _wmic_alias_methods_cache=""
-    declare -g -A _wmic_alias_verb_properties_cache=""
-    declare -g -A _wmic_alias_verb_switches_cache=""
-    declare -g -A _wmic_alias_verbs_cache=""
+    declare -g -A _wmic_cache_alias_list_formats=""
+    declare -g -A _wmic_cache_alias_methods=""
+    declare -g -A _wmic_cache_alias_verb_properties=""
+    declare -g -A _wmic_cache_alias_verb_switches=""
+    declare -g -A _wmic_cache_alias_verbs=""
+    declare -g -A _wmic_cache_alias_method_parameters=""
+    declare -g _wmic_cache_base_switches
+    declare -g _wmic_cache_aliases
+    _wmic_load_cache > /dev/null
     _wmic_init_cache_internal > /dev/null
+    _wmic_save_cache > /dev/null
+}
+
+_wmic_save_cache()
+{
+    mkdir -p ~/.cache/
+    set | sed ' /^_wmic_cache_/{ /^[^ ]*=(/{ :a /)$/!{ n; ba; }; b; }; / () $/{ :b /^}$/!{ n; bb; }; b; }; b; }; d; ' > ~/.cache/wmic
+}
+
+_wmic_load_cache()
+{
+    if [[ -e ~/.cache/wmic ]]; then
+        source ~/.cache/wmic
+    fi
 }
 
 _wmic_init_cache_internal()
@@ -27,16 +45,16 @@ _wmic_init_cache_internal()
     _wmic_base_switches
     _wmic_aliases
 
-    for current_alias in $_wmic_aliases_cache ; do
+    for current_alias in $_wmic_cache_aliases ; do
         _wmic_alias_verbs "$current_alias"
         _wmic_alias_list_formats "$current_alias"
         _wmic_alias_methods "$current_alias"
 
-        for current_method in $_wmic_alias_methods_cache["$current_alias"] ; do
+        for current_method in $_wmic_cache_alias_methods["$current_alias"] ; do
             _wmic_alias_method_parameters "$current_alias" "$current_method"
         done
 
-        for current_verb in $_wmic_alias_verbs_cache["$current_alias"] ; do
+        for current_verb in $_wmic_cache_alias_verbs["$current_alias"] ; do
             _wmic_alias_verb_init "$current_alias" "$current_verb"
         done
     done
@@ -44,108 +62,108 @@ _wmic_init_cache_internal()
 
 _wmic_base_switches()
 {
-    if [[ "$_wmic_base_switches_cache" ]]; then
-        echo $_wmic_base_switches_cache
+    if [[ "${_wmic_cache_base_switches}" ]]; then
+        echo $_wmic_cache_base_switches
         return
     fi
 
-    _wmic_base_switches_cache=$(wmic /? 2> /dev/null | sed '/^\//!d; s/[ \[].*//; s/./\l&/g')
-    echo $_wmic_base_switches_cache
+    _wmic_cache_base_switches=$(wmic /? 2> /dev/null | sed '/^\//!d; s/[ \[].*//; s/./\l&/g')
+    echo $_wmic_cache_base_switches
 }
 
 _wmic_aliases()
 {
-    if [[ "$_wmic_aliases_cache" ]]; then
-        echo $_wmic_aliases_cache
+    if [[ "${_wmic_cache_aliases}" ]]; then
+        echo $_wmic_cache_aliases
         return
     fi
 
-    _wmic_aliases_cache=$(wmic /? 2> /dev/null | sed '1,/:/d; 1,/:/d; 1,/:/d; 1,/:/d; s/\r//g; /^$/,$d; s/ .*//; s/./\l&/g')
-    echo $_wmic_aliases_cache
+    _wmic_cache_aliases=$(wmic /? 2> /dev/null | sed '1,/:/d; 1,/:/d; 1,/:/d; 1,/:/d; s/\r//g; /^$/,$d; s/ .*//; s/./\l&/g')
+    echo $_wmic_cache_aliases
 }
 
 _wmic_alias_verbs()
 {
-    if [[ "${_wmic_alias_verbs_cache["$1"]}" ]]; then
-        echo ${_wmic_alias_verbs_cache["$1"]}
+    if [[ "${_wmic_cache_alias_verbs["$1"]+foo}" ]]; then
+        echo ${_wmic_cache_alias_verbs["$1"]}
         return
     fi
 
-    _wmic_alias_verbs_cache["$1"]=$(wmic $1 /? 2> /dev/null | sed '1,/:/d; 1,/:/d; s/\r//g; /^$/d; s/^[^ ]* //; s/ .*//; s/./\l&/g')
-    echo ${_wmic_alias_verbs_cache["$1"]}
+    _wmic_cache_alias_verbs["$1"]=$(wmic $1 /? 2> /dev/null | sed '1,/:/d; 1,/:/d; s/\r//g; /^$/d; s/^[^ ]* //; s/ .*//; s/./\l&/g')
+    echo ${_wmic_cache_alias_verbs["$1"]}
 }
 
 _wmic_alias_verb_init()
 {
     local subscript="$1_$2"
 
-    if [[ "${_wmic_alias_verb_switches_cache["$subscript"]}" ]]; then
+    if [[ "${_wmic_cache_alias_verb_switches["$subscript"]+foo}" ]]; then
         return
     fi
 
     local output=$(wmic $1 $2 /?)
     local IFS=$'\n'
 
-    _wmic_alias_verb_switches_cache["$subscript"]=$(printf '%s\n' $output | sed '/^\//!d; s/[(< \[].*//; s/./\l&/g; s/[:=]/\\&/g')
-    _wmic_alias_verb_properties_cache["$subscript"]=$(printf '%s\n' $output | sed '1,/^=/d; s/\r//g; /^$/,$d; s/ .*//; s/./\l&/g')
+    _wmic_cache_alias_verb_switches["$subscript"]=$(printf '%s\n' $output | sed '/^\//!d; s/[(< \[].*//; s/./\l&/g; s/[:=]/\\&/g')
+    _wmic_cache_alias_verb_properties["$subscript"]=$(printf '%s\n' $output | sed '1,/^=/d; s/\r//g; /^$/,$d; s/ .*//; s/./\l&/g')
 }
 
 _wmic_alias_verb_switches()
 {
     local subscript="$1_$2"
-    if [[ "${_wmic_alias_verb_switches_cache["$subscript"]}" ]]; then
-        echo ${_wmic_alias_verb_switches_cache["$subscript"]}
+    if [[ "${_wmic_cache_alias_verb_switches["$subscript"]+foo}" ]]; then
+        echo ${_wmic_cache_alias_verb_switches["$subscript"]}
         return
     fi
 
-    _wmic_alias_verb_switches_cache["$subscript"]=$(wmic $1 $2 /? 2> /dev/null | sed '/^\//!d; s/[(< \[].*//; s/./\l&/g; s/[:=]/\\&/g')
-    echo ${_wmic_alias_verb_switches_cache["$subscript"]}
+    _wmic_cache_alias_verb_switches["$subscript"]=$(wmic $1 $2 /? 2> /dev/null | sed '/^\//!d; s/[(< \[].*//; s/./\l&/g; s/[:=]/\\&/g')
+    echo ${_wmic_cache_alias_verb_switches["$subscript"]}
 }
 
 _wmic_alias_verb_properties()
 {
     local subscript="$1_$2"
-    if [[ "${_wmic_alias_verb_properties_cache["$subscript"]}" ]]; then
-        echo ${_wmic_alias_verb_properties_cache["$subscript"]}
+    if [[ "${_wmic_cache_alias_verb_properties["$subscript"]+foo}" ]]; then
+        echo ${_wmic_cache_alias_verb_properties["$subscript"]}
         return
     fi
 
-    _wmic_alias_verb_properties_cache["$subscript"]=$(wmic $1 $2 /? 2> /dev/null | sed '1,/^=/d; s/\r//g; /^$/,$d; s/ .*//; s/./\l&/g')
-    echo ${_wmic_alias_verb_properties_cache["$subscript"]}
+    _wmic_cache_alias_verb_properties["$subscript"]=$(wmic $1 $2 /? 2> /dev/null | sed '1,/^=/d; s/\r//g; /^$/,$d; s/ .*//; s/./\l&/g')
+    echo ${_wmic_cache_alias_verb_properties["$subscript"]}
 }
 
 _wmic_alias_list_formats()
 {
-    if [[ "${_wmic_alias_list_formats_cache["$1"]}" ]]; then
-        echo ${_wmic_alias_list_formats_cache["$1"]}
+    if [[ "${_wmic_cache_alias_list_formats["$1"]+foo}" ]]; then
+        echo ${_wmic_cache_alias_list_formats["$1"]}
         return
     fi
 
-    _wmic_alias_list_formats_cache["$1"]=$(wmic $1 list /? 2> /dev/null | sed '/ - /!d; /^\//d; s/ .*//; s/./\l&/g')
-    echo ${_wmic_alias_list_formats_cache["$1"]}
+    _wmic_cache_alias_list_formats["$1"]=$(wmic $1 list /? 2> /dev/null | sed '/ - /!d; /^\//d; s/ .*//; s/./\l&/g')
+    echo ${_wmic_cache_alias_list_formats["$1"]}
 }
 
 _wmic_alias_methods()
 {
-    if [[ "${_wmic_alias_methods_cache["$1"]}" ]]; then
-        echo ${_wmic_alias_methods_cache["$1"]}
+    if [[ "${_wmic_cache_alias_methods["$1"]+foo}" ]]; then
+        echo ${_wmic_cache_alias_methods["$1"]}
         return
     fi
 
-    _wmic_alias_methods_cache["$1"]=$(wmic $1 call /? 2> /dev/null | sed '1,/^=/d; s/\W.*//; /^$/d; s/./\l&/g')
-    echo ${_wmic_alias_methods_cache["$1"]}
+    _wmic_cache_alias_methods["$1"]=$(wmic $1 call /? 2> /dev/null | sed '1,/^=/d; s/\W.*//; /^$/d; s/./\l&/g')
+    echo ${_wmic_cache_alias_methods["$1"]}
 }
 
 _wmic_alias_method_parameters()
 {
     local subscript="$1_$2"
-    if [[ "${_wmic_alias_method_parameters_cache[$subscript]}" ]]; then
-        echo ${_wmic_alias_method_parameters_cache[$subscript]}
+    if [[ "${_wmic_cache_alias_method_parameters["$subscript"]+foo}" ]]; then
+        echo ${_wmic_cache_alias_method_parameters["$subscript"]}
         return
     fi
 
-    _wmic_alias_method_parameters_cache[$subscript]=$(wmic $1 call $2 /? 2> /dev/null | sed '/\[IN \]/!d; s/.*\]//; s/(.*//; s/./\l&/g')
-    echo ${_wmic_alias_method_parameters_cache[$subscript]}
+    _wmic_cache_alias_method_parameters["$subscript"]=$(wmic $1 call $2 /? 2> /dev/null | sed '/\[IN \]/!d; s/.*\]//; s/(.*//; s/./\l&/g')
+    echo ${_wmic_cache_alias_method_parameters["$subscript"]}
 }
 
 _wmic_users()

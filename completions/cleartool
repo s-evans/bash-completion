@@ -41,11 +41,26 @@
 
 _cleartool_init_cache()
 {
-    declare -g -A _cleartool_view_uuids_cache=""
-    declare -g -A _cleartool_views_cache=""
-    declare -g -A _cleartool_vobs_cache=""
+    declare -g -A _cleartool_cache_view_uuids=""
+    declare -g -A _cleartool_cache_views=""
+    declare -g -A _cleartool_cache_vobs=""
     declare -g _cleartool_caching=1
+    _cleartool_load_cache > /dev/null
     _cleartool_init_cache_internal > /dev/null
+    _cleartool_save_cache > /dev/null
+}
+
+_cleartool_save_cache()
+{
+    mkdir -p ~/.cache/
+    set | sed ' /^_cleartool_cache_/{ /^[^ ]*=(/{ :a /)$/!{ n; ba; }; b; }; / () $/{ :b /^}$/!{ n; bb; }; b; }; b; }; d; ' > ~/.cache/cleartool
+}
+
+_cleartool_load_cache()
+{
+    if [[ -e ~/.cache/cleartool ]]; then
+        source ~/.cache/cleartool
+    fi
 }
 
 _cleartool_init_cache_internal()
@@ -57,13 +72,13 @@ _cleartool_init_cache_internal()
 
 _cleartool_vobs()
 {
-    if [[ "$_cleartool_vobs_cache" ]]; then
-        echo $_cleartool_vobs_cache
+    if [[ "${_cleartool_cache_vobs}" ]]; then
+        echo $_cleartool_cache_vobs
         return
     fi
     local IFS=$'\n'
-    _cleartool_vobs_cache=$(printf '%q ' $(cleartool lsvob -short | sed 's/\r//') | sed 's/[:=]/\\&/g')
-    echo $_cleartool_vobs_cache
+    _cleartool_cache_vobs=$(printf '%q ' $(cleartool lsvob -short | sed 's/\r//') | sed 's/[:=]/\\&/g')
+    echo $_cleartool_cache_vobs
 }
 
 _cleartool_mounted_vobs()
@@ -88,24 +103,24 @@ _cleartool_unmounted_vobs()
 
 _cleartool_view_uuids()
 {
-    if [[ "$_cleartool_view_uuids_cache" ]]; then
-        echo $_cleartool_view_uuids_cache
+    if [[ "${_cleartool_cache_view_uuids}" ]]; then
+        echo $_cleartool_cache_view_uuids
         return
     fi
     local IFS=$'\n'
-    _cleartool_view_uuids_cache=$(printf '%q ' $(cleartool lsview -long | sed '/^View uuid: /!d; s/^View uuid: //; s/\r//' | sort | uniq) | sed 's/[:=]/\\&/g' )
-    echo $_cleartool_view_uuids_cache
+    _cleartool_cache_view_uuids=$(printf '%q ' $(cleartool lsview -long | sed '/^View uuid: /!d; s/^View uuid: //; s/\r//' | sort | uniq) | sed 's/[:=]/\\&/g' )
+    echo $_cleartool_cache_view_uuids
 }
 
 _cleartool_views()
 {
-    if [[ "$_cleartool_views_cache" ]]; then
-        echo $_cleartool_views_cache
+    if [[ "${_cleartool_cache_views}" ]]; then
+        echo $_cleartool_cache_views
         return
     fi
     local IFS=$'\n'
-    _cleartool_views_cache=$(printf '%q ' $(cleartool lsview -short | sed 's/\r//') | sed 's/[:=]/\\&/g')
-    echo $_cleartool_views_cache
+    _cleartool_cache_views=$(printf '%q ' $(cleartool lsview -short | sed 's/\r//') | sed 's/[:=]/\\&/g')
+    echo $_cleartool_cache_views
 }
 
 _cleartool_started_views()
@@ -137,25 +152,25 @@ _cleartool()
 
     command=${words[1]}
 
-    commands='annotate apropos catcr catcs cd chactivity chbl checkin ci \
-        checkout co checkvob chevent chflevel chfolder chmaster \
-        chpool chproject chstream chtype chview cptype deliver \
-        describe diff diffbl diffcr dospace edcs endview file find \
-        findmerge get getcache getlog help hostinfo ln lock ls \
-        lsactivity lsbl lscheckout lsco lsclients lscomp lsdo lsfolder \
-        lshistory lslock lsmaster lspool lsprivate lsproject lsregion \
-        lsreplica lssite lsstgloc lsstream lstype lsview lsvob lsvtree \
-        man merge mkactivity mkattr mkattype mkbl mkbranch mkbrtype \
-        mkcomp mkdir mkelem mkeltype mkfolder mkhlink mkhltype mklabel \
-        mklbtype mkpool mkproject mkregion mkstgloc mkstream mktag \
-        mktrigger mktrtype mkview mkvob mount move mv protect \
-        protectvob pwd pwv quit rebase recoverview reformatview \
-        reformatvob register relocate rename reqmaster reserve \
-        rmactivity rmattr rmbl rmbranch rmcomp rmdo rmelem rmfolder \
-        rmhlink rmlabel rmmerge rmname rmpool rmproject rmregion \
-        rmstgloc rmstream rmtag rmtrigger rmtype rmver rmview rmvob \
-        schedule setactivity setcache setcs setplevel setsite setview \
-        shell space startview umount uncheckout unco unlock unregister \
+    commands='annotate apropos catcr catcs cd chactivity chbl checkin ci
+        checkout co checkvob chevent chflevel chfolder chmaster
+        chpool chproject chstream chtype chview cptype deliver
+        describe diff diffbl diffcr dospace edcs endview file find
+        findmerge get getcache getlog help hostinfo ln lock ls
+        lsactivity lsbl lscheckout lsco lsclients lscomp lsdo lsfolder
+        lshistory lslock lsmaster lspool lsprivate lsproject lsregion
+        lsreplica lssite lsstgloc lsstream lstype lsview lsvob lsvtree
+        man merge mkactivity mkattr mkattype mkbl mkbranch mkbrtype
+        mkcomp mkdir mkelem mkeltype mkfolder mkhlink mkhltype mklabel
+        mklbtype mkpool mkproject mkregion mkstgloc mkstream mktag
+        mktrigger mktrtype mkview mkvob mount move mv protect
+        protectvob pwd pwv quit rebase recoverview reformatview
+        reformatvob register relocate rename reqmaster reserve
+        rmactivity rmattr rmbl rmbranch rmcomp rmdo rmelem rmfolder
+        rmhlink rmlabel rmmerge rmname rmpool rmproject rmregion
+        rmstgloc rmstream rmtag rmtrigger rmtype rmver rmview rmvob
+        schedule setactivity setcache setcs setplevel setsite setview
+        shell space startview umount uncheckout unco unlock unregister
         unreserve update winkin'
 
     if [[ $cword -eq 1 ]] ; then

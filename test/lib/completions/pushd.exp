@@ -11,9 +11,7 @@ proc teardown {} {
 setup
 
 
-assert_complete_any "indent --"
-
-
+assert_complete_any "pushd "
 sync_after_int
 
 

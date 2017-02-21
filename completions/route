@@ -1,137 +1,140 @@
 # Linux route(8) completion                                -*- shell-script -*-
 
 if [[ $OSTYPE == *linux* ]]; then
-    _route()
-    {
-        local cur prev words cword
-        _init_completion || return
 
-        if [[ $prev == dev ]]; then
-            _available_interfaces
-            return 0
-        fi
+_route()
+{
+    local cur prev words cword
+    _init_completion || return
 
-        # Remove already given options from completions
-        local opt found i
-        for opt in add del -host -net netmask metric mss window irtt reject mod \
-            dyn reinstate dev default gw; do
-            found=false
-            for (( i=1; i < ${#words[@]}-1; i++ )); do
-                [[ ${words[i]} == $opt ]] && found=true && break
-            done
-            $found || COMPREPLY[${#COMPREPLY[@]}]="$opt"
+    if [[ $prev == dev ]]; then
+        _available_interfaces
+        return
+    fi
+
+    # Remove already given options from completions
+    local opt found i
+    for opt in add del -host -net netmask metric mss window irtt reject mod \
+        dyn reinstate dev default gw; do
+        found=false
+        for (( i=1; i < ${#words[@]}-1; i++ )); do
+            [[ ${words[i]} == $opt ]] && found=true && break
         done
+        $found || COMPREPLY[${#COMPREPLY[@]}]="$opt"
+    done
 
-        COMPREPLY=( $( compgen -W '"${COMPREPLY[@]}"' -- "$cur" ) )
-    } &&
-    complete -F _route route
+    COMPREPLY=( $( compgen -W '"${COMPREPLY[@]}"' -- "$cur" ) )
+} &&
+complete -F _route route
+
 elif [[ $OSTYPE == cygwin ]]; then
-    # TODO: support ipv6
 
-    _windows_get_routes()
-    {
-        route -4 print | sed -e '1,/^Network/ d'  \
-            -e '/===/,$ d' -e 's, \+, ,g' -e 's/^ \| $//'  \
-            -e 's/ [0-9]\+$/ metric&/' -e 's/ [^ ]\+ metric/ metric/'  \
-            -e 's/ / mask /' -e 's/On-link/0.0.0.0/'
-    }
+# TODO: support ipv6
 
-    _windows_get_interface_ids()
-    {
-        route -4 print | sed -e '1,2 d' -e '/===/,$ d' -e 's/^ \+\| \+$//' -e 's/\..*//'
-    }
+_windows_get_routes()
+{
+    route -4 print | sed -e '1,/^Network/ d'  \
+        -e '/===/,$ d' -e 's, \+, ,g' -e 's/^ \| $//'  \
+        -e 's/ [0-9]\+$/ metric&/' -e 's/ [^ ]\+ metric/ metric/'  \
+        -e 's/ / mask /' -e 's/On-link/0.0.0.0/'
+}
 
-    _route()
-    {
-        local cur prev words cword options cmd IFS commands command
-        _init_completion
-        commands=('print' 'add' 'change' 'delete')
+_windows_get_interface_ids()
+{
+    route -4 print | sed -e '1,2 d' -e '/===/,$ d' -e 's/^ \+\| \+$//' -e 's/\..*//'
+}
 
-        if [[ "${words[1]}" == -p && $cword -eq 2 ]]; then
-            COMPREPLY=( $( compgen -W 'add' -- "$cur" ) )
+_route()
+{
+    local cur prev words cword options cmd IFS commands command
+    _init_completion
+    commands=('print' 'add' 'change' 'delete')
 
-        elif [[ "${words[1]}" == -* && $cword -eq 2 ]]; then
-            COMPREPLY=( $( compgen -W '${commands[@]}' -- "$cur" ) )
+    if [[ "${words[1]}" == -p && $cword -eq 2 ]]; then
+        COMPREPLY=( $( compgen -W 'add' -- "$cur" ) )
 
-        elif [[ $cword -eq 1 ]] ; then
-            COMPREPLY=( $( compgen -W '-f -p -4 -6 ${commands[@]}' -- "$cur" ) )
+    elif [[ "${words[1]}" == -* && $cword -eq 2 ]]; then
+        COMPREPLY=( $( compgen -W '${commands[@]}' -- "$cur" ) )
 
-        else
-            declare -i count=0
-            for word in ${words[@]::$cword} ; do
-                for option in ${commands[@]} ; do
-                    if [[ "$option" == "$word" ]]; then
-                        command=$option
-                        break
-                    fi
-                done
-                if [[ -n $command ]]; then
+    elif [[ $cword -eq 1 ]] ; then
+        COMPREPLY=( $( compgen -W '-f -p -4 -6 ${commands[@]}' -- "$cur" ) )
+
+    else
+        declare -i count=0
+        for word in ${words[@]::$cword} ; do
+            for option in ${commands[@]} ; do
+                if [[ "$option" == "$word" ]]; then
+                    command=$option
                     break
                 fi
-                count+=1
             done
+            if [[ -n $command ]]; then
+                break
+            fi
+            count+=1
+        done
 
-            count=$cword-$count
+        count=$cword-$count
 
-            case "$command" in
-                print)
-                    # NOTE: no meaningful completions available
-                    ;;
+        case "$command" in
+            print)
+                # NOTE: no meaningful completions available
+                ;;
 
-                add)
-                    case $count in
-                        2)
-                            options='mask'
-                            ;;
-                        5)
-                            options='metric'
-                            ;;
-                        7)
-                            options='if'
-                            ;;
-                        8)
-                            IFS=$'\n'
-                            options=$(_windows_get_interface_ids)
-                            ;;
-                    esac
-                    ;;
+            add)
+                case $count in
+                    2)
+                        options='mask'
+                        ;;
+                    5)
+                        options='metric'
+                        ;;
+                    7)
+                        options='if'
+                        ;;
+                    8)
+                        IFS=$'\n'
+                        options=$(_windows_get_interface_ids)
+                        ;;
+                esac
+                ;;
 
-                change)
-                    case $count in
-                        1)
-                            IFS=$'\n'
-                            options=$(_windows_get_routes)
-                            ;;
-                        2)
-                            options='mask'
-                            ;;
-                        5)
-                            options='metric'
-                            ;;
-                        7)
-                            options='if'
-                            ;;
-                        8)
-                            IFS=$'\n'
-                            options=$(_windows_get_interface_ids)
-                            ;;
-                    esac
-                    ;;
+            change)
+                case $count in
+                    1)
+                        IFS=$'\n'
+                        options=$(_windows_get_routes)
+                        ;;
+                    2)
+                        options='mask'
+                        ;;
+                    5)
+                        options='metric'
+                        ;;
+                    7)
+                        options='if'
+                        ;;
+                    8)
+                        IFS=$'\n'
+                        options=$(_windows_get_interface_ids)
+                        ;;
+                esac
+                ;;
 
-                delete)
-                    case $count in
-                        1)
-                            IFS=$'\n'
-                            options=$(_windows_get_routes)
-                            ;;
-                    esac
-                    ;;
-            esac
+            delete)
+                case $count in
+                    1)
+                        IFS=$'\n'
+                        options=$(_windows_get_routes)
+                        ;;
+                esac
+                ;;
+        esac
 
-            COMPREPLY=( $( compgen -W '$options' -- "$cur" ) )
-        fi
-    } &&
+        COMPREPLY=( $( compgen -W '$options' -- "$cur" ) )
+    fi
+} &&
     complete -F _route route route.exe
 fi
 
-# ex: ts=4 sw=4 et filetype=sh
+# ex: filetype=sh

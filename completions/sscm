@@ -2,14 +2,14 @@
 _sscm_labels()
 {
     local IFS=$'\n'
-    local options=$(sscm lslabel -pFoo -bBar | awk '/^-/{FIELDWIDTHS=length($1)+1; doprint=1; getline} !/^$/{if ( doprint ) { sub(" +$", "", $1); print $1 } }')
+    local options=$(sscm lslabel -pFoo -bBar 2> /dev/null | awk '/^-/{FIELDWIDTHS=length($1)+1; doprint=1; getline} !/^$/{if ( doprint ) { sub(" +$", "", $1); print $1 } }')
     printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
 _sscm_filters()
 {
     local IFS=$'\n'
-    local options=$(sscm lsfilter | awk '/^-/{FIELDWIDTHS=length($1)+1 " " length($2); doprint=1; getline} !/^$/{if ( doprint ) { print $2 } }')
+    local options=$(sscm lsfilter 2> /dev/null | awk '/^-/{FIELDWIDTHS=length($1)+1 " " length($2); doprint=1; getline} !/^$/{if ( doprint ) { print $2 } }')
     printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
@@ -18,21 +18,17 @@ _sscm_branches()
     local p_option
 
     for (( i = 0; i < ${#words[@]}; i++ )); do
-        if [[ $i -eq $cword ]]; then
-            continue
-        fi
-
         case "${words[i]}" in
             -p*)
-                p_option="${words[i]}"
+                p_option="${words[i]%/*}"
                 ;;
         esac
     done
 
     local IFS=$'\n'
-    local options=$(sscm lsbranch -daw $p_option | sed 's/\r//g; /^$/d; s/ ([^)]*)$//')
+    local options=$(sscm lsbranch -daw $p_option 2> /dev/null | sed 's/\r//g; /^$/d; s/ ([^)]*)$//')
     local options+=$'\n'
-    local options+=$(sscm lsmainline -i | sed 's/\r//g; /^$/d')
+    local options+=$(sscm lsmainline -i 2> /dev/null | sed 's/\r//g; /^$/d')
     printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
@@ -40,24 +36,22 @@ _sscm_repos()
 {
     local p_option b_option
 
+    # TODO: complete p option if not specified with the mainline branchname associated with the b option (using branchproperty?)
+
     for (( i = 0; i < ${#words[@]}; i++ )); do
-        if [[ $i -eq $cword ]]; then
-            continue
-        fi
-
         case "${words[i]}" in
-            -p*)
-                p_option="${words[i]}"
-                ;;
-
             -b*)
                 b_option="${words[i]}"
+                ;;
+
+            -p*)
+                p_option="${words[i]%/*}"
                 ;;
         esac
     done
 
     local IFS=$'\n'
-    local options=$(sscm ls $b_option $p_option | sed '/^ /d; /^$/d')
+    local options=$(sscm ls $b_option $p_option 2> /dev/null | sed '/^ /d; /^$/d; s,$,/,')
     printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
@@ -73,7 +67,7 @@ _sscm_events()
 _sscm_users()
 {
     local IFS=$'\n'
-    local options=$(sscm lsuser | awk '{print $3}')
+    local options=$(sscm lsuser 2> /dev/null | awk '{print $3}')
     printf '%q\n' ${options,,} | sed -e 's/[:=]/\\&/g' -e "/''/d"
 }
 
@@ -87,6 +81,7 @@ _sscm_common_options()
 
         -p*)
             _sscm_repos | sed 's/^/-p/'
+            compopt -o nospace
             ;;
 
         -u*)

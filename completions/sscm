@@ -1,0 +1,680 @@
+
+_sscm_labels()
+{
+    local p_option b_option
+
+    for (( i = 0; i < ${#words[@]}; i++ )); do
+        case "${words[i]}" in
+            -b*)
+                b_option="${words[i]}"
+                ;;
+
+            -p*)
+                p_option="${words[i]%/*}"
+                ;;
+        esac
+    done
+
+    local IFS=$'\n'
+    local options=$(sscm lslabel $p_option $b_option 2> /dev/null | awk '/^-/{FIELDWIDTHS=length($1)+1; doprint=1; getline} !/^$/{if ( doprint ) { sub(" +$", "", $1); print $1 } }' | sed 's/ \+$//')
+    printf '%q\n' ${options} | sed -e 's/[:=]/\\&/g' -e "/''/d"
+}
+
+_sscm_filters()
+{
+    local IFS=$'\n'
+    local options=$(sscm lsfilter 2> /dev/null | awk '/^-/{FIELDWIDTHS=length($1)+1 " " length($2); doprint=1; getline} !/^$/{if ( doprint ) { print $2 } }' | sed 's/ \+$//')
+    printf '%q\n' ${options} | sed -e 's/[:=]/\\&/g' -e "/''/d"
+}
+
+_sscm_branches()
+{
+    local p_option
+
+    for (( i = 0; i < ${#words[@]}; i++ )); do
+        case "${words[i]}" in
+            -p*)
+                p_option="${words[i]%/*}"
+                ;;
+        esac
+    done
+
+    local IFS=$'\n'
+    local options=$(sscm lsbranch -daw $p_option 2> /dev/null | sed 's/\r//g; /^$/d; s/ ([^)]*)$//')
+    local options+=$'\n'
+    local options+=$(sscm lsmainline -i 2> /dev/null | sed 's/\r//g; /^$/d; s/ ([^)]*)$//')
+    printf '%q\n' ${options} | sed -e 's/[:=]/\\&/g' -e "/''/d"
+}
+
+_sscm_repos()
+{
+    local p_option b_option
+
+    for (( i = 0; i < ${#words[@]}; i++ )); do
+        case "${words[i]}" in
+            -b*)
+                b_option="${words[i]}"
+                ;;
+
+            -p*)
+                p_option="${words[i]%/*}"
+                ;;
+        esac
+    done
+
+    local IFS=$'\n'
+    local options=$(sscm ls $b_option $p_option 2> /dev/null | sed '/^ /d; /^$/d; s,$,/,')
+    local options+=$'\n'
+    local options+=$(sscm lsmainline -i 2> /dev/null | sed 's/\r//g; /^$/d; s/ ([^)]*)$//; s,$,/,')
+    printf '%q\n' ${options} | sed -e 's/[:=]/\\&/g' -e "/''/d"
+}
+
+_sscm_events()
+{
+    printf '%s\n' AddToRepository AddToBranch AddFromBranch AttachToIssue \
+        AttachToTestCase AttachToRequirement AttachToExternal BreakShare \
+        CheckIn FileDestroyed FileRenamed Label Promote PromoteFrom Rebase \
+        RebaseWithMerge Remove RepoDestroyed RepoMoved RepoRenamed Restore \
+        Share RollbackFile RollbackRebase RollbackPromote
+}
+
+_sscm_users()
+{
+    local IFS=$'\n'
+    local options=$(sscm lsuser 2> /dev/null | awk '{print $3}')
+    printf '%q\n' ${options} | sed -e 's/[:=]/\\&/g' -e "/''/d"
+}
+
+_sscm_common_options()
+{
+    # NOTE: these options are not universal for all commands but they're pretty close ¯\_(ツ)_/¯
+    case "$cur" in
+        -b*)
+            _sscm_branches | sed 's/^/-b/'
+            ;;
+
+        -p*)
+            _sscm_repos | sed 's/^/-p/'
+            ;;
+
+        -u*)
+            _sscm_users | sed 's/^/-u/'
+            ;;
+
+        -f*)
+            _sscm_filters | sed 's/^/-f/'
+            ;;
+
+        -l*)
+            _sscm_labels | sed 's/^/-l/'
+            ;;
+
+        -a*)
+            _sscm_events | sed 's/^/-a/'
+            ;;
+
+        *)
+            printf '%s\n' $@
+            ;;
+    esac
+}
+
+_sscm()
+{
+    local cur words cword options
+
+    _init_completion || return
+
+    cur=$(printf '%q' "$cur")
+
+    if [[ $cword -eq 1 ]]; then
+        options='add addcodereview addcustomfield addexistingmainline addgroup
+            addlabel addproxy addshelf adduser analyzedb annotate batch
+            branchdiff branchhistory branchproperty breakshare
+            bulkcustomfieldchange changebranchattrib changebranchtype checkin
+            checkout cloak commitchangelist cpfile cruisecontrol dblock diff
+            diffreport duplicatechanges editchangelist editcustomfield
+            editgroup editlabel editmailqueue editproxy editshadow edituser
+            exportrepository fetchttdb findinfiles get history label
+            labeledfilesreport ls lsbranch lschangelist lscloak lscodereview
+            lscustomfield lsfilter lsgroup lsissue lsissuefilter lslabel
+            lsmailqueue lsmainline lsproxy lsreport lsserverlog lsshadow
+            lsshelf lsstate lsttdb lsuser mainlinecomplianceoption
+            mainlineoption mainlineunicodeoption merge mkbranch mkmainline
+            mkrepository mr mkshadow move passwd promote promotefile property
+            rebase rebasefile rename renamebranch renamegroup restore
+            restorebranch retrieveuser rm rmbranch rmcustomfield rmgroup
+            rmlabel rmmainline rmproxy rmserverlog rmshadow rmshelf rmttdb
+            rmuser rmworkdir rollback runreport securerepository
+            servercacheoption servercheckforupdate servercomplianceoption
+            serveremailoption serverlogoption serveroption serverrdbmsoption
+            serverunicodeoption serverupdatecheckoption setclient
+            setcustomfield setstate setttdb share shelf showworkdirs uncheckout
+            uncloak unlabel unshelf upgrademainline version voidcheckout
+            workdir workdirinfo'
+        COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+        return
+    fi
+
+    # TODO: update case statement
+
+    local IFS=$'\n'
+
+    case "${words[1]}" in
+        add)
+            options=$(_sscm_common_options -a -b -c -e -f -g -h -i -j -k -l -m -n -o -p -q -r -s -t -u -v -w -x -y -z)
+            ;;
+
+        addcodereview|acr)
+            options=$(_sscm_common_options -a -h -n -p -r -y -z)
+            ;;
+
+        addcustomfield|acf)
+            options=$(_sscm_common_options -c -d -f -h -l -m -n -v -y -z)
+            ;;
+
+        addexistingmainline|aeml)
+            options=$(_sscm_common_options -d -h -y -z)
+            ;;
+
+        addgroup|ag)
+            options=$(_sscm_common_options -d -h -n -s -u -y -z)
+            ;;
+
+        addlabel|albl)
+            options=$(_sscm_common_options -b -d -h -i -p -y -z)
+            ;;
+
+        addproxy|ap)
+            options=$(_sscm_common_options -a -c -h -i -m -n -o -p -r -s -t -u -y -z)
+            ;;
+
+        addshelf|as)
+            options=$(_sscm_common_options -d -h -p -s -y -z)
+            ;;
+
+        adduser|au)
+            options=$(_sscm_common_options -c -e -f -h -i -l -m -n -p -t -w -y -z)
+            ;;
+
+        analyzedb|adb)
+            options=$(_sscm_common_options -c -h -n -o -r -y -z)
+            ;;
+
+        annotate)
+            options=$(_sscm_common_options -a -b -c -h -o -p -y -z)
+            ;;
+
+        batch)
+            options=$(_sscm_common_options -h -o -y -z)
+            ;;
+
+        branchdiff|bd)
+            options=$(_sscm_common_options -b -c -d -h -i -j -k -l -n -p -r -w -y -z)
+            ;;
+
+        branchhistory|bh)
+            options=$(_sscm_common_options -b -d -h -p -u -y -z)
+            ;;
+
+        branchproperty|bp)
+            options=$(_sscm_common_options -b -h -i -o -p -s -x -y -z)
+            ;;
+
+        breakshare|bs)
+            options=$(_sscm_common_options -b -c -h -p -r -y -z)
+            ;;
+
+        bulkcustomfieldchange|bcfc)
+            options=$(_sscm_common_options -b -h -p -r -y -z)
+            ;;
+
+        changebranchattrib|cba)
+            options=$(_sscm_common_options -c -d -f -h -i -o -p -s -y -z)
+            ;;
+
+        changebranchtype|cbt)
+            options=$(_sscm_common_options -b -h -i -n -o -p -sbaseline -y -z)
+            ;;
+
+        checkin|ci)
+            options=$(_sscm_common_options -a -b -c -d -e -f -g -h -i -k -l -m -n -o -p -q -r -s -t -u -v -w -x -y -z)
+            ;;
+
+        checkout|co)
+            options=$(_sscm_common_options -b -c -e -f -h -p -q -r -t -v -w -x -y -z)
+            ;;
+
+        cloak|ck)
+            options=$(_sscm_common_options -b -h -p -y -z)
+            ;;
+
+        commitchangelist|ccl)
+            options=$(_sscm_common_options -h -p -y -z)
+            ;;
+
+        cpfile|cpf)
+            options=$(_sscm_common_options -a -b -c -e -h -i -m -n -o -p -s -v -y -z)
+            ;;
+
+        cruisecontrol|cc)
+            options=$(_sscm_common_options -b -d -h -m -n -p -r -x -y -z)
+            ;;
+
+        dblock|dbl)
+            options=$(_sscm_common_options -a -b -h -y -z)
+            ;;
+
+        diff)
+            options=$(_sscm_common_options -b -c -h -i -p -u -v -y -z)
+            ;;
+
+        diffreport|dr)
+            options=$(_sscm_common_options -a -b -c -d -h -i -k -l -n -o -p -v -w -y -z)
+            ;;
+
+        duplicatechanges|dc)
+            options=$(_sscm_common_options -c -f -h -l -p -r -s -v -y -z)
+            ;;
+
+        editchangelist|ecl)
+            options=$(_sscm_common_options -c -h -f -m -p -r -y -z)
+            ;;
+
+        editcustomfield|ecf)
+            options=$(_sscm_common_options -c -d -h -l -m -n -v -y -z)
+            ;;
+
+        editgroup|eg)
+            options=$(_sscm_common_options -d -h -n -s -u -y -z)
+            ;;
+
+        editlabel|elbl)
+            options=$(_sscm_common_options -b -d -g -h -i -n -p -y -z)
+            ;;
+
+        editmailqueue|emq)
+            options=$(_sscm_common_options -a -d -h -r -y -z)
+            ;;
+
+        editproxy|ep)
+            options=$(_sscm_common_options -a -c -d -h -i -l -m -n -o -p -r -s -t -u -y -z)
+            ;;
+
+        editshadow|es)
+            options=$(_sscm_common_options -b -f -h -l -r -t -w -y -z)
+            ;;
+
+        edituser|eu)
+            options=$(_sscm_common_options -c -e -f -h -i -l -m -n -p -t -u -w -y -z)
+            ;;
+
+        exportrepository|er)
+            options=$(_sscm_common_options -b -c -d -h -l -p -y -z)
+            ;;
+
+        fetchttdb|ftt)
+            options=$(_sscm_common_options -h -y -z)
+            ;;
+
+        findinfiles|fif)
+            options=$(_sscm_common_options -b -c -e -f -h -l -m -p -r -w -x -y -z)
+            ;;
+
+        get)
+            options=$(_sscm_common_options -a -b -d -e -f -h -i -j -l -p -q -r -s -t -v -w -y -z)
+            ;;
+
+        history)
+            options=$(_sscm_common_options -a -b -c -d -e -f -h -p -r -u -v -w -y -z)
+            ;;
+
+        label)
+            options=$(_sscm_common_options -b -c -h -l -o -p -r -s -v -y -z)
+            ;;
+
+        labeledfilesreport|lfr)
+            options=$(_sscm_common_options -b -h -i -o -p -r -y -z)
+            ;;
+
+        ls)
+            options=$(_sscm_common_options -a -b -c -e -f -h -l -m -p -r -s -u -w -x -y -z)
+            ;;
+
+        lsbranch|lb)
+            options=$(_sscm_common_options -a -d -f -h -p -w -y -z)
+            ;;
+
+        lschangelist|lcl)
+            options=$(_sscm_common_options -h -p -u -v -x -y -z)
+            ;;
+
+        lscloak|lck)
+            options=$(_sscm_common_options -h -y -z)
+            ;;
+
+        lscodereview|lcr)
+            options=$(_sscm_common_options -a -h -p -v -y -z)
+            ;;
+
+        lscustomfield|lcf)
+            options=$(_sscm_common_options -h -r -y -z)
+            ;;
+
+        lsfilter|lf)
+            options=$(_sscm_common_options -h -y -z)
+            ;;
+
+        lsgroup|lg)
+            options=$(_sscm_common_options -d -f -h -n -s -u -y -z)
+            ;;
+
+        lsissue|ld)
+            options=$(_sscm_common_options -f -h -l -y -z)
+            ;;
+
+        lsissuefilter|ldf)
+            options=$(_sscm_common_options -h -l -y -z)
+            ;;
+
+        lslabel|llbl)
+            options=$(_sscm_common_options -b -d -f -g -h -i -o -p -v -w -x -y -z)
+            ;;
+
+        lsmailqueue|lmq)
+            options=$(_sscm_common_options -h -y -z)
+            ;;
+
+        lsmainline|lml)
+            options=$(_sscm_common_options -h -i -y -z)
+            ;;
+
+        lsproxy|lp)
+            options=$(_sscm_common_options -h -y -z)
+            ;;
+
+        lsreport|lr)
+            options=$(_sscm_common_options -h -y -z)
+            ;;
+
+        lsserverlog|lsl)
+            options=$(_sscm_common_options -a -f -h -l -p -s -t -y -z)
+            ;;
+
+        lsshadow|lss)
+            options=$(_sscm_common_options -a -b -h -p -y -z)
+            ;;
+
+        lsshelf)
+            options=$(_sscm_common_options -b -h -n -o -p -s -y -z)
+            ;;
+
+        lsstate|lst)
+            options=$(_sscm_common_options -h -r -y -z)
+            ;;
+
+        lsttdb|ltt)
+            options=$(_sscm_common_options -h -y -z)
+            ;;
+
+        lsuser|lu)
+            options=$(_sscm_common_options -a -c -d -e -f -g -h -i -n -o -p -s -t -w -y -z)
+            ;;
+
+        mainlinecomplianceoption|mcoo)
+            options=$(_sscm_common_options -g -h -l -m -r -t -y -z)
+            ;;
+
+        mainlineoption|mo)
+            options=$(_sscm_common_options -b -d -f -g -h -j -k -m -n -q -r -t -w -x -y -z)
+            ;;
+
+        mainlineunicodeoption|muo)
+            options=$(_sscm_common_options -a -d -g -h -s -u -y -z)
+            ;;
+
+        merge)
+            options=$(_sscm_common_options -b -f -h -i -p -r -s -u -v -y -z)
+            ;;
+
+        mkbranch|mb)
+            options=$(_sscm_common_options -a -b -c -f -h -i -l -s -t -x -y -z)
+            ;;
+
+        mkmainline|mml)
+            options=$(_sscm_common_options -c -h -l -s -y -z)
+            ;;
+
+        mkrepository|mkrepo|mr)
+            options=$(_sscm_common_options -b -c -h -p -x -y -z)
+            ;;
+
+        mkshadow|mks)
+            options=$(_sscm_common_options -b -h -p -r -t -w -y -z)
+            ;;
+
+        move)
+            options=$(_sscm_common_options -b -c -h -p -q -x -y -z)
+            ;;
+
+        passwd|pw)
+            options=$(_sscm_common_options -h -u -z)
+            ;;
+
+        promote)
+            options=$(_sscm_common_options -a -b -c -d -e -h -i -k -l -m -n -o -p -q -s -t -u -v -x -y -z)
+            ;;
+
+        promotefile|pf)
+            options=$(_sscm_common_options -a -b -c -d -e -h -i -k -l -m -n -o -p -q -r -s -t -u -v -x -y -z)
+            ;;
+
+        property)
+            options=$(_sscm_common_options -a -b -d -h -i -k -n -o -p -r -s -t -y -z)
+            ;;
+
+        rebase)
+            options=$(_sscm_common_options -a -b -c -d -e -h -i -k -l -m -o -p -q -s -t -v -x -y -z)
+            ;;
+
+        rebasefile|rf)
+            options=$(_sscm_common_options -a -b -c -d -e -h -i -k -l -m -n -o -p -q -r -s -t -v -x -y -z)
+            ;;
+
+        rename)
+            options=$(_sscm_common_options -b -c -h -p -q -x -y -z)
+            ;;
+
+        renamebranch)
+            options=$(_sscm_common_options -c -h -p -y -z)
+            ;;
+
+        renamegroup)
+            options=$(_sscm_common_options -h -y -z)
+            ;;
+
+        restore)
+            options=$(_sscm_common_options -b -c -h -p -v -y -z)
+            ;;
+
+        restorebranch)
+            options=$(_sscm_common_options -c -h -i -p -u -y -z)
+            ;;
+
+        retrieveuser|rtu)
+            options=$(_sscm_common_options -h -y -z)
+            ;;
+
+        rm)
+            options=$(_sscm_common_options -c -b -d -f -h -p -q -x -y -z)
+            ;;
+
+        rmbranch|rb)
+            options=$(_sscm_common_options -c -d -h -i -p -q -u -y -z)
+            ;;
+
+        rmcustomfield|rcf)
+            options=$(_sscm_common_options -h -y -z)
+            ;;
+
+        rmgroup|rg)
+            options=$(_sscm_common_options -h -y -z)
+            ;;
+
+        rmlabel|rmlbl)
+            options=$(_sscm_common_options -b -h -p -q -y -z)
+            ;;
+
+        rmmainline|rml)
+            options=$(_sscm_common_options -c -h -y -z)
+            ;;
+
+        rmproxy|rp)
+            options=$(_sscm_common_options -h -y -z)
+            ;;
+
+        rmserverlog|rsl)
+            options=$(_sscm_common_options -a -h -t -y -z)
+            ;;
+
+        rmshadow|rms)
+            options=$(_sscm_common_options -a -b -h -l -y -z)
+            ;;
+
+        rmshelf)
+            options=$(_sscm_common_options -h -o -p -y -z)
+            ;;
+
+        rmttdb|rtt)
+            options=$(_sscm_common_options -h -y -z)
+            ;;
+
+        rmuser|ru)
+            options=$(_sscm_common_options -h -y -z)
+            ;;
+
+        rmworkdir|rmwd)
+            options=$(_sscm_common_options -b -c -h -i -p -y -z)
+            ;;
+
+        rollback|rbk)
+            options=$(_sscm_common_options -b -c -h -p -v -y -z)
+            ;;
+
+        runreport|rr)
+            options=$(_sscm_common_options -b -h -o -p -y -z)
+            ;;
+
+        securerepository|sr)
+            options=$(_sscm_common_options -a -b -f -g -h -o -p -r -y -z)
+            ;;
+
+        servercacheoption|sco)
+            options=$(_sscm_common_options -f -h -m -r -t -y -z)
+            ;;
+
+        servercheckforupdate|scfu)
+            options=$(_sscm_common_options -c -h -n -y -z)
+            ;;
+
+        servercomplianceoption|scoo)
+            options=$(_sscm_common_options -h -l -m -r -t -y -z)
+            ;;
+
+        serveremailoption|seo)
+            options=$(_sscm_common_options -a -e -f -h -n -o -p -q -s -t -u -v -y -z)
+            ;;
+
+        serverlogoption|slo)
+            options=$(_sscm_common_options -e -f -h -l -n -o -r -s -w -y -z)
+            ;;
+
+        serveroption|so)
+            options=$(_sscm_common_options -a -b -c -d -e -f -g -h -i -j -k -l -m -n -o -p -q -r -s -t -u -w -x -y -z)
+            ;;
+
+        serverrdbmsoption|sro)
+            options=$(_sscm_common_options -c -d -h -m -s -t -u -y -z)
+            ;;
+
+        serverunicodeoption|suo)
+            options=$(_sscm_common_options -a -d -h -s -u -y -z)
+            ;;
+
+        serverupdatecheckoption|suco)
+            options=$(_sscm_common_options -b -c -e -h -n -r -s -t -y -z)
+            ;;
+
+        setclient|sc)
+            options=$(_sscm_common_options -a -c -d -g -h -i -j -m -o -p -r -s -u -w -x -y -y -z)
+            ;;
+
+        setcustomfield|scf)
+            options=$(_sscm_common_options -b -h -p -y -z)
+            ;;
+
+        setstate|ss)
+            options=$(_sscm_common_options -b -c -h -p -r -v -y -z)
+            ;;
+
+        setttdb|stt)
+            options=$(_sscm_common_options -h -i -y -z)
+            ;;
+
+        share)
+            options=$(_sscm_common_options -b -c -h -p -r -y -z)
+            ;;
+
+        shelf)
+            options=$(_sscm_common_options -b -f -h -i -l -n -p -r -w -y -z)
+            ;;
+
+        showworkdirs|swd)
+            options=$(_sscm_common_options -h -m -y -z)
+            ;;
+
+        uncheckout|uco)
+            options=$(_sscm_common_options -b -d -f -h -p -q -r -y -z)
+            ;;
+
+        uncloak|uck)
+            options=$(_sscm_common_options -b -h -p -y -z)
+            ;;
+
+        unlabel|unl)
+            options=$(_sscm_common_options -b -c -h -l -p -r -y -z)
+            ;;
+
+        unshelf)
+            options=$(_sscm_common_options -b -d -e -h -n -o -p -r -y -z)
+            ;;
+
+        upgrademainline|uml)
+            options=$(_sscm_common_options -e -h -i -y -z)
+            ;;
+
+        version)
+            options=$(_sscm_common_options -c -h -y -z)
+            ;;
+
+        voidcheckout|vco)
+            options=$(_sscm_common_options -b -h -p -r -y -z)
+            ;;
+
+        workdir|wd)
+            options=$(_sscm_common_options -b -g -h -q -r -o -y -z)
+            ;;
+
+        workdirinfo|wdi)
+            options=$(_sscm_common_options -h -r)
+            ;;
+
+    esac
+
+    COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+    [[ $COMPREPLY == */ ]] && compopt -o nospace
+}
+
+complete -F _sscm sscm sscm.exe
+
+# ex: filetype=sh

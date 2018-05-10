@@ -17,8 +17,133 @@
 
 # Rational ClearCase Completion
 # author: Jan Tomka
-# date: 2015-06-09 
+# date: 2015-06-09
 # source: http://jan.tomka.name/project/clearcase-completion-bash
+
+# TODO: add support for branches and versions of files
+
+# TODO: add caching and improved completion for
+# streams
+# projects
+# activities
+# baselines
+
+# NOTE:
+# Setting _cleartool_auto_init_cache initializes the cache when this completion
+# file is loaded (ie. during first completion request)
+
+# NOTE:
+# Cache can be manually (re-)initialized by calling _cleartool_init_cache
+
+# NOTE:
+# Enabling caching may negatively impact the accuracy of completion candidates
+# suggested to the user
+
+_cleartool_init_cache()
+{
+    declare -g -A _cleartool_cache_view_uuids=""
+    declare -g -A _cleartool_cache_views=""
+    declare -g -A _cleartool_cache_vobs=""
+    declare -g _cleartool_caching=1
+    _cleartool_load_cache > /dev/null
+    _cleartool_init_cache_internal > /dev/null
+    _cleartool_save_cache > /dev/null
+}
+
+_cleartool_save_cache()
+{
+    mkdir -p ~/.cache/
+    set | sed ' /^_cleartool_cache_/{ /^[^ ]*=(/{ :a /)$/!{ n; ba; }; b; }; / () $/{ :b /^}$/!{ n; bb; }; b; }; b; }; d; ' > ~/.cache/cleartool
+}
+
+_cleartool_load_cache()
+{
+    if [[ -e ~/.cache/cleartool ]]; then
+        source ~/.cache/cleartool
+    fi
+}
+
+_cleartool_init_cache_internal()
+{
+    _cleartool_vobs
+    _cleartool_views
+    _cleartool_view_uuids
+}
+
+_cleartool_vobs()
+{
+    if [[ "${_cleartool_cache_vobs}" ]]; then
+        echo $_cleartool_cache_vobs
+        return
+    fi
+    local IFS=$'\n'
+    _cleartool_cache_vobs=$(printf '%q ' $(cleartool lsvob -short | sed 's/\r//') | sed 's/[:=]/\\&/g')
+    echo $_cleartool_cache_vobs
+}
+
+_cleartool_mounted_vobs()
+{
+    if [[ "$_cleartool_caching" ]]; then
+        _cleartool_vobs
+        return
+    fi
+    local IFS=$'\n'
+    printf '%q ' $(cleartool lsvob | sed '/^\*/d; s/^\s\+\(\S*\).*/\1/; s/\r//') | sed 's/[:=]/\\&/g' 
+}
+
+_cleartool_unmounted_vobs()
+{
+    if [[ "$_cleartool_caching" ]]; then
+        _cleartool_vobs
+        return
+    fi
+    local IFS=$'\n'
+    printf '%q ' $(cleartool lsvob | sed '/^\*/d; s/^\s\+\(\S*\).*/\1/; s/\r//') | sed 's/[:=]/\\&/g'
+}
+
+_cleartool_view_uuids()
+{
+    if [[ "${_cleartool_cache_view_uuids}" ]]; then
+        echo $_cleartool_cache_view_uuids
+        return
+    fi
+    local IFS=$'\n'
+    _cleartool_cache_view_uuids=$(printf '%q ' $(cleartool lsview -long | sed '/^View uuid: /!d; s/^View uuid: //; s/\r//' | sort | uniq) | sed 's/[:=]/\\&/g' )
+    echo $_cleartool_cache_view_uuids
+}
+
+_cleartool_views()
+{
+    if [[ "${_cleartool_cache_views}" ]]; then
+        echo $_cleartool_cache_views
+        return
+    fi
+    local IFS=$'\n'
+    _cleartool_cache_views=$(printf '%q ' $(cleartool lsview -short | sed 's/\r//') | sed 's/[:=]/\\&/g')
+    echo $_cleartool_cache_views
+}
+
+_cleartool_started_views()
+{
+    if [[ "$_cleartool_caching" ]]; then
+        _cleartool_views
+        return
+    fi
+    local IFS=$'\n'
+    # TODO: return only started views
+    printf '%q ' $(cleartool lsview -short | sed 's/\r//') | sed 's/[:=]/\\&/g'
+}
+
+_cleartool_unstarted_views()
+{
+    if [[ "$_cleartool_caching" ]]; then
+        _cleartool_views
+        return
+    fi
+    local IFS=$'\n'
+    # TODO: return only unstarted views
+    printf '%q ' $(cleartool lsview -short | sed 's/\r//') | sed 's/[:=]/\\&/g'
+}
 
 _cleartool()
 {
@@ -27,29 +152,29 @@ _cleartool()
 
     command=${words[1]}
 
-    commands='annotate apropos catcr catcs cd chactivity chbl checkin ci \
-        checkout co checkvob chevent chflevel chfolder chmaster \
-        chpool chproject chstream chtype chview cptype deliver \
-        describe diff diffbl diffcr dospace edcs endview file find \
-        findmerge get getcache getlog help hostinfo ln lock ls \
-        lsactivity lsbl lscheckout lsco lsclients lscomp lsdo lsfolder \
-        lshistory lslock lsmaster lspool lsprivate lsproject lsregion \
-        lsreplica lssite lsstgloc lsstream lstype lsview lsvob lsvtree \
-        man merge mkactivity mkattr mkattype mkbl mkbranch mkbrtype \
-        mkcomp mkdir mkelem mkeltype mkfolder mkhlink mkhltype mklabel \
-        mklbtype mkpool mkproject mkregion mkstgloc mkstream mktag \
-        mktrigger mktrtype mkview mkvob mount move mv protect \
-        protectvob pwd pwv quit rebase recoverview reformatview \
-        reformatvob register relocate rename reqmaster reserve \
-        rmactivity rmattr rmbl rmbranch rmcomp rmdo rmelem rmfolder \
-        rmhlink rmlabel rmmerge rmname rmpool rmproject rmregion \
-        rmstgloc rmstream rmtag rmtrigger rmtype rmver rmview rmvob \
-        schedule setactivity setcache setcs setplevel setsite setview \
-        shell space startview umount uncheckout unco unlock unregister \
+    commands='annotate apropos catcr catcs cd chactivity chbl checkin ci
+        checkout co checkvob chevent chflevel chfolder chmaster
+        chpool chproject chstream chtype chview cptype deliver
+        describe diff diffbl diffcr dospace edcs endview file find
+        findmerge get getcache getlog help hostinfo ln lock ls
+        lsactivity lsbl lscheckout lsco lsclients lscomp lsdo lsfolder
+        lshistory lslock lsmaster lspool lsprivate lsproject lsregion
+        lsreplica lssite lsstgloc lsstream lstype lsview lsvob lsvtree
+        man merge mkactivity mkattr mkattype mkbl mkbranch mkbrtype
+        mkcomp mkdir mkelem mkeltype mkfolder mkhlink mkhltype mklabel
+        mklbtype mkpool mkproject mkregion mkstgloc mkstream mktag
+        mktrigger mktrtype mkview mkvob mount move mv protect
+        protectvob pwd pwv quit rebase recoverview reformatview
+        reformatvob register relocate rename reqmaster reserve
+        rmactivity rmattr rmbl rmbranch rmcomp rmdo rmelem rmfolder
+        rmhlink rmlabel rmmerge rmname rmpool rmproject rmregion
+        rmstgloc rmstream rmtag rmtrigger rmtype rmver rmview rmvob
+        schedule setactivity setcache setcs setplevel setsite setview
+        shell space startview umount uncheckout unco unlock unregister
         unreserve update winkin'
 
     if [[ $cword -eq 1 ]] ; then
-        COMPREPLY=( $( compgen -W "$commands" -- $cur ) )
+        COMPREPLY=( $( compgen -W '$commands' -- $(printf '%q' $cur) ) )
     else
         if [[ "$cur" == -* ]]; then
             # Command-specific option flags
@@ -89,6 +214,7 @@ _cleartool()
                         -cwork'
                     ;;
                 checkout|co)
+                    # TODO: list branches
                     options='-reserved -unreserved \
                         -nmaster -out -ndata -ptime -branch \
                         -version -nwarn -comment -cfile \
@@ -157,7 +283,8 @@ _cleartool()
                         -complete -gmerge -ok -abort -serial \
                         -force -resume'
                     ;;
-                describe)
+                # describe
+                des*)
                     options='-graphical -local -long \
                         -short -fmt -alabel -all -aattr -all \
                         -ahlink -cview -version -ancestor \
@@ -198,7 +325,7 @@ _cleartool()
                     options='-all -visible -nvisible \
                         -avobs -name -depth -nrecurse \
                         -directory -cview -user -group -type \
-                        -follow -nxname -element -branch \
+                        -kind -follow -nxname -element -branch \
                         -version -print -exec -ok'
                     ;;
                 findmerge)
@@ -703,10 +830,16 @@ _cleartool()
             esac
             options="$options -h"
 
-            COMPREPLY=( $( compgen -W "$options" -- $cur ) )
+            COMPREPLY=( $( compgen -W '$options' -- $(printf '%q' $cur) ) )
         else
             # Command-specific arguments
             case "$command" in
+                diff)
+                    if [[ "$prev" == -options ]]; then
+                        # TODO: list options
+                        options='-blank_ignore'
+                    fi
+                    ;;
                 help|apropos)
                     options="$commands"
                     ;;
@@ -721,68 +854,149 @@ _cleartool()
                         clearexport_pvcs clearexport_sccs"
                     ;;
                 mount)
-                    options=$(cleartool lsvob |sed -e "/^\*/d" -e "s/^\s\+\(\S*\).*/\1/" -e 's/\r//')
+                    options=$(_cleartool_unmounted_vobs)
                     ;;
                 umount)
-                    options=$(cleartool lsvob |sed -e "/^\s/d" -e "s/^\*\s\+\(\S*\).*/\1/" -e 's/\r//')
+                    options=$(_cleartool_mounted_vobs)
+                    ;;
+                endview)
+                    options=$(_cleartool_started_views)
+                    ;;
+                find)
+                    case "$prev" in
+                        -kind)
+                            options='actype attype baseline branch brtype
+                            checkpoint dbid delem do domain dover dver eltype felem
+                            fver hlink hltype lbtype login oid pool replica
+                            replicauuid role rptype sibrep slink state sttype
+                            trtype user viewdb vob vobuuid wko lscomp lsfolder
+                            lsproject lsstream'
+                            ;;
+                        -type)
+                            options='f d l'
+                            ;;
+                        -user)
+                            # TODO: list users
+                            options=''
+                            ;;
+                        -group)
+                            # TODO: list groups
+                            options=''
+                            ;;
+                        -ver?(sion))
+                            ;&
+                        -ele?(ment))
+                            ;&
+                        -bra?(nch))
+                            # TODO: this could be vastly improved
+                            options='attr_sub() atttype() atttype_sub() brtype()
+                            created_by() created_since() eltype() hltype() lbtype()
+                            lbtype_sub() merge() pool() trtype() version()'
+                            ;;
+                    esac
+                    ;;
+                startview)
+                    options=$(_cleartool_unstarted_views)
                     ;;
                 setview)
                     if [[ "$prev" == -exe?(c) ]]; then
                         COMPREPLY=( $(compgen -A command -- $cur) )
                     else
-                        options=$(cleartool lsview -short | sed -e 's/\r//')
+                        options=$(_cleartool_views)
                     fi
+                    ;;
+                lshistory)
+                    case $prev in
+                        -branch)
+                            options=$(printf '%q ' $(cleartool lstype -kind brtype -fmt '%n ') | sed 's/[:=]/\\&/g')
+                            ;;
+                    esac
+                    ;;
+                mkbranch)
+                    case $prev in
+                        -c|-comment)
+                            options=''
+                            ;;
+                        -cfile)
+                            options=''
+                            ;;
+                        -version)
+                            options=''
+                            ;;
+                        -*|$command)
+                            options=$(printf '%q ' $(cleartool lstype -kind brtype -fmt '%n ') | sed 's/[:=]/\\&/g')
+                            ;;
+                    esac
+                    ;;
+                lstype)
+                    case $prev in
+                        -kind)
+                            options='attype brtype eltype hltype lbtype trtype'
+                            ;;
+                    esac
                     ;;
                 lsview)
                     if [[ "$prev" == -hos?(t) ]]; then
                         _known_hosts
                     elif [[ "$prev" == -reg?(ion) ]]; then
-                        options=$(cleartool lsregion -short | sed -e 's/\r//')
+                        options=$(cleartool lsregion -short | sed 's/\r//')
+                        options=$(printf '%q\n' ${options})
                     elif [[ "$prev" == -sto?(rage) ]]; then
                         # TODO: Doesn't work OK.
-                        options=$(cleartool lsview |sed -e "s/.*\s\(\S*\)$/\1/" -e 's/\r//')
+                        options=$(_cleartool_views)
                     elif [[ "$prev" == -uui?(d) ]]; then
-                        options=$(cleartool lsview -long |grep "^View uuid: " |sed -e "s/^View uuid: //" -e 's/\r//' |sort |uniq)
+                        options=$(_cleartool_view_uuids)
                     else
-                        options=$(cleartool lsview -short | sed -e 's/\r//')
+                        options=$(_cleartool_views)
                     fi
                     ;;
                 uncheckout|unco)
                     # List of user's checked out elements
                     # TODO: Include list of activities for checkin
-                    options=$(cleartool lscheckout -short -me | sed -e 's/\r//')
+                    local IFS=$'\n'
+                    options=$(printf '%q\n' $(cleartool lscheckout -short -me | sed 's/\r//'))
                     ;;
                 checkin|ci)
                     if [[ "$prev" != @(-fro?(m)|-cfi?(le)) ]]; then
-                        options=$(cleartool lscheckout -short -me | sed -e 's/\r//')
+                        local IFS=$'\n'
+                        options=$(printf '%q\n' $(cleartool lscheckout -short -me | sed 's/\r//'))
                     fi
                     ;;
                 lsregion)
-                    options=$(cleartool lsregion -short | sed -e 's/\r//')
+                    # TODO: region caching
+                    local IFS=$'\n'
+                    options=$(printf '%q\n' $(cleartool lsregion -short | sed 's/\r//'))
                     ;;
                 rmregion)
                     if [[ "$prev" != -pas?(sword) ]]; then
-                        options=$(cleartool lsregion -short | sed -e 's/\r//')
+                        # TODO: region caching
+                        local IFS=$'\n'
+                        options=$(printf '%q\n' $(cleartool lsregion -short | sed 's/\r//'))
                     fi
                     ;;
                 lsvob)
                     if [[ "$prev" == -reg?(ion) ]]; then
-                        options=$(cleartool lsregion -short | sed -e 's/\r//')
+                        local IFS=$'\n'
+                        options=$(printf '%q\n' $(cleartool lsregion -short | sed 's/\r//'))
                     elif [[ "$prev" == -hos?(t) ]]; then
                         _known_hosts
                     elif [[ "$prev" == -uui?(d) ]]; then
-                        options=$(cleartool lsvob -long |grep "^Vob replica uuid: " |sed -e "s/^Vob replica uuid: //" -e 's/\r//' |sort |uniq)
+                        # TODO: vob uuid caching
+                        local IFS=$'\n'
+                        options=$(printf '%q\n' $(cleartool lsvob -long | sed '/^Vob replica uuid: /!d; s/^Vob replica uuid: //; s/\r//' | sort | uniq) | sed 's/[:=]/\\&/g')
                     elif [[ "$prev" == -fam?(ily) ]]; then
-                        options=$(cleartool lsvob -long |grep "^Vob family uuid: " |sed -e "s/^Vob family uuid: //" -e 's/\r//' |sort |uniq)
+                        local IFS=$'\n'
+                        options=$(printf '%q\n' $(cleartool lsvob -long | sed '/^Vob family uuid: /!d; s/^Vob family uuid: //; s/\r//' | sort | uniq) | sed 's/[:=]/\\&/g')
                     elif [[ "$prev" == -sto?(rage) ]]; then
                         # TODO: Doesn't work OK
-                        options=$(cleartool lsvob |sed -e "s/^\*\?\ \S*\s*\(\S*\).*/\1/" -e 's/\r//')
+                        local IFS=$'\n'
+                        options=$(printf '%q\n' $(cleartool lsvob | sed 's/^\*\?\ \S*\s*\(\S*\).*/\1/; s/\r//') | sed 's/[:=]/\\&/g')
                     fi
                     ;;
             esac
 
             if [ -n "$options" -a -z "$COMPREPLY" ]; then
-                COMPREPLY=( $(compgen -W "$options" -- $cur ) )
+                COMPREPLY=( $(compgen -W '$options' -- $(printf '%q' $cur) ) )
             fi
         fi
     fi
@@ -799,10 +1013,10 @@ _multitool()
     commands="help man quit cd pwd shell apropos lstype rmtype mkreplica \
         chreplica syncreplica lsreplica rmreplica rename chmaster \
         lsmaster reqmaster lsepoch chepoch recoverpacket \
-        restorereplica describe describe lspacket"
+        restorereplica describe lspacket"
 
     if [[ $cword -eq 1 ]] ; then
-        COMPREPLY=( $( compgen -W "$commands" -- $cur ) )
+        COMPREPLY=( $( compgen -W '$commands' -- $(printf '%q' $cur) ) )
     else
         if [[ "$cur" == -* ]]; then
             # Command-specific option flags
@@ -899,7 +1113,7 @@ _multitool()
             esac
             options="$options -h"
 
-            COMPREPLY=( $( compgen -W "$options" -- $cur ) )
+            COMPREPLY=( $( compgen -W '$options' -- $(printf '%q' $cur) ) )
         else
             case "$command" in
                 help|apropos|man)
@@ -908,7 +1122,7 @@ _multitool()
             esac
 
             if [ -n "$options" -a -z "$COMPREPLY" ]; then
-                COMPREPLY=( $( compgen -W "$options" -- $cur ) )
+                COMPREPLY=( $( compgen -W '$options' -- $(printf '%q' $cur) ) )
             fi
         fi
     fi
@@ -1116,5 +1330,9 @@ _clearvobadmin()
     fi
 }
 complete -o default -F _clearvobadmin clearvobadmin clearvobadmin.exe
+
+if [[ "$_cleartool_auto_init_cache" ]]; then
+    _cleartool_init_cache
+fi
 
 # vi: ft=sh

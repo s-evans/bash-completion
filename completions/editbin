@@ -1,0 +1,36 @@
+#!/usr/bin/env sh
+
+_editbin()
+{
+    local cur words cword options cmds
+    _init_completion
+    cur=$(printf '%q' "${cur,,}")
+
+    case $cur in
+
+        /*)
+            cmds=( ${words[@]::cword} ) 
+            options=('/allowbind' '/allowisolation' '/bind' '/dynamicbase'
+            '/errorreport:none' '/errorreport:prompt' '/errorreport:queue'
+            '/errorreport:send' '/heap:' '/largeaddressaware' '/nologo'
+            '/nxcompat' '/rebase' '/release' '/section:' '/stack:'
+            '/subsystem:boot_application' '/subsystem:console'
+            '/subsystem:efi_application' '/subsystem:efi_boot_service_driver'
+            '/subsystem:efi_rom' '/subsystem:efi_runtime_driver'
+            '/subsystem:native' '/subsystem:posix' '/subsystem:windows'
+            '/subsystem:windowsce' '/tsaware' '/version:')
+            options=$(_complement cmds[@] options[@])
+            ;;
+
+        *)
+            ;;
+
+    esac
+
+    COMPREPLY=( $(compgen -W '$options' -- "$cur" ) )
+    [[ $COMPREPLY == *: ]] && compopt -o nospace
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+    [[ $COMPREPLY == *\; ]] && compopt -o nospace
+}
+
+complete -o default -F _editbin editbin editbin.exe

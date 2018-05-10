@@ -1,0 +1,82 @@
+#!/usr/bin/env sh
+
+_vstest_end()
+{
+    COMPREPLY=( $(compgen -W '$options' -- $cur ) )
+    [[ $COMPREPLY == *: ]] && compopt -o nospace
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+    [[ $COMPREPLY == *\; ]] && compopt -o nospace
+}
+
+_vstest()
+{
+    local cur words cword options cmds
+    _init_completion
+    cur=$(printf '%q' "${cur,,}")
+
+    case $cur in
+
+        /tests\\:*)
+            # TODO: list tests
+            _vstest_end
+            return
+            ;;
+
+        /testcasefilter\\:*)
+            # TODO: list tests filters
+            _vstest_end
+            return
+            ;;
+
+        /platform\\:*)
+            options=( '/platform:x86' '/platform:x64' '/platform:arm' )
+            _vstest_end
+            return
+            ;;
+
+        /settings\\:*)
+            # TODO: list files
+            _vstest_end
+            return
+            ;;
+
+        @*)
+            # TODO: list files
+            options='@'
+            _vstest_end
+            return
+            ;;
+
+        /lt | /ListTests)
+            ;&
+        /Parallel)
+            ;&
+        /? | /Help)
+            ;&
+        /InIsolation)
+            _vstest_end
+            return
+            ;;
+
+        /*)
+            cmds=( ${words[@]::cword} )
+            options=( '/tests\:' '/testcasefilter\:' '/framework\:'
+            '/platform\:' '/settings\:' '/listtests' '/parallel'
+            '/testadapterpath\:' '/blame' '/diag\:' '/logger\:'
+            '/resultsdirectory\:' '/parentprocessid\:' '/port\:' '/collect\:'
+            '/inisolation')
+            options=$(_complement cmds[@] options[@])
+            _vstest_end
+            return
+            ;;
+
+        *)
+            echo "foo"
+            _vstest_end
+            return
+
+    esac
+
+}
+
+complete -o default -F _vstest vstest vstest.console vstest.console.exe

@@ -64,7 +64,7 @@ _msbuild()
             ;;
 
         *)
-            cmds=( ${words[@]::cword} ) 
+            cmds=( ${words[@]::cword} )
             options=('/target\:' '/property\:' '/maxcpucount\:' '/maxcpucount'
             '/toolsversion\:' '/verbosity\:quiet' '/verbosity\:minimal'
             '/verbosity\:normal' '/verbosity\:detailed'
